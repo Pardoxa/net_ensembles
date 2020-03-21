@@ -5,11 +5,12 @@ pub trait Node {
 }
 
 
-struct TestNode {
+pub struct TestNode {
     info: String,
 }
 
 impl TestNode {
+    #[allow(dead_code)]
     fn get_info(&self) -> &str {
         &self.info
     }

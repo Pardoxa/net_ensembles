@@ -4,17 +4,10 @@
 //! # Example
 //! ```
 //! use net_ensembles;
-//!
+//! use net_ensembles::Node;
 //!
 //! ```
-mod node;
+pub mod node;
+pub mod er;
 pub use self::node::Node;
-
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub use er::ER;
