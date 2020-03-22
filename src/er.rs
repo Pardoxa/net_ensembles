@@ -111,6 +111,11 @@ mod testing {
         let mut e = test_graph(12, 100, 0.0);
         let ec = e.get_graph().edge_count();
         assert_eq!(0, ec);
+        // empty graph should not be connected:
+        assert!(
+            !e.get_graph()
+                .is_connected()
+        );
 
         // add edge
         e.get_mut_graph()
@@ -148,7 +153,8 @@ mod testing {
         let rng = Pcg64::seed_from_u64(76);
         let e = ER::<TestNode, Pcg64>::new(20, 19.0, rng);
         assert_eq!(20, e.get_graph().vertex_count());
-        assert_eq!(190, e.get_graph().edge_count() );
+        assert_eq!(190, e.get_graph().edge_count());
+        assert!(e.get_graph().is_connected());
     }
 
     #[test]

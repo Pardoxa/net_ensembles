@@ -32,7 +32,7 @@ impl fmt::Display for GraphErrors {
 }
 
 #[allow(dead_code)]
-struct GraphContainer<T>{
+pub struct GraphContainer<T>{
     id: u32,
     adj: Vec<u32>,
     node: T,
@@ -46,6 +46,14 @@ impl<T> GraphContainer<T> {
             adj: Vec::new(),
             node,
         }
+    }
+
+    pub fn get_node(&self) -> &T {
+        &self.node
+    }
+
+    pub fn neighbors(&self) -> std::slice::Iter::<u32> {
+        self.adj.iter()
     }
 
     pub fn get_id(&self) -> u32 {
@@ -168,6 +176,60 @@ impl<T: Node> Graph<T> {
     pub fn edge_count(&self) -> u32 {
         self.edge_count
     }
+
+    pub fn get_container(&self, index: usize) -> &GraphContainer<T> {
+        &self.vertices[index]
+    }
+
+    pub fn dfs(&self) -> Dfs<T> {
+        Dfs::new(&self)
+    }
+
+    pub fn is_connected(&self) -> bool {
+
+        self.dfs().count() == self.vertex_count() as usize
+    }
+}
+
+pub struct Dfs<'a, T>
+    where T: 'a + Node {
+    gr: &'a Graph<T>,
+    handled: Vec<bool>,
+    stack: Vec<u32>,
+}
+
+/// Depth first search
+impl<'a, T> Dfs<'a, T>
+    where T: 'a + Node{
+    fn new(gr: &'a Graph<T>) -> Self {
+        let mut handled: Vec<bool> = vec![false; gr.vertex_count() as usize];
+        handled[0] = true;
+        Dfs {
+            gr,
+            handled,
+            stack: vec![0],
+        }
+    }
+}
+
+impl<'a, T> Iterator for Dfs<'a, T>
+    where T: 'a + Node {
+        type Item = &'a T;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if let Some(index) = self.stack.pop(){
+                let container = self.gr.get_container(index as usize);
+                for i in container.neighbors() {
+                    if !self.handled[*i as usize] {
+                        self.handled[*i as usize] = true;
+                        self.stack.push(*i);
+                    }
+                }
+                Some(container.get_node())
+            } else {
+                None
+            }
+        }
 }
 
 
