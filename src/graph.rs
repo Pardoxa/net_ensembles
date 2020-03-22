@@ -7,7 +7,7 @@ use crate::node::Node;
 /// all of my error messages
 #[derive(Debug)]
 pub enum GraphErrors{
-    EdgeExistsAllready,
+    EdgeExists,
     EdgeDoesNotExist,
     IndexOutOfRange,
     IdenticalIndices,
@@ -16,10 +16,10 @@ pub enum GraphErrors{
 impl GraphErrors {
    pub fn to_str(&self) -> &str {
        match self {
-           GraphErrors::EdgeExistsAllready  => &"EdgeExistsAllready",
+           GraphErrors::EdgeExists          => &"EdgeExists",
            GraphErrors::EdgeDoesNotExist    => &"EdgeDoesNotExist",
            GraphErrors::IndexOutOfRange     => &"IndexOutOfRange",
-           GraphErrors::IdenticalIndices  => &"IdenticalIndices",
+           GraphErrors::IdenticalIndices    => &"IdenticalIndices",
        }
    }
 }
@@ -58,7 +58,7 @@ impl<T> GraphContainer<T> {
 
     pub fn push(&mut self, other: &mut GraphContainer<T>) -> Result<(),GraphErrors> {
         if self.contains(&other.get_id()) {
-            return Err(GraphErrors::EdgeExistsAllready);
+            return Err(GraphErrors::EdgeExists);
         }
         self.adj.push(other.get_id());
         other.adj.push(self.id);
@@ -140,8 +140,9 @@ impl<T: Node> Graph<T> {
     /// ## ErrorCases:
     /// | Error | Reason |
     /// | ---- | ---- |
-    /// | `GraphErrors::IndexOutOfRange` | index to large  |
-    /// | `GraphErrors::IdenticalIndices` | index2 == index1 not allowed! |
+    /// | `GraphErrors::IndexOutOfRange` | `index1` or `index2` larger than `self.vertex_count()`  |
+    /// | `GraphErrors::IdenticalIndices` | `index2 == index1` not allowed! |
+    /// | `GraphErrors::EdgeExists` | requested edge already exists! |
     pub fn add_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
         let (r1, r2) = self.get_2_mut(index1, index2)?;
         r1.push(r2)?;
@@ -149,7 +150,13 @@ impl<T: Node> Graph<T> {
         Ok(())
     }
 
-    /// Try to remove edges, return error `GraphErrors::EdgeDoesNotExist` if impossible
+    /// Removes edge between nodes *index1* and *index2*
+    /// ## ErrorCases:
+    /// | Error | Reason |
+    /// | ---- | ---- |
+    /// | `GraphErrors::IndexOutOfRange` | `index1` or `index2` larger than `self.vertex_count()`  |
+    /// | `GraphErrors::IdenticalIndices` | `index2 == index1` not allowed! |
+    /// | `GraphErrors::EdgeDoesNotExist` | requested edge does not exists |
     pub fn remove_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
         let (r1, r2) = self.get_2_mut(index1, index2)?;
         r1.remove(r2)?;

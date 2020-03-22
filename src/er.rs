@@ -29,6 +29,7 @@ use crate::graph::Graph;
 pub struct ER<T: Node, R: rand::Rng + SeedableRng> {
     graph: Graph<T>,
     prob: f64,
+    c: f64,
     rng: R,
 }
 /// This is going to become an Erdős-Rényi graph
@@ -38,11 +39,10 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         if self.graph.edge_count() > 0 {
             panic!("cant randomize graph which already has edges in it -> not implemented yet")
         }
+        // iterate over all possible edges once
         for i in 0..self.graph.vertex_count() {
             for j in i+1..self.graph.vertex_count() {
-                println!("i,j {}, {}", i, j);
                 if self.rng.gen::<f64>() <= self.prob {
-                    println!("yes!");
                     self.graph.add_edge(i, j).unwrap();
                 }
             }
@@ -61,10 +61,12 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         }
     }
 
-    pub fn new(size: u32, prob: f64, rng: R) -> Self {
+    pub fn new(size: u32, c: f64, rng: R) -> Self {
+        let prob = c / (size - 1) as f64;
         let graph: Graph<T> = Graph::new(size);
         let mut e = ER {
             graph,
+            c,
             prob,
             rng,
         };
@@ -74,6 +76,10 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
 
     pub fn get_graph(&self) -> &Graph<T> {
         &self.graph
+    }
+
+    fn get_mut_graph(&mut self) -> &mut Graph<T> {
+        &mut self.graph
     }
 }
 
@@ -94,21 +100,55 @@ mod testing {
     use rand_pcg::Pcg64;
     use crate::node::TestNode;
 
+    fn test_graph(seed: u64, size: u32, c: f64) -> ER::<TestNode, Pcg64> {
+        let rng = Pcg64::seed_from_u64(seed);
+        ER::<TestNode, Pcg64>::new(size, c, rng)
+    }
+
+    #[test]
+    fn test_edge_count() {
+        // create empty graph
+        let mut e = test_graph(12, 100, 0.0);
+        let ec = e.get_graph().edge_count();
+        assert_eq!(0, ec);
+
+        // add edge
+        e.get_mut_graph()
+            .add_edge(0,1)
+            .unwrap();
+        let ec_1 = e.get_graph().edge_count();
+        assert_eq!(1, ec_1);
+
+        let mut res = e.get_mut_graph()
+            .add_edge(0,1);
+        assert!(res.is_err());
+
+        // remove edge
+        e.get_mut_graph()
+            .remove_edge(0, 1)
+            .unwrap();
+        let ec_0 = e.get_graph().edge_count();
+        assert_eq!(0, ec_0);
+
+        res = e.get_mut_graph()
+            .remove_edge(0, 1);
+        assert!(res.is_err());
+    }
+
     #[test]
     fn test_graph_construction() {
         let rng = Pcg64::seed_from_u64(76);
-        let e = ER::<TestNode, Pcg64>::new(20, 0.3, rng);
-        assert_eq!(e.get_graph().edge_count(), 56);
+        let e = ER::<TestNode, Pcg64>::new(20, 2.7, rng);
+        assert_eq!(e.get_graph().edge_count(), 28);
         assert_eq!(20, e.get_graph().vertex_count());
     }
 
     #[test]
-    fn test_rand_step() {
+    fn test_complete_graph() {
         let rng = Pcg64::seed_from_u64(76);
-        let mut e = ER::<TestNode, Pcg64>::new(20, 2.0, rng);
+        let e = ER::<TestNode, Pcg64>::new(20, 19.0, rng);
         assert_eq!(20, e.get_graph().vertex_count());
         assert_eq!(190, e.get_graph().edge_count() );
-        e.random_step();
     }
 
     #[test]
