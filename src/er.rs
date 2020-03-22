@@ -61,6 +61,8 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         }
     }
 
+    /// create new graph with `size` nodes and connectivity `c`.
+    /// `rng` is consumed and used as rondom number generator in the following
     pub fn new(size: u32, c: f64, rng: R) -> Self {
         let prob = c / (size - 1) as f64;
         let graph: Graph<T> = Graph::new(size);
@@ -74,6 +76,9 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         e
     }
 
+    /// returns reference to the underlying topology aka, the `Graph<T>`
+    ///
+    /// Use this to call functions regarding the topology
     pub fn get_graph(&self) -> &Graph<T> {
         &self.graph
     }

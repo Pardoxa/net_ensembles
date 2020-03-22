@@ -32,7 +32,7 @@ impl fmt::Display for GraphErrors {
 }
 
 #[allow(dead_code)]
-pub struct GraphContainer<T>{
+struct GraphContainer<T>{
     id: u32,
     adj: Vec<u32>,
     node: T,
@@ -100,7 +100,7 @@ pub struct Graph<T: Node> {
 
 impl<T: Node> Graph<T> {
     /// Create new graph with `size` nodes
-    ///
+    /// and no edges
     pub fn new(size: u32) -> Self {
         let mut vertices = Vec::with_capacity(size as usize);
         for i in 0..size {
@@ -144,7 +144,7 @@ impl<T: Node> Graph<T> {
         Ok((r1, r2))
     }
 
-    /// Adds edge between nodes *index1* and *index2*
+    /// Adds edge between nodes `index1` and `index2`
     /// ## ErrorCases:
     /// | Error | Reason |
     /// | ---- | ---- |
@@ -177,35 +177,51 @@ impl<T: Node> Graph<T> {
         self.edge_count
     }
 
-    pub fn get_container(&self, index: usize) -> &GraphContainer<T> {
+    fn get_container(&self, index: usize) -> &GraphContainer<T> {
         &self.vertices[index]
     }
 
+    /// # returns Iterator
+    ///
+    /// the iterator will iterate over the vertices in depth first search order,
+    /// beginning with vertex 0.
+    ///
+    /// Order
+    ///------------------------
+    /// Order is guaranteed to be in DFS order, however
+    /// if this order is not unambigouse
+    /// adding edges and especially removing edges will shuffle the order.
+    ///
+    /// Note:
+    /// ----------------------
+    /// Will only iterate over vertices within the connected component that contains vertex 0
     pub fn dfs(&self) -> Dfs<T> {
         Dfs::new(&self)
     }
 
+    /// returns true if all vertices are connected by paths of edges, false otherwise
     pub fn is_connected(&self) -> bool {
 
         self.dfs().count() == self.vertex_count() as usize
     }
 }
 
+/// Depth first search Iterator
 pub struct Dfs<'a, T>
     where T: 'a + Node {
-    gr: &'a Graph<T>,
+    graph: &'a Graph<T>,
     handled: Vec<bool>,
     stack: Vec<u32>,
 }
 
-/// Depth first search
+
 impl<'a, T> Dfs<'a, T>
     where T: 'a + Node{
-    fn new(gr: &'a Graph<T>) -> Self {
-        let mut handled: Vec<bool> = vec![false; gr.vertex_count() as usize];
+    fn new(graph: &'a Graph<T>) -> Self {
+        let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
         handled[0] = true;
         Dfs {
-            gr,
+            graph,
             handled,
             stack: vec![0],
         }
@@ -218,7 +234,7 @@ impl<'a, T> Iterator for Dfs<'a, T>
 
         fn next(&mut self) -> Option<Self::Item> {
             if let Some(index) = self.stack.pop(){
-                let container = self.gr.get_container(index as usize);
+                let container = self.graph.get_container(index as usize);
                 for i in container.neighbors() {
                     if !self.handled[*i as usize] {
                         self.handled[*i as usize] = true;
