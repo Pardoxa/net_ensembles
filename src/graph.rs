@@ -1,6 +1,7 @@
 use std::fmt;
 use crate::node::Node;
 
+#[derive(Debug)]
 pub enum GraphErrors{
     EdgeExistsAllready,
     EdgeDoesNotExist,
@@ -72,9 +73,12 @@ impl<T> GraphContainer<T> {
 pub struct Graph<T: Node> {
     vertices: Vec<GraphContainer<T>>,
     next_id: u32,
+    edge_count: u32,
 }
 
 impl<T: Node> Graph<T> {
+    /// Create new graph with `size` nodes
+    ///
     pub fn new(size: u32) -> Self {
         let mut vertices = Vec::with_capacity(size as usize);
         for i in 0..size {
@@ -84,10 +88,12 @@ impl<T: Node> Graph<T> {
         Self{
             vertices,
             next_id: size,
+            edge_count: 0,
         }
     }
 
-    pub fn size(&self) -> u32 {
+    /// returns number of vertices present in graph
+    pub fn vertex_count(&self) -> u32 {
         self.next_id
     }
 
@@ -126,7 +132,12 @@ impl<T: Node> Graph<T> {
     pub fn add_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
         let (r1, r2) = self.get_2_mut(index1, index2)?;
         r1.push(r2)?;
+        self.edge_count += 1;
         Ok(())
+    }
+
+    pub fn edge_count(&self) -> u32 {
+        self.edge_count
     }
 }
 

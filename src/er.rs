@@ -22,16 +22,13 @@
 //! assert_eq!(20, e.get_graph().vertex_count());
 //! ```
 use crate::node::Node;
-use graphlib::Graph;
-use graphlib::VertexId;
 use rand_core::SeedableRng;
-use rand::seq::SliceRandom;
+use crate::graph::Graph;
 
 #[allow(dead_code)]
 pub struct ER<T: Node, R: rand::Rng + SeedableRng> {
     graph: Graph<T>,
     prob: f64,
-    ids: Vec<VertexId>,
     rng: R,
 }
 /// This is going to become an Erdős-Rényi graph
@@ -41,43 +38,31 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         if self.graph.edge_count() > 0 {
             panic!("cant randomize graph which already has edges in it -> not implemented yet")
         }
-        for i in 0..self.ids.len() {
-            for j in i+1..self.ids.len() {
+        for i in 0..self.graph.vertex_count() {
+            for j in i+1..self.graph.vertex_count() {
                 println!("i,j {}, {}", i, j);
                 if self.rng.gen::<f64>() <= self.prob {
                     println!("yes!");
-                    self.graph.add_edge(&self.ids[i], &self.ids[j]).unwrap();
+                    self.graph.add_edge(i, j).unwrap();
                 }
             }
         }
     }
 
     pub fn random_step(&mut self) {
-        let sample: Vec<_> = self.ids
-            .choose_multiple(&mut self.rng, 2)
-            .collect();
-        println!("{:?}", sample);
-        if self.graph.has_edge(&sample[0], &sample[1]) {
-            panic!("Has edge!");
-        }else {
-            let i = self.graph.fetch(&sample[0]).unwrap().get_id();
-            let j = self.graph.fetch(&sample[1]).unwrap().get_id();
-            println!("{}, {}", i, j);
-            panic!("=?")
-        }
+        let (e1, e2) = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
+        println!("(e1: {}, e2: {})", e1, e2);
+
+        // should remove edge here if result is err
+        self.graph.add_edge(e1,e2);
         //self.graph.add_edge(&sample[0], &sample[1]).unwrap();
     }
 
-    pub fn new(size: usize, prob: f64, rng: R) -> Self {
-        let mut graph: Graph<T> = Graph::with_capacity(size);
-        let mut ids = Vec::new();
-        for i in 0..size {
-            ids.push(graph.add_vertex(T::new_empty(i)));
-        }
+    pub fn new(size: u32, prob: f64, rng: R) -> Self {
+        let graph: Graph<T> = Graph::new(size);
         let mut e = ER {
             graph,
             prob,
-            ids,
             rng,
         };
         e.random();
@@ -86,6 +71,17 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
 
     pub fn get_graph(&self) -> &Graph<T> {
         &self.graph
+    }
+}
+
+/// high is exclusive
+fn draw_two_from_range<T: rand::Rng>(rng: &mut T, high: u32) -> (u32, u32){
+    let first = rng.gen_range(0, high);
+    let second = rng.gen_range(0, high - 1);
+    return if second < first {
+        (first, second)
+    } else {
+        (first, second +1)
     }
 }
 
@@ -110,5 +106,18 @@ mod testing {
         assert_eq!(20, e.get_graph().vertex_count());
         assert_eq!(190, e.get_graph().edge_count() );
         e.random_step();
+    }
+
+    #[test]
+    fn draw_2(){
+        let mut rng = Pcg64::seed_from_u64(762132);
+        for _i in 0..100 {
+            let (first, second) = draw_two_from_range(&mut rng, 2);
+            assert!(first != second);
+        }
+        for i in 2..100 {
+            let (first, second) = draw_two_from_range(&mut rng, i);
+            assert!(first != second);
+        }
     }
 }

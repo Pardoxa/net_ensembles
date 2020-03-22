@@ -9,6 +9,6 @@
 //! ```
 pub mod node;
 pub mod graph;
-//pub mod er;
+pub mod er;
 pub use self::node::Node;
-//pub use er::ER;
+pub use er::ER;
