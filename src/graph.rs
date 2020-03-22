@@ -14,7 +14,8 @@ pub enum GraphErrors{
 }
 
 impl GraphErrors {
-   pub fn to_str(&self) -> &str {
+    /// get error message as `&str`, for printing etc.
+   pub fn to_str(&self) -> &'static str {
        match self {
            GraphErrors::EdgeExists          => &"EdgeExists",
            GraphErrors::EdgeDoesNotExist    => &"EdgeDoesNotExist",
@@ -31,14 +32,13 @@ impl fmt::Display for GraphErrors {
     }
 }
 
-#[allow(dead_code)]
+
 struct GraphContainer<T>{
     id: u32,
     adj: Vec<u32>,
     node: T,
 }
 
-#[allow(dead_code)]
 impl<T> GraphContainer<T> {
     pub fn new(id: u32, node: T) -> Self {
         GraphContainer{
@@ -91,7 +91,7 @@ impl<T> GraphContainer<T> {
     }
 }
 
-#[allow(dead_code)]
+
 pub struct Graph<T: Node> {
     vertices: Vec<GraphContainer<T>>,
     next_id: u32,
