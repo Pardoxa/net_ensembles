@@ -1,6 +1,10 @@
+//! # Created by Yannick Feld
+//! My implementation for a graph
+//!
 use std::fmt;
 use crate::node::Node;
 
+/// all of my error messages
 #[derive(Debug)]
 pub enum GraphErrors{
     EdgeExistsAllready,
@@ -61,10 +65,20 @@ impl<T> GraphContainer<T> {
         Ok(())
     }
 
+    fn swap_delete_element(&mut self, elem: u32) -> () {
+        let index = self.adj.iter().position(|x| *x == elem).unwrap();
+        self.adj.swap_remove(index);
+    }
+
+    /// Trys to remove edges, returns error `GraphErrors::EdgeDoesNotExist` if impossible
     pub fn remove(&mut self, other: &mut GraphContainer<T>) -> Result<(),GraphErrors> {
         if !self.contains(&other.get_id()){
             return Err(GraphErrors::EdgeDoesNotExist);
         }
+
+        self.swap_delete_element(other.get_id());
+        other.swap_delete_element(self.get_id());
+
         Ok(())
     }
 }
@@ -113,11 +127,10 @@ impl<T: Node> Graph<T> {
         let r2: &mut GraphContainer<T>;
 
         let ptr = self.vertices.as_mut_ptr();
+
         unsafe {
-            let p1 = ptr.offset(index1 as isize);
-            let p2 = ptr.offset(index2 as isize);
-            r1 = &mut *p1;
-            r2 = &mut *p2;
+            r1 = &mut *ptr.offset(index1 as isize);
+            r2 = &mut *ptr.offset(index2 as isize);
         }
 
         Ok((r1, r2))
@@ -136,6 +149,15 @@ impl<T: Node> Graph<T> {
         Ok(())
     }
 
+    /// Try to remove edges, return error `GraphErrors::EdgeDoesNotExist` if impossible
+    pub fn remove_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
+        let (r1, r2) = self.get_2_mut(index1, index2)?;
+        r1.remove(r2)?;
+        self.edge_count -= 1;
+        Ok(())
+    }
+
+    /// returns total number of edges in graph
     pub fn edge_count(&self) -> u32 {
         self.edge_count
     }

@@ -49,13 +49,16 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         }
     }
 
+    /// Add or remove edge according to ER-prob
     pub fn random_step(&mut self) {
         let (e1, e2) = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
-        println!("(e1: {}, e2: {})", e1, e2);
 
-        // should remove edge here if result is err
-        self.graph.add_edge(e1,e2);
-        //self.graph.add_edge(&sample[0], &sample[1]).unwrap();
+        // Try to add edge. else: remove edge
+        if self.rng.gen::<f64>() <= self.prob {
+            let _ = self.graph.add_edge(e1, e2);
+        } else {
+            let _ = self.graph.remove_edge(e1, e2);
+        }
     }
 
     pub fn new(size: u32, prob: f64, rng: R) -> Self {
