@@ -19,7 +19,7 @@ impl TestNode {
 impl Node for TestNode {
     fn new_empty() -> Self {
         TestNode {
-            info: "".to_string()
+            info: "".to_string(),
         }
     }
 }
