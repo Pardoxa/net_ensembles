@@ -197,8 +197,8 @@ impl<T: Node> Graph<T> {
     ///
     /// Order
     ///------------------------
-    /// Order is guaranteed to be in DFS order, however
-    /// if this order is not unambigouse
+    /// Order is guaranteed to be in DFS order, however,
+    /// if this order is not unambigouse,
     /// adding edges and especially removing edges will shuffle the order.
     ///
     /// Note:
@@ -324,9 +324,9 @@ impl<T: Node> Graph<T> {
                 };
 
                 if remaining_neighbors < q_usize {
-                    // virtually remove vertex
                     something_changed = true;
 
+                    // virtually remove vertex
                     handled[i] = true;
                     for j in self.get_container(i).neighbors() {
                         subtract[*j as usize] += 1;
@@ -398,7 +398,7 @@ impl<T: Node> Graph<T> {
             }
 
         }
-        // cast current_id as
+        // cast current_id as usize
         let num_components = usize::try_from(current_id).ok().unwrap();
 
         let mut result = vec![0; num_components];
@@ -417,6 +417,23 @@ impl<T: Node> Graph<T> {
     /// Count number of leaves in the graph, i.e. vertices with exactly one neighbor
     pub fn leaf_count(&self) -> usize {
         self.vertices.iter().filter(|a| a.neighbor_count() == 1).count()
+    }
+
+    pub fn to_dot(&self) -> String {
+        let mut s = "digraph{\n\tnode [hight=0.6, width=0.6, fixedsize=true]\n\t".to_string();
+
+        for i in 0..self.vertex_count() {
+            s += &format!("{} ", i);
+        }
+        s += "\n";
+
+        for i in 0..self.vertex_count() {
+            for j in self.get_container(i as usize).neighbors() {
+                s.push_str(&format!("\t{} -> {}\n", i, j));
+            }
+        }
+        s += "}";
+        s
     }
 }
 
@@ -531,6 +548,8 @@ impl<'a, T> Iterator for Dfs<'a, T>
 mod tests {
     use super::*;
     use crate::node::TestNode;
+    use std::fs::File;
+    use std::io::prelude::*;
 
     #[test]
     fn test_graph_container() {
@@ -671,4 +690,15 @@ mod tests {
         }
         assert_eq!(graph.q_core(2), Some(20));
     }
+
+    #[test]
+    fn dot() {
+        let graph = create_graph_1();
+        let s = graph.to_dot();
+        let mut read_in = File::open("TestData/dotTest.dot").expect("unable to open file");
+        let mut test_data = String::new();
+        read_in.read_to_string(&mut test_data).expect("unable to read file");
+        assert_eq!(test_data, s);
+    }
+
 }
