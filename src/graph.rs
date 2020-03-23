@@ -4,6 +4,7 @@
 use std::fmt;
 use crate::node::Node;
 use std::cmp::max;
+use std::convert::TryFrom;
 
 /// all of my error messages
 #[derive(Debug)]
@@ -96,7 +97,7 @@ impl<T> GraphContainer<T> {
     }
 }
 
-
+/// Contains the Topology and implements functions for analyzing topology
 pub struct Graph<T: Node> {
     vertices: Vec<GraphContainer<T>>,
     next_id: u32,
@@ -275,9 +276,10 @@ impl<T: Node> Graph<T> {
         self.dfs_0().count() == self.vertex_count() as usize
     }
 
-    /// Calculates the q-core of the network if possible
+    /// Calculates the size of the q-core (i.e. number of nodes in the biggest possible set of nodes,
+    /// where all nodes from the set are connected with at least `q` other nodes from the set)
     ///
-    /// returns None if impossible
+    /// returns None if impossible to calculate (e.g. `vertex_count == 0` or `q <= 1`)
     /// # Example
     /// ```
     /// use net_ensembles::TestNode;
@@ -366,9 +368,59 @@ impl<T: Node> Graph<T> {
 
         Some(result)
     }
+
+    /// # compute sizes of all connected components
+    ///
+    /// the number of connected components is the size of the returned vector, i.e. `result.len()`
+    /// ## result is ordered
+    /// returns (reverse) ordered vector of sizes of the connected components,
+    /// i.e. the biggest component is of size `result[0]` and the smallest is of size `result[result.len() - 1]`
+    pub fn connected_components(&self) -> Vec<u32> {
+
+        let mut component_id : Vec<i32> = vec![-1; self.vertex_count() as usize];
+        let mut current_id = 0;
+
+        for i in 0..self.vertex_count(){
+            // already in a component?
+            if component_id[i as usize] != -1 {
+                continue;
+            }
+            // start depth first search over indices of vertices connected with vertex i
+            if let Some(iter) = self.dfs_with_index(i) {
+                for (j, _) in iter {
+                    component_id[j as usize] = current_id;
+                }
+                current_id += 1;
+            } else {
+                // should NEVER enter this
+                // if this panic shows, there might be a logic error
+                panic!("something went horribly wrong");
+            }
+
+        }
+        // cast current_id as
+        let num_components = usize::try_from(current_id).ok().unwrap();
+
+        let mut result = vec![0; num_components];
+
+        for i in component_id {
+            let as_usize = usize::try_from(i).ok().unwrap();
+            result[as_usize] += 1;
+        }
+
+        // sort by reverse
+        // unstable here means inplace and ordering of equal elements is not guaranteed
+        result.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap().reverse());
+        result
+    }
+
+    /// Count number of leaves in the graph, i.e. vertices with exactly one neighbor
+    pub fn leaf_count(&self) -> usize {
+        self.vertices.iter().filter(|a| a.neighbor_count() == 1).count()
+    }
 }
 
-// Depth first search iterator with index of corresponding nodes
+/// Depth first search Iterator with index of corresponding nodes
 pub struct DfsWithIndex<'a, T>
     where T: 'a + Node {
         graph: &'a Graph<T>,
@@ -504,6 +556,27 @@ mod tests {
     }
 
     #[test]
+    fn test_connected_components() {
+        let graph: Graph<TestNode> = Graph::new(20);
+        assert_eq!(vec![1;20], graph.connected_components());
+
+        let graph2: Graph<TestNode> = Graph::new(0);
+        assert_eq!(Vec::<u32>::new(), graph2.connected_components());
+    }
+
+    #[test]
+    fn test_2_components() {
+        let graph = create_graph_1();
+        let components = graph.connected_components();
+        assert_eq!(components[0], 6);
+        assert_eq!(components[1], 4);
+        assert_eq!(components[2], 3);
+        for i in 3..components.len() {
+            assert_eq!(components[i], 1);
+        }
+    }
+
+    #[test]
     fn test_q_core() {
         let mut graph: Graph<TestNode> = Graph::new(20);
         graph.add_edge(0, 1).unwrap();
@@ -536,19 +609,15 @@ mod tests {
     }
 
     #[test]
-    fn test_q_core_empty_graph() {
-        let graph: Graph<TestNode> = Graph::new(0);
-        assert_eq!(graph.q_core(1), None);
-        assert_eq!(graph.q_core(2), None);
+    fn test_leaf_count() {
+        let graph = create_graph_1();
+        assert_eq!(2, graph.leaf_count());
 
-        let graph2: Graph<TestNode> = Graph::new(1);
-
-        assert_eq!(graph2.q_core(1), None);
-        assert_eq!(graph2.q_core(2), Some(0));
+        let empty_graph: Graph<TestNode> = Graph::new(20);
+        assert_eq!(0, empty_graph.leaf_count());
     }
 
-    #[test]
-    fn test_q_core_multiple_components() {
+    fn create_graph_1() -> Graph<TestNode> {
         let mut graph: Graph<TestNode> = Graph::new(20);
 
         graph.add_edge(0,1).unwrap();
@@ -566,6 +635,24 @@ mod tests {
                 graph.add_edge(i, j).unwrap();
             }
         }
+        graph
+    }
+
+    #[test]
+    fn test_q_core_empty_graph() {
+        let graph: Graph<TestNode> = Graph::new(0);
+        assert_eq!(graph.q_core(1), None);
+        assert_eq!(graph.q_core(2), None);
+
+        let graph2: Graph<TestNode> = Graph::new(1);
+
+        assert_eq!(graph2.q_core(1), None);
+        assert_eq!(graph2.q_core(2), Some(0));
+    }
+
+    #[test]
+    fn test_q_core_multiple_components() {
+        let graph = create_graph_1();
 
         assert_eq!(graph.q_core(2), Some(4));
         assert_eq!(graph.q_core(3), Some(4));
