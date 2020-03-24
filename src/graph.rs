@@ -50,35 +50,42 @@ impl fmt::Display for GraphErrors {
 ///  and internal id. Normally the index in the graph.
 ///
 ///
-/// Also contains user specified data, i.e, `T` from `VertexContainer<T>`
+/// Also contains user specified data, i.e, `T` from `NodeContainer<T>`
 #[derive(Debug)]
-pub struct VertexContainer<T>{
+pub struct NodeContainer<T: Node>{
     id: u32,
     adj: Vec<u32>,
     node: T,
 }
 
-//impl<T: fmt::Display> fmt::Display for VertexContainer<T> {
-//    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//        write!(f, "id: {}\tadj: {:?} T: {}" , self.id, self.adj, self.node)
-//    }
-//}
+impl<T: Node> fmt::Display for NodeContainer<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "id: {}\tadj: {:?} Node: {}" ,
+            self.id,
+            self.adj,
+            self.node.make_string()
+                .expect(&format!("make_string failed - Did you forget to Override? Look at {}::Node", env!("CARGO_PKG_NAME")))
+        )
+    }
+}
 
-impl<T> VertexContainer<T> {
+impl<T: Node> NodeContainer<T> {
     fn new(id: u32, node: T) -> Self {
-        VertexContainer{
+        NodeContainer{
             id,
             adj: Vec::new(),
             node,
         }
     }
 
-    /// return reference to what the VertexContainer contains
+    /// return reference to what the NodeContainer contains
     pub fn get_contained(&self) -> &T {
         &self.node
     }
 
-    /// return mut reference to what the VertexContainer contains
+    /// return mut reference to what the NodeContainer contains
     pub fn get_contained_mut(&mut self) -> &mut T {
         &mut self.node
     }
@@ -107,7 +114,7 @@ impl<T> VertexContainer<T> {
         self.adj.contains(other_id)
     }
 
-    fn push(&mut self, other: &mut VertexContainer<T>) -> Result<(),GraphErrors> {
+    fn push(&mut self, other: &mut NodeContainer<T>) -> Result<(),GraphErrors> {
         if self.is_adjacent(&other.get_id()) {
             return Err(GraphErrors::EdgeExists);
         }
@@ -122,7 +129,7 @@ impl<T> VertexContainer<T> {
     }
 
     /// Trys to remove edges, returns error `GraphErrors::EdgeDoesNotExist` if impossible
-    fn remove(&mut self, other: &mut VertexContainer<T>) -> Result<(),GraphErrors> {
+    fn remove(&mut self, other: &mut NodeContainer<T>) -> Result<(),GraphErrors> {
         if !self.is_adjacent(&other.get_id()){
             return Err(GraphErrors::EdgeDoesNotExist);
         }
@@ -225,7 +232,17 @@ impl<T> VertexContainer<T> {
 pub struct Graph<T: Node> {
     next_id: u32,
     edge_count: u32,
-    vertices: Vec<VertexContainer<T>>,
+    vertices: Vec<NodeContainer<T>>,
+}
+
+impl<T: Node> fmt::Display for Graph<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut s = String::new();
+        for v in self.node_container_iter() {
+            s += &format!("{}\n", v);
+        }
+        write!(f, "next_id: {}\nedge_count: {}\nvertices:\n{}", self.next_id, self.edge_count, s)
+    }
 }
 
 impl<T: Node> Graph<T> {
@@ -234,7 +251,7 @@ impl<T: Node> Graph<T> {
     pub fn new(size: u32) -> Self {
         let mut vertices = Vec::with_capacity(size as usize);
         for i in 0..size {
-            let container = VertexContainer::new(i, T::new_from_index(i));
+            let container = NodeContainer::new(i, T::new_from_index(i));
             vertices.push(container);
         }
         Self{
@@ -244,31 +261,31 @@ impl<T: Node> Graph<T> {
         }
     }
 
-    /// borrows VertexContainer at index
-    pub fn get_vertex_container(&self, index: usize) -> &VertexContainer<T> {
+    /// borrows NodeContainer at index
+    pub fn get_node_container(&self, index: usize) -> &NodeContainer<T> {
         &self.vertices[index]
     }
 
-    /// get iterator over VertexContainer in order of the indices
-    pub fn vertex_container_iter(&self) -> std::slice::Iter::<VertexContainer<T>> {
+    /// get iterator over NodeContainer in order of the indices
+    pub fn node_container_iter(&self) -> std::slice::Iter::<NodeContainer<T>> {
         self.vertices.iter()
     }
 
 
-    fn get_vertex_container_mut(&mut self, index: usize) -> &mut VertexContainer<T> {
+    fn get_node_container_mut(&mut self, index: usize) -> &mut NodeContainer<T> {
         &mut self.vertices[index]
     }
 
     /// get read only access to stored information at `index`
     /// for your calculations
     pub fn at(&self, index: usize) -> &T {
-        self.get_vertex_container(index).get_contained()
+        self.get_node_container(index).get_contained()
     }
 
     /// get mutable access to stored information at `index`
     /// for your calculations
     pub fn at_mut(&mut self, index: usize) -> &mut T {
-        self.get_vertex_container_mut(index).get_contained_mut()
+        self.get_node_container_mut(index).get_contained_mut()
     }
 
     /// returns number of vertices present in graph
@@ -281,15 +298,15 @@ impl<T: Node> Graph<T> {
     /// `GraphErrors::IndexOutOfRange`  <-- index to large
     /// GraphErrors::IdenticalIndices <-- index1 == index2 not allowed!
     fn get_2_mut(&mut self, index1: u32, index2: u32) ->
-        Result<(&mut VertexContainer<T>, &mut VertexContainer<T>),GraphErrors>
+        Result<(&mut NodeContainer<T>, &mut NodeContainer<T>),GraphErrors>
     {
         if index1 >= self.next_id || index2 >= self.next_id {
             return Err(GraphErrors::IndexOutOfRange);
         } else if index1 == index2 {
             return Err(GraphErrors::IdenticalIndices);
         }
-        let r1: &mut VertexContainer<T>;
-        let r2: &mut VertexContainer<T>;
+        let r1: &mut NodeContainer<T>;
+        let r2: &mut NodeContainer<T>;
 
         let ptr = self.vertices.as_mut_ptr();
 
@@ -334,7 +351,7 @@ impl<T: Node> Graph<T> {
         self.edge_count
     }
 
-    fn get_container(&self, index: usize) -> &VertexContainer<T> {
+    fn get_container(&self, index: usize) -> &NodeContainer<T> {
         &self.vertices[index]
     }
 
@@ -797,6 +814,10 @@ mod tests {
         fn new_from_index(index: u32) -> Self {
             PhaseNode { phase: 10.0 * index as f64 }
         }
+
+        fn make_string(&self) -> Option<String> {
+            Some(format!("phase: {}", self.phase))
+        }
     }
 
     #[test]
@@ -837,17 +858,12 @@ mod tests {
 
 
 
-    #[test]
-    fn test_graph_container() {
-        let c = VertexContainer::new(0, 1);
-        assert_eq!(0, c.get_id());
-    }
 
     #[test]
     fn test_graph_container_push() {
         // create two nodes
-        let mut c = VertexContainer::new(0, 1);
-        let mut c2 = VertexContainer::new(1, 1);
+        let mut c = NodeContainer::new(0, TestNode::new_from_index(0));
+        let mut c2 = NodeContainer::new(1, TestNode::new_from_index(1));
         // create edge -> should not result in error!
         let res = c.push(&mut c2);
         if let Err(e) = res {
@@ -1008,8 +1024,18 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_printing() {
+    fn test_printing_default() {
         let graph = create_graph_1();
-        panic!("printed?");
+        println!("{}",graph.get_container(0));
+    }
+
+    #[test]
+    fn test_printing_implemented() {
+        let mut graph: Graph<PhaseNode> = Graph::new(4);
+        for i in 0..4 {
+            graph.add_edge(i, (i + 1) % 4).unwrap();
+        }
+        println!("{}",graph.get_container(0));
+        println!("{}", graph);
     }
 }

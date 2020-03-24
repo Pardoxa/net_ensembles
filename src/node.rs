@@ -5,6 +5,16 @@
 pub trait Node {
     /// how to construct a blank object
     fn new_from_index(index: u32) -> Self;
+
+    /// Override this, if you want to store the network
+    fn make_string(&self) -> Option<String> {
+        None
+    }
+
+    // Override this, if you want to store the network
+    //fn parse_str(info: &str) -> (&str, Self) {
+    //    panic!("ERROR: Trait Node's make_string(&self) not implemented!");
+    //}
 }
 
 /// minimal example for a node
