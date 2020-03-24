@@ -6,6 +6,16 @@ use crate::node::Node;
 use std::cmp::max;
 use std::convert::TryFrom;
 
+/// # constant for dot options
+/// ```
+/// pub const DEFAULT_DOT_OPTIONS: &str = "bgcolor=\"transparent\";\n\tfontsize=50;\n\t\
+///         node [shape=ellipse, penwidth=1, \
+///         fontname=\"Courier\", pin=true ];\n\tsplines=true;";
+/// ```
+pub const DEFAULT_DOT_OPTIONS: &str = "bgcolor=\"transparent\";\n\tfontsize=50;\n\t\
+        node [shape=ellipse, penwidth=1, \
+        fontname=\"Courier\", pin=true ];\n\tsplines=true;";
+
 /// all of my error messages
 #[derive(Debug)]
 pub enum GraphErrors{
@@ -419,10 +429,12 @@ impl<T: Node> Graph<T> {
         self.vertices.iter().filter(|a| a.neighbor_count() == 1).count()
     }
 
-    /// creates String which contains the topology of the network in a format
-    /// that can be used by circo etc. to generate a pdf of the graph
+    /// Creates String which contains the topology of the network in a format
+    /// that can be used by circo etc. to generate a pdf of the graph.
+    ///
+    /// Note: Indices are used as lables
     pub fn to_dot(&self) -> String {
-        let mut s = "digraph{\n\tnode [hight=0.6, width=0.6, fixedsize=true]\n\t".to_string();
+        let mut s = "graph{\n\t".to_string();
 
         for i in 0..self.vertex_count() {
             s += &format!("{} ", i);
@@ -431,29 +443,67 @@ impl<T: Node> Graph<T> {
 
         for i in 0..self.vertex_count() as usize {
             for j in self.get_container(i).neighbors() {
-                s.push_str(&format!("\t{} -> {}\n", i, j));
+                if i < *j as usize {
+                    s.push_str(&format!("\t{} -- {}\n", i, j));
+                }
             }
         }
         s += "}";
         s
     }
 
-    /// same as with `to_dot()`, but you can choose the labels
     /// # Example
     /// ```
-    /// use net_ensembles::{Graph,TestNode};
+    /// use std::fs::File;
+    /// use std::io::prelude::*;
+    /// use net_ensembles::{Graph,TestNode,DEFAULT_DOT_OPTIONS};
+    ///
     /// let mut graph: Graph<TestNode> = Graph::new(3);
     /// graph.add_edge(0, 1).unwrap();
     /// graph.add_edge(0, 2).unwrap();
     /// graph.add_edge(1, 2).unwrap();
-    /// let s = graph.to_dot_with_labels(|_node, index| format!("Hey {}!", index));
+    ///
+    /// // create string of dotfile
+    /// let s = graph.to_dot_with_labels(
+    ///    DEFAULT_DOT_OPTIONS,
+    ///    |_node, index| format!("Hey {}!", index)
+    /// );
+    ///
+    /// // write to file
+    /// let mut f = File::create("example.dot").expect("Unable to create file");
+    /// f.write_all(s.as_bytes()).expect("Unable to write data");
+    ///
     /// ```
-    pub fn to_dot_with_labels<F>(&self, f: F ) -> String
+    /// In this example, `example.dot` now contains:
+    /// ```dot
+    /// graph G{
+	///    bgcolor="transparent";
+	///    fontsize=50;
+	///    node [shape=ellipse, penwidth=1, fontname="Courier", pin=true ];
+	///    splines=true;
+	///    0 1 2 ;
+	///    "0" [label="Hey 0!"];
+	///    "1" [label="Hey 1!"];
+	///    "2" [label="Hey 2!"];
+	///    0 -- 1
+	///    0 -- 2
+	///    1 -- 2
+    /// }
+    /// ```
+    ///
+    /// Then you can use, e.g.,
+    /// ```console
+    /// foo@bar:~$ circo example.dot -Tpdf > example.pdf
+    /// ```
+    /// to create a pdf representation from it.
+    /// Google graphviz to learn more.
+    pub fn to_dot_with_labels<F>(&self, dot_options: &str, f: F ) -> String
         where F: Fn(&T, usize) -> String
     {
-        let mut s = "digraph G{\n\tbgcolor=\"transparent\";\n\tfontsize=50;\n\tnode [shape=ellipse, \
-                        penwidth=1, fontname=\"Courier\", pin=true ];\n\tsplines=true; \n\t"
+        let mut s = "graph G{\n\t"
                     .to_string();
+        s += dot_options;
+        s+= "\n\t";
 
         for i in 0..self.vertex_count() {
             s += &format!("{} ", i);
@@ -465,7 +515,9 @@ impl<T: Node> Graph<T> {
 
         for i in 0..self.vertex_count() as usize {
             for j in self.get_container(i).neighbors() {
-                s.push_str(&format!("\t{} -> {}\n", i, j));
+                if i < *j as usize {
+                    s.push_str(&format!("\t{} -- {}\n", i, j));
+                }
             }
         }
         s += "}";
@@ -747,9 +799,11 @@ mod tests {
     #[test]
     fn dot_labeled() {
         let graph = create_graph_1();
-        let s = graph.to_dot_with_labels(|_node, index| format!("Hey {}!", index));
+        let s = graph.to_dot_with_labels(DEFAULT_DOT_OPTIONS, |_node, index| format!("Hey {}!", index));
         let mut read_in = File::open("TestData/label_test.dot").expect("unable to open file");
         let mut test_data = String::new();
+        // let mut f = File::create("label_test.dot").expect("Unable to create file");
+        // f.write_all(s.as_bytes()).expect("Unable to write data");
         read_in.read_to_string(&mut test_data).expect("unable to read file");
         assert_eq!(test_data, s);
     }

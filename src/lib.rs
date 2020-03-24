@@ -14,3 +14,4 @@ pub use self::node::Node;
 pub use er::ER;
 pub use graph::Graph;
 pub use node::TestNode;
+pub use graph::DEFAULT_DOT_OPTIONS;
