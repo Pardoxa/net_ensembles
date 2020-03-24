@@ -419,6 +419,8 @@ impl<T: Node> Graph<T> {
         self.vertices.iter().filter(|a| a.neighbor_count() == 1).count()
     }
 
+    /// creates String which contains the topology of the network in a format
+    /// that can be used by circo etc. to generate a pdf of the graph
     pub fn to_dot(&self) -> String {
         let mut s = "digraph{\n\tnode [hight=0.6, width=0.6, fixedsize=true]\n\t".to_string();
 
@@ -427,8 +429,42 @@ impl<T: Node> Graph<T> {
         }
         s += "\n";
 
+        for i in 0..self.vertex_count() as usize {
+            for j in self.get_container(i).neighbors() {
+                s.push_str(&format!("\t{} -> {}\n", i, j));
+            }
+        }
+        s += "}";
+        s
+    }
+
+    /// same as with `to_dot()`, but you can choose the labels
+    /// # Example
+    /// ```
+    /// use net_ensembles::{Graph,TestNode};
+    /// let mut graph: Graph<TestNode> = Graph::new(3);
+    /// graph.add_edge(0, 1).unwrap();
+    /// graph.add_edge(0, 2).unwrap();
+    /// graph.add_edge(1, 2).unwrap();
+    /// let s = graph.to_dot_with_labels(|_node, index| format!("Hey {}!", index));
+    /// ```
+    pub fn to_dot_with_labels<F>(&self, f: F ) -> String
+        where F: Fn(&T, usize) -> String
+    {
+        let mut s = "digraph G{\n\tbgcolor=\"transparent\";\n\tfontsize=50;\n\tnode [shape=ellipse, \
+                        penwidth=1, fontname=\"Courier\", pin=true ];\n\tsplines=true; \n\t"
+                    .to_string();
+
         for i in 0..self.vertex_count() {
-            for j in self.get_container(i as usize).neighbors() {
+            s += &format!("{} ", i);
+        }
+        s += ";\n";
+        for (index, vertex) in self.vertices.iter().enumerate() {
+            s += &format!("\t\"{}\" [label=\"{}\"];\n", index, f(vertex.get_node(), index));
+        }
+
+        for i in 0..self.vertex_count() as usize {
+            for j in self.get_container(i).neighbors() {
                 s.push_str(&format!("\t{} -> {}\n", i, j));
             }
         }
@@ -584,7 +620,7 @@ mod tests {
     }
 
     #[test]
-    fn test_2_components() {
+    fn test_multiple_connected_components() {
         let graph = create_graph_1();
         let components = graph.connected_components();
         assert_eq!(components[0], 6);
@@ -639,9 +675,9 @@ mod tests {
     fn create_graph_1() -> Graph<TestNode> {
         let mut graph: Graph<TestNode> = Graph::new(20);
 
-        graph.add_edge(0,1).unwrap();
-        graph.add_edge(0,2).unwrap();
-        graph.add_edge(1,2).unwrap();
+        graph.add_edge(0, 1).unwrap();
+        graph.add_edge(0, 2).unwrap();
+        graph.add_edge(1, 2).unwrap();
 
         // line of 6 vertices - no connected component
         for i in 5..10 {
@@ -688,7 +724,14 @@ mod tests {
                 graph.add_edge(i, j).unwrap();
             }
         }
-        assert_eq!(graph.q_core(2), Some(20));
+
+        // since this is a complete graph, q core should always consist of 20 nodes
+        // as long as q < 20, as every node as 19 neighbors
+        for i in 2..20 {
+            assert_eq!(graph.q_core(i), Some(20));
+        }
+
+        assert_eq!(graph.q_core(20), Some(0));
     }
 
     #[test]
@@ -696,6 +739,16 @@ mod tests {
         let graph = create_graph_1();
         let s = graph.to_dot();
         let mut read_in = File::open("TestData/dotTest.dot").expect("unable to open file");
+        let mut test_data = String::new();
+        read_in.read_to_string(&mut test_data).expect("unable to read file");
+        assert_eq!(test_data, s);
+    }
+
+    #[test]
+    fn dot_labeled() {
+        let graph = create_graph_1();
+        let s = graph.to_dot_with_labels(|_node, index| format!("Hey {}!", index));
+        let mut read_in = File::open("TestData/label_test.dot").expect("unable to open file");
         let mut test_data = String::new();
         read_in.read_to_string(&mut test_data).expect("unable to read file");
         assert_eq!(test_data, s);
