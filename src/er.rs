@@ -1,6 +1,6 @@
 //! # Create Erdős-Rényi networks
 //!
-//! # Example:
+//! # Minimal example:
 //! ```
 //! use net_ensembles;
 //! use net_ensembles::Node;
@@ -12,28 +12,31 @@
 //!
 //! // it has to implement the Node trait
 //! impl Node for ExampleNode {
-//!     fn new_empty(index: u32) -> Self {
+//!     fn new_from_index(index: u32) -> Self {
 //!         ExampleNode { }
 //!     }
 //! }
 //!
+//! // now choose your random number generator
 //! let rng = Pcg64::seed_from_u64(76);
+//! // the following creates an ER graph with 20 vertices and a connectivity of 0.3
+//! // and uses thre random number generator rng
 //! let e = net_ensembles::ER::<ExampleNode, Pcg64>::new(20, 0.3, rng);
 //! assert_eq!(20, e.get_graph().vertex_count());
 //! ```
+//! Take a look at the struct `ER` for details
 use crate::node::Node;
 use rand_core::SeedableRng;
 use crate::graph::Graph;
 
-#[allow(dead_code)]
+/// # Implements Erdős-Rényi graph
 pub struct ER<T: Node, R: rand::Rng + SeedableRng> {
     graph: Graph<T>,
     prob: f64,
     c: f64,
     rng: R,
 }
-/// This is going to become an Erdős-Rényi graph
-#[allow(dead_code)]
+
 impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
     fn random(&mut self) {
         if self.graph.edge_count() > 0 {
@@ -47,6 +50,18 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
                 }
             }
         }
+    }
+
+    /// returns target connectivity
+    /// # Explanation
+    /// The target connectivity is the connectivity used to
+    /// calculate the probability, that any two vertices a and b (where a != b)
+    /// are connected.
+    ///
+    /// $p_{ij} = \frac{c_{target}}{N - 1}$
+    /// where $N$ is the number of vertices in the graph
+    pub fn get_target_connectivity(&self) -> f64 {
+        self.c
     }
 
     /// Add or remove edge according to ER-prob
@@ -83,6 +98,7 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         &self.graph
     }
 
+    #[allow(dead_code)]
     fn get_mut_graph(&mut self) -> &mut Graph<T> {
         &mut self.graph
     }
@@ -95,7 +111,7 @@ fn draw_two_from_range<T: rand::Rng>(rng: &mut T, high: u32) -> (u32, u32){
     return if second < first {
         (first, second)
     } else {
-        (first, second +1)
+        (first, second + 1)
     }
 }
 

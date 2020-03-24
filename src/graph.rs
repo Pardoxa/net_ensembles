@@ -1,6 +1,7 @@
-//! # Created by Yannick Feld
-//! My implementation for a graph
+//! # Topology
+//! Implements a network.
 //!
+//! You probably want to take a look at the struct `Graph`
 use std::fmt;
 use crate::node::Node;
 use std::cmp::max;
@@ -50,11 +51,18 @@ impl fmt::Display for GraphErrors {
 ///
 ///
 /// Also contains user specified data, i.e, `T` from `VertexContainer<T>`
+#[derive(Debug)]
 pub struct VertexContainer<T>{
     id: u32,
     adj: Vec<u32>,
     node: T,
 }
+
+//impl<T: fmt::Display> fmt::Display for VertexContainer<T> {
+//    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//        write!(f, "id: {}\tadj: {:?} T: {}" , self.id, self.adj, self.node)
+//    }
+//}
 
 impl<T> VertexContainer<T> {
     fn new(id: u32, node: T) -> Self {
@@ -151,24 +159,25 @@ impl<T> VertexContainer<T> {
 ///
 /// // implement the trait `Node`
 /// impl Node for PhaseNode {
-///     fn new_empty(index: u32) -> Self {
+///     fn new_from_index(index: u32) -> Self {
 ///         PhaseNode { phase: index as f64 * 10.0}
 ///     }
 /// }
 ///
 /// // now you can create an empty graph
 /// let mut graph: Graph<PhaseNode> = Graph::new(4);
+/// for i in 0..4 {
+///     assert_eq!(
+///       graph.at(i).get_phase(),
+///       i as f64 * 10.0
+///     );
+/// }
+///
 /// // and fill it with edges
 /// for i in 0..4 {
 ///     graph.add_edge(i, (i + 1) % 4).unwrap();
 /// }
 ///
-/// for i in 0..4 {
-///     assert_eq!(
-///         graph.at(i).get_phase(),
-///         i as f64 * 10.0
-///     );
-/// }
 ///
 /// // you can manipulate the extra information stored at each Vertex
 /// for i in 0..4 {
@@ -212,10 +221,11 @@ impl<T> VertexContainer<T> {
 /// ```
 /// Now you can use `circo` or similar programs to create a pdf from that.
 /// Google graphviz for more info.
+#[derive(Debug)]
 pub struct Graph<T: Node> {
-    vertices: Vec<VertexContainer<T>>,
     next_id: u32,
     edge_count: u32,
+    vertices: Vec<VertexContainer<T>>,
 }
 
 impl<T: Node> Graph<T> {
@@ -224,7 +234,7 @@ impl<T: Node> Graph<T> {
     pub fn new(size: u32) -> Self {
         let mut vertices = Vec::with_capacity(size as usize);
         for i in 0..size {
-            let container = VertexContainer::new(i, T::new_empty(i));
+            let container = VertexContainer::new(i, T::new_from_index(i));
             vertices.push(container);
         }
         Self{
@@ -784,7 +794,7 @@ mod tests {
     }
 
     impl Node for PhaseNode {
-        fn new_empty(index: u32) -> Self {
+        fn new_from_index(index: u32) -> Self {
             PhaseNode { phase: 10.0 * index as f64 }
         }
     }
@@ -996,4 +1006,10 @@ mod tests {
         assert_eq!(test_data, s);
     }
 
+    #[test]
+    #[should_panic]
+    fn test_printing() {
+        let graph = create_graph_1();
+        panic!("printed?");
+    }
 }
