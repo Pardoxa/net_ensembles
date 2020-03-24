@@ -1,0 +1,12 @@
+graph G{
+	
+	0 1 2 3 ;
+	"0" [label="Phase: 0 at index 0"];
+	"1" [label="Phase: 0.5 at index 1"];
+	"2" [label="Phase: 1 at index 2"];
+	"3" [label="Phase: 1.5 at index 3"];
+	0 -- 1
+	0 -- 3
+	1 -- 2
+	2 -- 3
+}

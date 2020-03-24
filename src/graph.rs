@@ -44,44 +44,63 @@ impl fmt::Display for GraphErrors {
     }
 }
 
-
-struct GraphContainer<T>{
+/// # Used for accessing neighbor information from graph
+/// Contains Adjacency list
+///  and internal id. Normally the index in the graph.
+///
+///
+/// Also contains user specified data, i.e, `T` from `VertexContainer<T>`
+pub struct VertexContainer<T>{
     id: u32,
     adj: Vec<u32>,
     node: T,
 }
 
-impl<T> GraphContainer<T> {
-    pub fn new(id: u32, node: T) -> Self {
-        GraphContainer{
+impl<T> VertexContainer<T> {
+    fn new(id: u32, node: T) -> Self {
+        VertexContainer{
             id,
             adj: Vec::new(),
             node,
         }
     }
 
-    pub fn get_node(&self) -> &T {
+    /// return reference to what the VertexContainer contains
+    pub fn get_contained(&self) -> &T {
         &self.node
     }
 
+    /// return mut reference to what the VertexContainer contains
+    pub fn get_contained_mut(&mut self) -> &mut T {
+        &mut self.node
+    }
+
+    /// returns iterator over indices of neighbors
     pub fn neighbors(&self) -> std::slice::Iter::<u32> {
         self.adj.iter()
     }
 
+    /// count number of neighbors, i.e. number of edges incident to `self`
     pub fn neighbor_count(&self) -> usize {
         self.adj.len()
     }
 
+    /// returns id of container
+    /// ## Note:
+    /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
     pub fn get_id(&self) -> u32 {
         self.id
     }
 
-    pub fn contains(&self, other_id: &u32) -> bool {
+    /// check if vertex with `other_id` is adjacent to self
+    /// ## Note:
+    /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
+    pub fn is_adjacent(&self, other_id: &u32) -> bool {
         self.adj.contains(other_id)
     }
 
-    pub fn push(&mut self, other: &mut GraphContainer<T>) -> Result<(),GraphErrors> {
-        if self.contains(&other.get_id()) {
+    fn push(&mut self, other: &mut VertexContainer<T>) -> Result<(),GraphErrors> {
+        if self.is_adjacent(&other.get_id()) {
             return Err(GraphErrors::EdgeExists);
         }
         self.adj.push(other.get_id());
@@ -95,8 +114,8 @@ impl<T> GraphContainer<T> {
     }
 
     /// Trys to remove edges, returns error `GraphErrors::EdgeDoesNotExist` if impossible
-    pub fn remove(&mut self, other: &mut GraphContainer<T>) -> Result<(),GraphErrors> {
-        if !self.contains(&other.get_id()){
+    fn remove(&mut self, other: &mut VertexContainer<T>) -> Result<(),GraphErrors> {
+        if !self.is_adjacent(&other.get_id()){
             return Err(GraphErrors::EdgeDoesNotExist);
         }
 
@@ -107,9 +126,87 @@ impl<T> GraphContainer<T> {
     }
 }
 
-/// Contains the Topology and implements functions for analyzing topology
+/// # Contains the Topology and implements functions for analyzing topology
+/// used for graph ensembles
+/// # Example:
+/// A graph, where each node stores a phase
+/// ```
+/// use net_ensembles::{Node,Graph};
+/// use std::fs::File;
+/// use std::io::prelude::*;
+/// // define your own vertices, if you need to store extra information at each vertex
+/// #[derive(Debug)]
+/// pub struct PhaseNode {phase: f64,}
+///
+/// // implement whatever you need
+/// impl PhaseNode {
+///     pub fn set_phase(&mut self, phase: f64) {
+///         self.phase = phase;
+///     }
+///
+///     pub fn get_phase(&self) -> f64 {
+///         self.phase
+///     }
+/// }
+///
+/// // implement the trait `Node`
+/// impl Node for PhaseNode {
+///     fn new_empty() -> Self {
+///         PhaseNode { phase: 0.0 }
+///     }
+/// }
+///
+/// // now you can create an empty graph
+/// let mut graph: Graph<PhaseNode> = Graph::new(4);
+/// // and fill it with edges
+/// for i in 0..4 {
+///     graph.add_edge(i, (i + 1) % 4).unwrap();
+/// }
+///
+/// // you can manipulate the extra information stored at each Vertex
+/// for i in 0..4 {
+///     graph.at_mut(i).set_phase(i as f64 * 0.5);
+/// }
+///
+/// // you can, of course, also access the information
+/// for i in 0..4 {
+///     assert_eq!(
+///         graph.at(i).get_phase(),
+///         i as f64 * 0.5
+///     );
+/// }
+///
+/// // if you want to visualize your graph, you can generate a string with graphviz representation
+/// let dot = graph.to_dot_with_labels(
+///     "",
+///     |contained, index| format!("Phase: {} at index {}", contained.get_phase(), index)
+/// );
+/// // which you can store in a dot file
+/// let mut f = File::create("phase_example.dot").expect("Unable to create file");
+/// f.write_all(dot.as_bytes()).expect("Unable to write data");
+///
+/// // or just print it out
+/// println!("{}", dot);
+/// ```
+/// `phase_example.dot` will then contain
+/// ```dot
+/// graph G{
+///
+/// 	0 1 2 3 ;
+/// 	"0" [label="Phase: 0 at index 0"];
+/// 	"1" [label="Phase: 0.5 at index 1"];
+/// 	"2" [label="Phase: 1 at index 2"];
+/// 	"3" [label="Phase: 1.5 at index 3"];
+/// 	0 -- 1
+/// 	0 -- 3
+/// 	1 -- 2
+/// 	2 -- 3
+/// }
+/// ```
+/// Now you can use `circo` or similar programs to create a pdf from that.
+/// Google graphviz for more info.
 pub struct Graph<T: Node> {
-    vertices: Vec<GraphContainer<T>>,
+    vertices: Vec<VertexContainer<T>>,
     next_id: u32,
     edge_count: u32,
 }
@@ -120,7 +217,7 @@ impl<T: Node> Graph<T> {
     pub fn new(size: u32) -> Self {
         let mut vertices = Vec::with_capacity(size as usize);
         for i in 0..size {
-            let container = GraphContainer::new(i, T::new_empty());
+            let container = VertexContainer::new(i, T::new_empty());
             vertices.push(container);
         }
         Self{
@@ -128,6 +225,33 @@ impl<T: Node> Graph<T> {
             next_id: size,
             edge_count: 0,
         }
+    }
+
+    /// borrows VertexContainer at index
+    pub fn get_vertex_container(&self, index: usize) -> &VertexContainer<T> {
+        &self.vertices[index]
+    }
+
+    /// get iterator over VertexContainer in order of the indices
+    pub fn vertex_container_iter(&self) -> std::slice::Iter::<VertexContainer<T>> {
+        self.vertices.iter()
+    }
+
+
+    fn get_vertex_container_mut(&mut self, index: usize) -> &mut VertexContainer<T> {
+        &mut self.vertices[index]
+    }
+
+    /// get read only access to stored information at `index`
+    /// for your calculations
+    pub fn at(&self, index: usize) -> &T {
+        self.get_vertex_container(index).get_contained()
+    }
+
+    /// get mutable access to stored information at `index`
+    /// for your calculations
+    pub fn at_mut(&mut self, index: usize) -> &mut T {
+        self.get_vertex_container_mut(index).get_contained_mut()
     }
 
     /// returns number of vertices present in graph
@@ -140,15 +264,15 @@ impl<T: Node> Graph<T> {
     /// `GraphErrors::IndexOutOfRange`  <-- index to large
     /// GraphErrors::IdenticalIndices <-- index1 == index2 not allowed!
     fn get_2_mut(&mut self, index1: u32, index2: u32) ->
-        Result<(&mut GraphContainer<T>, &mut GraphContainer<T>),GraphErrors>
+        Result<(&mut VertexContainer<T>, &mut VertexContainer<T>),GraphErrors>
     {
         if index1 >= self.next_id || index2 >= self.next_id {
             return Err(GraphErrors::IndexOutOfRange);
         } else if index1 == index2 {
             return Err(GraphErrors::IdenticalIndices);
         }
-        let r1: &mut GraphContainer<T>;
-        let r2: &mut GraphContainer<T>;
+        let r1: &mut VertexContainer<T>;
+        let r2: &mut VertexContainer<T>;
 
         let ptr = self.vertices.as_mut_ptr();
 
@@ -193,7 +317,7 @@ impl<T: Node> Graph<T> {
         self.edge_count
     }
 
-    fn get_container(&self, index: usize) -> &GraphContainer<T> {
+    fn get_container(&self, index: usize) -> &VertexContainer<T> {
         &self.vertices[index]
     }
 
@@ -281,7 +405,7 @@ impl<T: Node> Graph<T> {
 
     /// returns true if all vertices are connected by paths of edges, false otherwise
     /// # panic
-    /// panics, if graph does not contain nodes!
+    /// panics, if graph does not contain vertices!
     pub fn is_connected(&self) -> bool {
         self.dfs_0().count() == self.vertex_count() as usize
     }
@@ -432,7 +556,7 @@ impl<T: Node> Graph<T> {
     /// Creates String which contains the topology of the network in a format
     /// that can be used by circo etc. to generate a pdf of the graph.
     ///
-    /// Note: Indices are used as lables
+    /// Note: Indices are used as labels
     pub fn to_dot(&self) -> String {
         let mut s = "graph{\n\t".to_string();
 
@@ -466,7 +590,7 @@ impl<T: Node> Graph<T> {
     /// // create string of dotfile
     /// let s = graph.to_dot_with_labels(
     ///    DEFAULT_DOT_OPTIONS,
-    ///    |_node, index| format!("Hey {}!", index)
+    ///    |_contained, index| format!("Hey {}!", index)
     /// );
     ///
     /// // write to file
@@ -477,17 +601,17 @@ impl<T: Node> Graph<T> {
     /// In this example, `example.dot` now contains:
     /// ```dot
     /// graph G{
-	///    bgcolor="transparent";
-	///    fontsize=50;
-	///    node [shape=ellipse, penwidth=1, fontname="Courier", pin=true ];
-	///    splines=true;
-	///    0 1 2 ;
-	///    "0" [label="Hey 0!"];
-	///    "1" [label="Hey 1!"];
-	///    "2" [label="Hey 2!"];
-	///    0 -- 1
-	///    0 -- 2
-	///    1 -- 2
+    ///	    bgcolor="transparent";
+    ///	    fontsize=50;
+    ///	    node [shape=ellipse, penwidth=1, fontname="Courier", pin=true ];
+    ///	    splines=true;
+    ///	    0 1 2 ;
+    ///	    "0" [label="Hey 0!"];
+    ///	    "1" [label="Hey 1!"];
+    ///	    "2" [label="Hey 2!"];
+    ///	    0 -- 1
+    ///	    0 -- 2
+    ///	    1 -- 2
     /// }
     /// ```
     ///
@@ -510,7 +634,7 @@ impl<T: Node> Graph<T> {
         }
         s += ";\n";
         for (index, vertex) in self.vertices.iter().enumerate() {
-            s += &format!("\t\"{}\" [label=\"{}\"];\n", index, f(vertex.get_node(), index));
+            s += &format!("\t\"{}\" [label=\"{}\"];\n", index, f(vertex.get_contained(), index));
         }
 
         for i in 0..self.vertex_count() as usize {
@@ -571,7 +695,7 @@ impl<'a, T> Iterator for DfsWithIndex<'a, T>
                         self.stack.push(*i);
                     }
                 }
-                Some((index, container.get_node()))
+                Some((index, container.get_contained()))
             } else {
                 None
             }
@@ -624,7 +748,7 @@ impl<'a, T> Iterator for Dfs<'a, T>
                         self.stack.push(*i);
                     }
                 }
-                Some(container.get_node())
+                Some(container.get_contained())
             } else {
                 None
             }
@@ -639,17 +763,67 @@ mod tests {
     use std::fs::File;
     use std::io::prelude::*;
 
+    #[derive(Debug)]
+    pub struct PhaseNode {phase: f64,}
+
+    impl PhaseNode {
+        pub fn set_phase(&mut self, phase: f64) {
+            self.phase = phase;
+        }
+
+        pub fn get_phase(&self) -> f64 {
+            self.phase
+        }
+    }
+
+    impl Node for PhaseNode {
+        fn new_empty() -> Self {
+            PhaseNode { phase: 0.0 }
+        }
+    }
+
+    #[test]
+    fn phase_test() {
+        let mut graph: Graph<PhaseNode> = Graph::new(4);
+        for i in 0..4 {
+            graph.add_edge(i, (i + 1) % 4).unwrap();
+        }
+
+        for i in 0..4 {
+            graph.at_mut(i).set_phase(i as f64 * 0.5);
+        }
+
+        for i in 0..4 {
+            assert_eq!(
+                graph.at(i).get_phase(),
+                i as f64 * 0.5
+            );
+        }
+
+        let dot = graph.to_dot_with_labels(
+            "",
+            |contained, index| format!("Phase: {} at index {}", contained.get_phase(), index)
+        );
+
+        let mut read_in = File::open("TestData/phase_test.dot").expect("unable to open file");
+        let mut test_data = String::new();
+        read_in.read_to_string(&mut test_data).expect("unable to read file");
+        assert_eq!(test_data, dot);
+    }
+
+
+
     #[test]
     fn test_graph_container() {
-        let c = GraphContainer::new(0, 1);
+        let c = VertexContainer::new(0, 1);
         assert_eq!(0, c.get_id());
     }
 
     #[test]
     fn test_graph_container_push() {
         // create two nodes
-        let mut c = GraphContainer::new(0, 1);
-        let mut c2 = GraphContainer::new(1, 1);
+        let mut c = VertexContainer::new(0, 1);
+        let mut c2 = VertexContainer::new(1, 1);
         // create edge -> should not result in error!
         let res = c.push(&mut c2);
         if let Err(e) = res {
@@ -799,7 +973,7 @@ mod tests {
     #[test]
     fn dot_labeled() {
         let graph = create_graph_1();
-        let s = graph.to_dot_with_labels(DEFAULT_DOT_OPTIONS, |_node, index| format!("Hey {}!", index));
+        let s = graph.to_dot_with_labels(DEFAULT_DOT_OPTIONS, |_, index| format!("Hey {}!", index));
         let mut read_in = File::open("TestData/label_test.dot").expect("unable to open file");
         let mut test_data = String::new();
         // let mut f = File::create("label_test.dot").expect("Unable to create file");

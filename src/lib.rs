@@ -10,7 +10,7 @@
 pub mod node;
 pub mod graph;
 pub mod er;
-pub use self::node::Node;
+pub use node::Node;
 pub use er::ER;
 pub use graph::Graph;
 pub use node::TestNode;
