@@ -151,8 +151,8 @@ impl<T> VertexContainer<T> {
 ///
 /// // implement the trait `Node`
 /// impl Node for PhaseNode {
-///     fn new_empty() -> Self {
-///         PhaseNode { phase: 0.0 }
+///     fn new_empty(index: u32) -> Self {
+///         PhaseNode { phase: index as f64 * 10.0}
 ///     }
 /// }
 ///
@@ -161,6 +161,13 @@ impl<T> VertexContainer<T> {
 /// // and fill it with edges
 /// for i in 0..4 {
 ///     graph.add_edge(i, (i + 1) % 4).unwrap();
+/// }
+///
+/// for i in 0..4 {
+///     assert_eq!(
+///         graph.at(i).get_phase(),
+///         i as f64 * 10.0
+///     );
 /// }
 ///
 /// // you can manipulate the extra information stored at each Vertex
@@ -217,7 +224,7 @@ impl<T: Node> Graph<T> {
     pub fn new(size: u32) -> Self {
         let mut vertices = Vec::with_capacity(size as usize);
         for i in 0..size {
-            let container = VertexContainer::new(i, T::new_empty());
+            let container = VertexContainer::new(i, T::new_empty(i));
             vertices.push(container);
         }
         Self{
@@ -777,8 +784,8 @@ mod tests {
     }
 
     impl Node for PhaseNode {
-        fn new_empty() -> Self {
-            PhaseNode { phase: 0.0 }
+        fn new_empty(index: u32) -> Self {
+            PhaseNode { phase: 10.0 * index as f64 }
         }
     }
 
@@ -787,6 +794,13 @@ mod tests {
         let mut graph: Graph<PhaseNode> = Graph::new(4);
         for i in 0..4 {
             graph.add_edge(i, (i + 1) % 4).unwrap();
+        }
+
+        for i in 0..4 {
+            assert_eq!(
+                graph.at(i).get_phase(),
+                i as f64 * 10.0
+            );
         }
 
         for i in 0..4 {

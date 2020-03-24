@@ -12,7 +12,7 @@
 //!
 //! // it has to implement the Node trait
 //! impl Node for ExampleNode {
-//!     fn new_empty() -> Self {
+//!     fn new_empty(index: u32) -> Self {
 //!         ExampleNode { }
 //!     }
 //! }
