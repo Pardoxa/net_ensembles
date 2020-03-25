@@ -6,6 +6,7 @@ use std::fmt;
 use crate::node::Node;
 use std::cmp::max;
 use std::convert::TryFrom;
+use std::collections::VecDeque;
 
 /// # constant for dot options
 /// ```
@@ -193,8 +194,13 @@ impl<T: Node> NodeContainer<T> {
     }
 
     fn swap_delete_element(&mut self, elem: u32) -> () {
-        let index = self.adj.iter().position(|x| *x == elem).unwrap();
-        self.adj.swap_remove(index);
+        let index = self.adj
+            .iter()
+            .position(|x| *x == elem)
+            .expect("swap_delete_element ERROR 0");
+
+        self.adj
+            .swap_remove(index);
     }
 
     /// Tries to remove edges, returns error `GraphErrors::EdgeDoesNotExist` if impossible
@@ -470,32 +476,10 @@ impl<T: Node> Graph<T> {
         &self.vertices[index]
     }
 
-    /// # returns Iterator
+    /// # returns `Some(Iterator)`
     ///
-    /// the iterator will iterate over the vertices in depth first search order,
-    /// beginning with vertex 0.
-    ///
-    /// # panic
-    /// panics if graph does not contain any vertices
-    ///
-    /// Order
-    ///------------------------
-    /// Order is guaranteed to be in DFS order, however,
-    /// if this order is not unambigouse,
-    /// adding edges and especially removing edges will shuffle the order.
-    ///
-    /// Note:
-    /// ----------------------
-    /// Will only iterate over vertices within the connected component that contains vertex 0
-    pub fn dfs_0(&self) -> Dfs<T> {
-        Dfs::new_0(&self)
-    }
-
-    /// # returns Iterator
-    ///
-    /// RETURNS NONE if iterator would be invalid!
-    ///
-    /// the iterator will iterate over the vertices in depth first search order,
+    /// * `None` if iterator would be invalid!
+    /// * the iterator will iterate over the vertices in depth first search order,
     /// beginning with vertex `index`.
     ///
     /// Order
@@ -511,33 +495,12 @@ impl<T: Node> Graph<T> {
         Dfs::new(&self, index)
     }
 
-    /// # returns Iterator
+    /// # returns `Some(Iterator)`
     ///
-    /// the iterator will iterate over the vertices in depth first search order,
-    /// beginning with vertex 0. Iterator returns tuple `(index, vertex)`
-    ///
-    /// # panic
-    /// panics if graph does not contain any vertices
-    ///
-    /// Order
-    ///------------------------
-    /// Order is guaranteed to be in DFS order, however
-    /// if this order is not unambigouse
-    /// adding edges and especially removing edges will shuffle the order.
-    ///
-    /// Note:
-    /// ----------------------
-    /// Will only iterate over vertices within the connected component that contains vertex 0
-    pub fn dfs_0_with_index(&self) -> DfsWithIndex<T> {
-        DfsWithIndex::new_0(&self)
-    }
-
-    /// # returns Iterator
-    ///
-    /// RETURNS NONE if iterator would be invalid!
-    ///
-    /// the iterator will iterate over the vertices in depth first search order,
-    /// beginning with vertex `index`. Iterator returns tuple `(index, vertex)`
+    /// * `None` if iterator would be invalid!
+    /// * the iterator will iterate over the vertices in depth first search order,
+    /// beginning with vertex `index`.
+    /// * Iterator returns tuple `(index, node)`
     ///
     /// Order
     ///------------------------
@@ -552,11 +515,36 @@ impl<T: Node> Graph<T> {
         DfsWithIndex::new(&self, index)
     }
 
-    /// returns true if all vertices are connected by paths of edges, false otherwise
-    /// # panic
-    /// panics, if graph does not contain vertices!
-    pub fn is_connected(&self) -> bool {
-        self.dfs_0().count() == self.vertex_count() as usize
+    /// # returns `Some(Iterator)`
+    ///
+    /// * `None` if iterator would be invalid!
+    /// * the iterator will iterate over the vertices in breadth first search order,
+    /// beginning with vertex `index`.
+    /// * Iterator returns tuple `(index, node, depth)`
+    ///
+    /// ### depth
+    /// * starts at 0 (i.e. the first element in the iterator will have `depth = 0`)
+    /// * `depth` equals number of edges in the *shortest path* from the *current* vertex to the
+    /// *first* vertex (i.e. to the vertex with index `index`)
+    ///
+    /// Order
+    ///------------------------
+    /// Order is guaranteed to be in BFS order, however
+    /// if this order is not unambigouse
+    /// adding edges and especially removing edges will shuffle the order.
+    ///
+    /// Note:
+    /// ----------------------
+    /// Will only iterate over vertices within the connected component that contains vertex `index`
+    pub fn bfs_index_depth(&self, index: u32) -> Option<Bfs<T>> {
+        Bfs::new(&self, index)
+    }
+
+    /// returns Some(true) if all vertices are connected by paths of edges, Some(false) otherwise
+    ///
+    /// returns None, if graph does not contain any vertices
+    pub fn is_connected(&self) -> Option<bool> {
+        Some(self.dfs(0)?.count() == self.vertex_count() as usize)
     }
 
     /// Calculates the size of the q-core (i.e. number of nodes in the biggest possible set of nodes,
@@ -682,12 +670,14 @@ impl<T: Node> Graph<T> {
 
         }
         // cast current_id as usize
-        let num_components = usize::try_from(current_id).ok().unwrap();
+        let num_components = usize::try_from(current_id).ok()
+            .expect("connected_components ERROR 0");
 
         let mut result = vec![0; num_components];
 
         for i in component_id {
-            let as_usize = usize::try_from(i).ok().unwrap();
+            let as_usize = usize::try_from(i).ok()
+                .expect("connected_components ERROR 1");
             result[as_usize] += 1;
         }
 
@@ -699,7 +689,10 @@ impl<T: Node> Graph<T> {
 
     /// Count number of leaves in the graph, i.e. vertices with exactly one neighbor
     pub fn leaf_count(&self) -> usize {
-        self.vertices.iter().filter(|a| a.neighbor_count() == 1).count()
+        self.vertices
+            .iter()
+            .filter(|a| a.neighbor_count() == 1)
+            .count()
     }
 
     /// Creates String which contains the topology of the network in a format
@@ -796,6 +789,102 @@ impl<T: Node> Graph<T> {
         s += "}";
         s
     }
+
+    /// returns None if graph not connected
+    ///
+    /// uses repeated breadth first search
+    ///
+    /// fast if graph has a small but non vanishing number of leaves
+    /// (or not connected at all)
+    pub fn diameter(&self) -> Option<u32> {
+        if !self.is_connected()? {
+            None
+        } else if self.leaf_count() > 0 {
+            // if there are leafs, the diameter has to start from one
+            // therefore, I only look at leafs
+            self.node_container_iter()
+                .filter(|n| n.neighbor_count() == 1 )
+                .map(|n|
+                    self.longest_shortest_path_size(n.get_id())
+                        .expect("diameter ERROR 0")
+                ).max()
+        } else {
+            // well, then calculate from every node
+            // (except 1 node) and use maximum foun
+            self.node_container_iter()
+            .skip(1)
+            .map( |n|
+                self.longest_shortest_path_size(n.get_id())
+                    .expect("diameter ERROR 1")
+            ).max()
+        }
+    }
+
+    /// calculate the size of the longest shortest path starting from vertex with index `index`
+    /// using breadth first search
+    pub fn longest_shortest_path_size(&self, index: u32) -> Option<u32> {
+        let iter = Bfs::new(&self, index)?;
+        let (.., depth) = iter.last()?;
+        Some(depth)
+    }
+}
+
+/// Breadth first search Iterator with index of corresponding nodes
+pub struct Bfs<'a, T>
+    where T: 'a + Node {
+        graph: &'a Graph<T>,
+        handled: Vec<bool>,
+        queue0: VecDeque<u32>,
+        queue1: VecDeque<u32>,
+        depth: u32,
+}
+
+impl<'a, T> Bfs<'a, T>
+    where T: 'a + Node {
+        fn new(graph: &'a Graph<T>, index: u32) -> Option<Self> {
+            if index >= graph.vertex_count() {
+                return None;
+            }
+            let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
+            let mut queue0 = VecDeque::with_capacity(graph.vertex_count() as usize);
+            let queue1 = VecDeque::with_capacity(graph.vertex_count() as usize);
+            let depth = 0;
+            queue0.push_back(index);
+            handled[index as usize] = true;
+            let result = Bfs {
+                graph,
+                handled,
+                queue0,
+                queue1,
+                depth,
+            };
+            Some(result)
+        }
+}
+
+/// Iterator: index, node, depth
+impl<'a, T> Iterator for Bfs<'a, T>
+    where T: 'a + Node {
+        type Item = (u32, &'a T, u32);
+        fn next(&mut self) -> Option<Self::Item> {
+            // if queue0 is not empty, take element from queue, push neighbors to other queue
+            if let Some(index) = self.queue0.pop_front() {
+                let container = self.graph.get_container(index as usize);
+                for i in container.neighbors() {
+                    if !self.handled[*i as usize] {
+                        self.handled[*i as usize] = true;
+                        self.queue1.push_back(*i);
+                    }
+                }
+                Some((index, container.get_contained(), self.depth))
+            }else if self.queue1.is_empty() {
+                None
+            }else {
+                std::mem::swap(&mut self.queue0, &mut self.queue1);
+                self.depth += 1;
+                self.next()
+            }
+        }
 }
 
 /// Depth first search Iterator with index of corresponding nodes
@@ -809,7 +898,6 @@ pub struct DfsWithIndex<'a, T>
 impl<'a, T> DfsWithIndex<'a, T>
     where T: 'a + Node {
         fn new(graph: &'a Graph<T>, index: u32) -> Option<Self> {
-            assert!(index < graph.vertex_count());
             if index >= graph.vertex_count() {
                 return None;
             }
@@ -826,9 +914,6 @@ impl<'a, T> DfsWithIndex<'a, T>
 
         }
 
-        fn new_0(graph: &'a Graph<T>) -> Self {
-            DfsWithIndex::new(graph, 0).unwrap()
-        }
 }
 
 impl<'a, T> Iterator for DfsWithIndex<'a, T>
@@ -877,10 +962,6 @@ impl<'a, T> Dfs<'a, T>
             stack,
         };
         Some(result)
-    }
-
-    fn new_0(graph: &'a Graph<T>) -> Self {
-        Dfs::new(graph, 0).unwrap()
     }
 }
 
@@ -1043,26 +1124,19 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn test_is_connected_on_empty_graph() {
-        let graph: Graph<TestNode> = Graph::new(0);
-        graph.is_connected();
-    }
-
-    #[test]
     fn test_check_is_connected() {
         let mut graph: Graph<TestNode> = Graph::new(10);
-        assert!(!graph.is_connected());
+        assert!(!graph.is_connected().unwrap());
 
         // almost connect graph
         for i in 0..8 {
             graph.add_edge(i, i+1).unwrap();
         }
-        assert!(!graph.is_connected());
+        assert!(!graph.is_connected().unwrap());
 
         // connect graph
         graph.add_edge(8, 9).unwrap();
-        assert!(graph.is_connected());
+        assert!(graph.is_connected().unwrap());
     }
 
     #[test]
@@ -1309,5 +1383,38 @@ mod tests {
         let s = "geufgeiruwgeuwhuiwehfoipaerughpsiucvhuirhgvuir";
         let res = NodeContainer::<PhaseNode>::parse_str(&s);
         assert!(res.is_none());
+    }
+
+    #[test]
+    fn diameter_test() {
+        let mut graph: Graph<TestNode> = Graph::new(5);
+        for i in 0..4 {
+            graph.add_edge(i, i + 1).unwrap();
+        }
+        assert_eq!(4, graph.diameter().unwrap());
+
+        graph = Graph::new(4);
+
+        for i in 0..4 {
+            graph.add_edge(i, (i + 1) % 4).unwrap();
+        }
+        assert_eq!(2, graph.diameter().unwrap());
+
+        graph = Graph::new(40);
+        for i in 0..40 {
+            graph.add_edge(i, (i + 1) % 40).unwrap();
+        }
+        assert_eq!(20, graph.diameter().unwrap());
+
+        graph = Graph::new(40);
+        for i in 0..40 {
+            for j in i+1..40 {
+                graph.add_edge(i, j).unwrap();
+            }
+        }
+        assert_eq!(1, graph.diameter().unwrap());
+
+        graph = Graph::new(1);
+        graph.diameter();
     }
 }

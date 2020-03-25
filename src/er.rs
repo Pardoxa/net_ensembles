@@ -136,6 +136,7 @@ mod testing {
         assert!(
             !e.get_graph()
                 .is_connected()
+                .expect("test_edge_count error 1")
         );
 
         // add edge
@@ -175,7 +176,7 @@ mod testing {
         let e = ER::<TestNode, Pcg64>::new(20, 19.0, rng);
         assert_eq!(20, e.get_graph().vertex_count());
         assert_eq!(190, e.get_graph().edge_count());
-        assert!(e.get_graph().is_connected());
+        assert!(e.get_graph().is_connected().expect("test_complete_graph error"));
     }
 
     #[test]
