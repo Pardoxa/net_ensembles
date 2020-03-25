@@ -277,7 +277,12 @@ impl<T: Node> NodeContainer<T> {
 /// // if you want to visualize your graph, you can generate a string with graphviz representation
 /// let dot = graph.to_dot_with_labels(
 ///     "",
-///     |contained, index| format!("Phase: {} at index {}", contained.get_phase(), index)
+///     |contained, index|
+///            format!(
+///                 "Phase: {} at index {}",
+///                 contained.get_phase(),
+///                 index
+///             )
 /// );
 /// // which you can store in a dot file
 /// let mut f = File::create("phase_example.dot").expect("Unable to create file");
@@ -302,7 +307,162 @@ impl<T: Node> NodeContainer<T> {
 /// }
 /// ```
 /// Now you can use `circo` or similar programs to create a pdf from that.
-/// Google graphviz for more info.
+/// Search for **graphviz** for more info.
+/// # Example 2
+/// * if you want to be able to clone the graph, only `#[derive(Clone)]`
+/// * if you also want to be able to store your graph, you have to override two functions of the Node trait, as shown below
+/// ```
+/// use net_ensembles::{Node,Graph};
+/// use std::fs::File;
+/// use std::io::prelude::*;
+/// // define your own vertices, if you need to store extra information at each vertex
+/// #[derive(Debug, Clone)]
+/// pub struct PhaseNode {phase: f64,}
+///
+/// impl PhaseNode {
+///     pub fn set_phase(&mut self, phase: f64) {
+///         self.phase = phase;
+///     }
+///
+///     pub fn get_phase(&self) -> f64 {
+///         self.phase
+///     }
+/// }
+///
+/// impl Node for PhaseNode {
+///     fn new_from_index(index: u32) -> Self {
+///         PhaseNode { phase: 10.0 * index as f64 }
+///     }
+///
+///     // Override this, to save the graph
+///     fn make_string(&self) -> Option<String> {
+///         Some(format!("phase: {},", self.phase))
+///     }
+///
+///     // Override this, since you want to load the stored graph
+///     fn parse_str(to_parse: &str) -> Option<(&str, Self)>
+///         where Self: Sized
+///     {
+///         let identifier = "phase: ";
+///         // searching for identifier
+///         let mut split_index = to_parse.find(identifier)?;
+///
+///         // add length of identifier to index
+///         split_index += identifier.len();
+///
+///         // new string slice to skip to our identifier
+///         let remaining_to_parse = &to_parse[split_index..];
+///
+///         // find out, where our data ends
+///         split_index = remaining_to_parse.find(",")?;
+///
+///         // create new string slice, beginning after what Node::make_string() created
+///         let (phase_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
+///         remaining_to_parse = &remaining_to_parse[1..];
+///
+///         // parse our data
+///         let phase = phase_str.parse::<f64>().ok()?;
+///         let node = PhaseNode{ phase };
+///
+///         // return our struct as option
+///         Some((remaining_to_parse, node))
+///     }
+/// }
+///
+/// // now you can create an empty graph
+/// let mut graph: Graph<PhaseNode> = Graph::new(4);
+/// for i in 0..4 {
+///     assert_eq!(
+///       graph.at(i).get_phase(),
+///       i as f64 * 10.0
+///     );
+/// }
+///
+/// // and fill it with edges
+/// for i in 0..4 {
+///     graph.add_edge(i, (i + 1) % 4).unwrap();
+/// }
+///
+///
+/// // you can manipulate the extra information stored at each Vertex
+/// for i in 0..4 {
+///     graph.at_mut(i).set_phase(i as f64 * 0.5);
+/// }
+///
+/// // you can, of course, also access the information
+/// for i in 0..4 {
+///     assert_eq!(
+///         graph.at(i).get_phase(),
+///         i as f64 * 0.5
+///     );
+/// }
+///
+/// // if you want to visualize your graph, you can generate a string with graphviz representation
+/// let dot = graph.to_dot_with_labels(
+///     "",
+///     |contained, index|
+///            format!(
+///                 "Phase: {} at index {}",
+///                 contained.get_phase(),
+///                 index
+///             )
+/// );
+/// // which you can store in a dot file
+/// let mut f = File::create("phase_example_still_works.dot").expect("Unable to create file");
+/// f.write_all(dot.as_bytes()).expect("Unable to write data");
+///
+/// // or just print it out
+/// println!("{}", dot);
+///
+/// // if you want to store your graph, you can do the following:
+/// // first get string representation
+/// let s = graph.to_string();
+/// // open file
+/// let mut graph_file = File::create("store_graph_example.dat").expect("Unable to create file");
+/// // write to file
+/// graph_file.write_all(s.as_bytes()).expect("Unable to write data");
+/// // close file
+/// drop(graph_file);
+///
+/// // now, if you want to load your network:
+/// let mut read_in = File::open("store_graph_example.dat").expect("unable to open file");
+/// let mut test_data = String::new();
+/// read_in.read_to_string(&mut test_data).expect("unable to read file");
+///
+/// // now we read the string. We still have to parse it:
+/// let (_, graph2) = Graph::<PhaseNode>::parse_str(&test_data).unwrap();
+///
+/// // now, to show, that the graphs are equal, here is one of my test functions:
+/// // modified for this example, which is a doc-test, so this example also serves as unit test
+///
+/// fn assert_equal_graphs(g1: &Graph<PhaseNode>, g2: &Graph<PhaseNode>) {
+///     assert_eq!(g1.edge_count(), g2.edge_count());
+///     assert_eq!(g1.vertex_count(), g2.vertex_count());
+///     for (n0, n1) in g2.node_container_iter().zip(g1.node_container_iter()) {
+///         assert_eq!(n1.get_id(), n1.get_id());
+///         assert_eq!(n1.neighbor_count(), n1.neighbor_count());
+///
+///         for (i, j) in n1.neighbors().zip(n0.neighbors()) {
+///             assert_eq!(i, j);
+///         }
+///     }
+///
+///     for i in 0..g2.vertex_count() as usize {
+///         assert_eq!(
+///             g1.at(i).get_phase(),
+///             g2.at(i).get_phase()
+///         );
+///     }
+/// }
+/// // lets use it
+/// assert_equal_graphs(&graph, &graph2);
+///
+/// // you can also clone the graph, if you need:
+/// let clone = graph.clone();
+/// assert_equal_graphs(&graph, &clone);
+/// let clone2 = graph2.clone();
+/// assert_equal_graphs(&clone, &clone2);
+/// ```
 #[derive(Debug, Clone)]
 pub struct Graph<T: Node> {
     next_id: u32,
@@ -397,14 +557,16 @@ impl<T: Node> Graph<T> {
         &mut self.vertices[index]
     }
 
-    /// get read only access to stored information at `index`
-    /// for your calculations
+    /// # For your calculations etc.
+    /// * **read access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
+    /// * see first **code example** (beginning of this page)
     pub fn at(&self, index: usize) -> &T {
         self.get_node_container(index).get_contained()
     }
 
-    /// get mutable access to stored information at `index`
-    /// for your calculations
+    /// # For your calculations etc.
+    /// * **write access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
+    /// * see first **code example** (beginning of this page)
     pub fn at_mut(&mut self, index: usize) -> &mut T {
         self.get_node_container_mut(index).get_contained_mut()
     }
@@ -540,17 +702,20 @@ impl<T: Node> Graph<T> {
         Bfs::new(&self, index)
     }
 
-    /// returns Some(true) if all vertices are connected by paths of edges, Some(false) otherwise
-    ///
-    /// returns None, if graph does not contain any vertices
+    /// | result       |                          condition                       |
+    /// |--------------|----------------------------------------------------------|
+    /// | `None`       | **if** graph does not contain any vertices               |
+    /// | `Some(true)` | **else if** all vertices are connected by paths of edges |
+    /// | `Some(false)`| **otherwise**                                            |
     pub fn is_connected(&self) -> Option<bool> {
         Some(self.dfs(0)?.count() == self.vertex_count() as usize)
     }
 
-    /// Calculates the size of the q-core (i.e. number of nodes in the biggest possible set of nodes,
+    /// # definition
+    /// Calculates the size of the **q-core** (i.e. number of nodes in the biggest possible set of nodes,
     /// where all nodes from the set are connected with at least `q` other nodes from the set)
     ///
-    /// returns None if impossible to calculate (e.g. `vertex_count == 0` or `q <= 1`)
+    /// returns `None` if impossible to calculate (e.g. `vertex_count == 0` or `q <= 1`)
     /// # Example
     /// ```
     /// use net_ensembles::TestNode;
@@ -564,6 +729,23 @@ impl<T: Node> Graph<T> {
     ///
     /// assert_eq!(graph2.q_core(1), None);
     /// assert_eq!(graph2.q_core(2), Some(0));
+    ///
+    ///
+    /// // create complete graph
+    /// let mut graph3: Graph<TestNode> = Graph::new(20);
+    /// for i in 0..graph3.vertex_count() {
+    ///     for j in i+1..graph3.vertex_count() {
+    ///         graph3.add_edge(i, j).unwrap();
+    ///     }
+    /// }
+    ///
+    /// // since this is a complete graph, the q-core should always consist of 20 nodes
+    /// // as long as q < 20, as every node has 19 neighbors
+    /// for i in 2..20 {
+    ///     assert_eq!(graph3.q_core(i), Some(20));
+    /// }
+
+    /// assert_eq!(graph3.q_core(20), Some(0));
     /// ```
     pub fn q_core(&self, q: u32) -> Option<u32> {
         if q < 2 || self.vertex_count() == 0 {
@@ -640,11 +822,11 @@ impl<T: Node> Graph<T> {
         Some(result)
     }
 
-    /// # compute sizes of all connected components
+    /// # compute sizes of all *connected components*
     ///
-    /// the number of connected components is the size of the returned vector, i.e. `result.len()`
-    /// ## result is ordered
-    /// returns (reverse) ordered vector of sizes of the connected components,
+    /// * the **number** of connected components is the **size** of the returned vector, i.e. `result.len()`
+    /// * returns **empty** vector, if graph does not contain vertices
+    /// * returns (reverse) **ordered vector of sizes** of the connected components,
     /// i.e. the biggest component is of size `result[0]` and the smallest is of size `result[result.len() - 1]`
     pub fn connected_components(&self) -> Vec<u32> {
 
@@ -665,7 +847,7 @@ impl<T: Node> Graph<T> {
             } else {
                 // should NEVER enter this
                 // if this panic shows, there might be a logic error
-                panic!("something went horribly wrong");
+                panic!("something went horribly wrong - connected_components");
             }
 
         }
@@ -683,7 +865,12 @@ impl<T: Node> Graph<T> {
 
         // sort by reverse
         // unstable here means inplace and ordering of equal elements is not guaranteed
-        result.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap().reverse());
+        result.sort_unstable_by(
+            |a, b|
+            a.partial_cmp(b)
+                .unwrap()
+                .reverse()
+        );
         result
     }
 
@@ -695,10 +882,10 @@ impl<T: Node> Graph<T> {
             .count()
     }
 
-    /// Creates String which contains the topology of the network in a format
-    /// that can be used by circo etc. to generate a pdf of the graph.
-    ///
-    /// Note: Indices are used as labels
+    /// * Creates String which contains the topology of the network in a format
+    /// that can be used by **circo** etc. to generate a pdf of the graph.
+    /// * **indices** are used as **labels**
+    /// * search for **graphviz** to learn about **.dot** format
     pub fn to_dot(&self) -> String {
         let mut s = "graph{\n\t".to_string();
 
@@ -761,8 +948,8 @@ impl<T: Node> Graph<T> {
     /// ```console
     /// foo@bar:~$ circo example.dot -Tpdf > example.pdf
     /// ```
-    /// to create a pdf representation from it.
-    /// Google graphviz to learn more.
+    /// to create a **pdf** representation from it.
+    /// Search for **graphviz** to learn more.
     pub fn to_dot_with_labels<F>(&self, dot_options: &str, f: F ) -> String
         where F: Fn(&T, usize) -> String
     {
@@ -790,11 +977,9 @@ impl<T: Node> Graph<T> {
         s
     }
 
-    /// returns None if graph not connected
-    ///
-    /// uses repeated breadth first search
-    ///
-    /// fast if graph has a small but non vanishing number of leaves
+    /// * returns `None` **if** graph not connected **or** does not contain vertices
+    /// * uses repeated breadth first search
+    /// * fast if graph has a small but non vanishing number of leaves
     /// (or not connected at all)
     pub fn diameter(&self) -> Option<u32> {
         if !self.is_connected()? {
@@ -805,7 +990,7 @@ impl<T: Node> Graph<T> {
             self.node_container_iter()
                 .filter(|n| n.neighbor_count() == 1 )
                 .map(|n|
-                    self.longest_shortest_path_size(n.get_id())
+                    self.longest_shortest_path_from_index(n.get_id())
                         .expect("diameter ERROR 0")
                 ).max()
         } else {
@@ -814,15 +999,15 @@ impl<T: Node> Graph<T> {
             self.node_container_iter()
             .skip(1)
             .map( |n|
-                self.longest_shortest_path_size(n.get_id())
+                self.longest_shortest_path_from_index(n.get_id())
                     .expect("diameter ERROR 1")
             ).max()
         }
     }
 
-    /// calculate the size of the longest shortest path starting from vertex with index `index`
+    /// calculate the size of the longest shortest path **starting from** vertex with **index** `index`
     /// using breadth first search
-    pub fn longest_shortest_path_size(&self, index: u32) -> Option<u32> {
+    pub fn longest_shortest_path_from_index(&self, index: u32) -> Option<u32> {
         let iter = Bfs::new(&self, index)?;
         let (.., depth) = iter.last()?;
         Some(depth)
@@ -1202,7 +1387,7 @@ mod tests {
         }
 
         // since this is a complete graph, q core should always consist of 20 nodes
-        // as long as q < 20, as every node as 19 neighbors
+        // as long as q < 20, as every node has 19 neighbors
         for i in 2..20 {
             assert_eq!(graph.q_core(i), Some(20));
         }
