@@ -20,9 +20,16 @@ pub const DEFAULT_DOT_OPTIONS: &str = "bgcolor=\"transparent\";\n\tfontsize=50;\
 /// all of my error messages
 #[derive(Debug)]
 pub enum GraphErrors{
+    /// ### somehow, the existing of the edge is a problem
+    /// Did you try to add an edge, which is already present, to the graph
     EdgeExists,
+    /// ### ERROR 404: Edge not found ;)
+    /// Did you try to delete a non existing edge?
     EdgeDoesNotExist,
+    /// ### Have you tried a smaller index?
     IndexOutOfRange,
+    /// ### No self loops allowed!
+    /// Meaning you can't: `graph.add_edge(i, i);`
     IdenticalIndices,
 }
 
@@ -58,18 +65,25 @@ pub struct NodeContainer<T: Node>{
     node: T,
 }
 
+const PARSE_ID: &str        = "id: ";
+const PARSE_SEPERATOR: &str = "\t";
+const PARSE_ADJ: &str       = "adj: ";
+const PARSE_NODE: &str      = "Node: ";
+
 impl<T: Node> fmt::Display for NodeContainer<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // "id: {} adj: {:?} Node: {}"
         write!(
             f,
-            "id: {}\tadj: {:?} Node: {}" ,
-            self.id,
-            self.adj,
-            self.node.make_string()
+            "{}{}{}{}{:?}{}{}{}" ,
+            PARSE_ID, self.id, PARSE_SEPERATOR,
+            PARSE_ADJ, self.adj, PARSE_SEPERATOR,
+            PARSE_NODE, self.node.make_string()
                 .expect(&format!("make_string failed - Did you forget to Override? Look at {}::Node", env!("CARGO_PKG_NAME")))
         )
     }
 }
+
 
 impl<T: Node> NodeContainer<T> {
     fn new(id: u32, node: T) -> Self {
@@ -77,6 +91,61 @@ impl<T: Node> NodeContainer<T> {
             id,
             adj: Vec::new(),
             node,
+        }
+    }
+
+    /// # parse from str
+    /// * Trys to parse a NodeContainer from a `str`.
+    /// * Will ignore leading whitespaces and other chars, as long as they do not match `"id: "`
+    /// * returns `None` if failed
+    ///
+    /// ## Return
+    /// 1) returns string slice beginning directly after the part, that was used to parse
+    /// 2) the `NodeContainer` resulting form the parsing
+    pub fn parse_str(to_parse: &str) -> Option<(&str, Self)> {
+        // skip identifier PARSE_ID
+        let mut split_index = to_parse.find(PARSE_ID)?;
+        split_index += PARSE_ID.len();
+        let remaining_to_parse = &to_parse[split_index..];
+
+        // find index of next PARSE_SEPERATOR and split there
+        split_index = remaining_to_parse.find(PARSE_SEPERATOR)?;
+        let (id_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
+        let id = id_str.parse::<u32>().ok()?;
+
+        // skip to after nex identifier
+        split_index = remaining_to_parse.find(PARSE_ADJ)?;
+        split_index += PARSE_ADJ.len();
+        remaining_to_parse = &remaining_to_parse[split_index..];
+
+
+        // find index of next PARSE_SEPERATOR and split there
+        split_index = remaining_to_parse.find(PARSE_SEPERATOR)?;
+        let (mut adj_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
+        // now remove the brackets []
+        adj_str = &adj_str[1..adj_str.len() - 1];
+        // now split at ", "
+        // collect into vector, which is None, if something failed
+        let adj_option: Option<Vec<u32>> = adj_str
+                                            .split(", ")
+                                            .map(|x| x.parse::<u32>().ok())
+                                            .collect();
+        let adj = adj_option?;
+
+        // skip until printed node
+        split_index = remaining_to_parse.find(PARSE_NODE)?;
+        split_index += PARSE_NODE.len();
+        remaining_to_parse = &remaining_to_parse[split_index..];
+
+        if let Some((remaining_to_parse, node)) = Node::parse_str(remaining_to_parse) {
+            let result = NodeContainer{
+                id,
+                adj,
+                node,
+            };
+            Some((remaining_to_parse, result))
+        } else {
+            None
         }
     }
 
@@ -816,7 +885,25 @@ mod tests {
         }
 
         fn make_string(&self) -> Option<String> {
-            Some(format!("phase: {}", self.phase))
+            Some(format!("phase: {},", self.phase))
+        }
+
+        /// Override this, if you want to load the stored the network
+        fn parse_str(to_parse: &str) -> Option<(&str, Self)>
+            where Self: Sized
+        {
+            let identifier = "phase: ";
+            let mut split_index = to_parse.find(identifier)?;
+            split_index += identifier.len();
+            let remaining_to_parse = &to_parse[split_index..];
+
+            split_index = remaining_to_parse.find(",")?;
+            let (phase_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
+            remaining_to_parse = &remaining_to_parse[1..];
+            let phase = phase_str.parse::<f64>().ok()?;
+            let node = PhaseNode{ phase };
+
+            Some((remaining_to_parse, node))
         }
     }
 
@@ -1036,6 +1123,49 @@ mod tests {
             graph.add_edge(i, (i + 1) % 4).unwrap();
         }
         println!("{}",graph.get_container(0));
-        println!("{}", graph);
+        let _ = format!("{}", graph);
+    }
+
+    #[test]
+    fn parse_node_container() {
+        let mut graph: Graph<PhaseNode> = Graph::new(40);
+        for i in 0..40 {
+            for j in i+1..40 {
+                graph.add_edge(i, j).unwrap();
+            }
+        }
+
+        graph.at_mut(0).set_phase(0.8324567623382901);
+
+        assert_eq!(graph.at(0).get_phase(), 0.8324567623382901);
+
+        let c0 = graph.get_container(0);
+
+        let s = format!("{}", c0);
+        let try_parse = NodeContainer::<PhaseNode>::parse_str(&s);
+
+        // also asserts, that result is Some
+        let (_, container) = try_parse.unwrap();
+
+        assert_eq!(c0.get_id(), container.get_id());
+        assert_eq!(c0.neighbor_count(), container.neighbor_count());
+
+        for (i, j) in c0.neighbors().zip(container.neighbors()) {
+            assert_eq!(i, j);
+        }
+
+        assert_eq!(
+            c0.get_contained().get_phase(),
+            container.get_contained().get_phase()
+        );
+
+    }
+
+    #[test]
+    fn parsing_invalid_node_container() {
+        // parsing gibberish should return None, not panic!
+        let s = "geufgeiruwgeuwhuiwehfoipaerughpsiucvhuirhgvuir";
+        let res = NodeContainer::<PhaseNode>::parse_str(&s);
+        assert!(res.is_none());
     }
 }

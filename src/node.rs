@@ -11,14 +11,15 @@ pub trait Node {
         None
     }
 
-    // Override this, if you want to store the network
-    //fn parse_str(info: &str) -> (&str, Self) {
-    //    panic!("ERROR: Trait Node's make_string(&self) not implemented!");
-    //}
+    /// Override this, if you want to load the stored the network
+    fn parse_str(_to_parse: &str) -> Option<(&str, Self)>
+        where Self: Sized
+    {
+        None
+    }
 }
 
 /// minimal example for a node
-#[derive(Debug)]
 pub struct TestNode {}
 
 
