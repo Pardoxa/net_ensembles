@@ -58,7 +58,7 @@ impl fmt::Display for GraphErrors {
 ///
 ///
 /// Also contains user specified data, i.e, `T` from `NodeContainer<T>`
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NodeContainer<T: Node>{
     id: u32,
     adj: Vec<u32>,
@@ -297,7 +297,7 @@ impl<T: Node> NodeContainer<T> {
 /// ```
 /// Now you can use `circo` or similar programs to create a pdf from that.
 /// Google graphviz for more info.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Graph<T: Node> {
     next_id: u32,
     edge_count: u32,
@@ -915,7 +915,7 @@ mod tests {
     use rand_core::SeedableRng;
     use rand::Rng;
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct PhaseNode {phase: f64,}
 
     impl PhaseNode {
@@ -1278,6 +1278,29 @@ mod tests {
             container.get_contained().get_phase()
         );
 
+    }
+
+    #[test]
+    fn clone(){
+        let mut rng = Pcg64::seed_from_u64(123174123);
+        let mut graph: Graph<PhaseNode> = Graph::new(100);
+        for i in 0..100 {
+            for j in i+1..100 {
+                if rng.gen::<f64>() <= 0.6 {
+                    graph.add_edge(i, j).unwrap();
+                }
+            }
+        }
+
+        let clone = graph.clone();
+        for i in 0..100 as usize {
+            assert_eq!(
+                graph.at(i).get_phase(),
+                clone.at(i).get_phase()
+            );
+        }
+
+        equal_graphs(graph, clone);
     }
 
     #[test]
