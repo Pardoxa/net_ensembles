@@ -1,10 +1,10 @@
 # Rust library for network-ensembles
 
-## implemented network ensembles
+### currently implementing network ensembles
 
 * Erdős-Rényi
 
-### planing to implement
+### planing to implement network ensembles
 
 * small-world
 

@@ -95,8 +95,8 @@ impl<T: Node> NodeContainer<T> {
     }
 
     /// # parse from str
-    /// * Trys to parse a NodeContainer from a `str`.
-    /// * Will ignore leading whitespaces and other chars, as long as they do not match `"id: "`
+    /// * tries to parse a NodeContainer from a `str`.
+    /// * will ignore leading whitespaces and other chars, as long as they do not match `"id: "`
     /// * returns `None` if failed
     ///
     /// ## Return
@@ -197,7 +197,7 @@ impl<T: Node> NodeContainer<T> {
         self.adj.swap_remove(index);
     }
 
-    /// Trys to remove edges, returns error `GraphErrors::EdgeDoesNotExist` if impossible
+    /// Tries to remove edges, returns error `GraphErrors::EdgeDoesNotExist` if impossible
     fn remove(&mut self, other: &mut NodeContainer<T>) -> Result<(),GraphErrors> {
         if !self.is_adjacent(&other.get_id()){
             return Err(GraphErrors::EdgeDoesNotExist);
@@ -328,6 +328,52 @@ impl<T: Node> Graph<T> {
             next_id: size,
             edge_count: 0,
         }
+    }
+
+    /// # parse from str
+    /// * tries to parse `Graph` from a `str`.
+    /// * will ignore leading whitespaces and other chars, as long as they do not match `"next_id: "`
+    /// * returns `None` if failed
+    ///
+    /// ## Return
+    /// 1) returns string slice beginning directly after the part, that was used to parse
+    /// 2) the `Graph` resulting form the parsing
+    pub fn parse_str(to_parse: &str) -> Option<(&str, Self)> {
+        // skip identifier
+        let mut split_index = to_parse.find("next_id: ")? + 9;
+        let remaining_to_parse = &to_parse[split_index..];
+
+        // find index of next PARSE_SEPERATOR and split there
+        split_index = remaining_to_parse.find("\n")?;
+        let (next_id_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
+        let next_id = next_id_str.parse::<u32>().ok()?;
+
+        // skip identifier
+        split_index = remaining_to_parse.find("edge_count: ")? + 12;
+        remaining_to_parse = &remaining_to_parse[split_index..];
+
+        // find index of next PARSE_SEPERATOR and split there
+        split_index = remaining_to_parse.find("\n")?;
+        let (edge_count_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
+        let edge_count = edge_count_str.parse::<u32>().ok()?;
+
+        // Parse the vertex vector
+        let mut vertices = Vec::with_capacity(next_id as usize);
+        for _ in 0..next_id {
+            let result = NodeContainer::<T>::parse_str(&remaining_to_parse)?;
+            remaining_to_parse = result.0;
+            let node = result.1;
+
+            vertices.push(node);
+        }
+        Some((
+                remaining_to_parse,
+                Self{
+                    vertices,
+                    next_id,
+                    edge_count,
+                }
+            ))
     }
 
     /// borrows NodeContainer at index
@@ -865,6 +911,9 @@ mod tests {
     use crate::node::TestNode;
     use std::fs::File;
     use std::io::prelude::*;
+    use rand_pcg::Pcg64;
+    use rand_core::SeedableRng;
+    use rand::Rng;
 
     #[derive(Debug)]
     pub struct PhaseNode {phase: f64,}
@@ -1116,14 +1165,84 @@ mod tests {
         println!("{}",graph.get_container(0));
     }
 
+    fn equal_graphs<T: Node>(g1: Graph<T>, g2: Graph<T>) {
+        assert_eq!(g1.edge_count(), g2.edge_count());
+        assert_eq!(g1.vertex_count(), g2.vertex_count());
+        for (n0, n1) in g2.node_container_iter().zip(g1.node_container_iter()) {
+            assert_eq!(n1.get_id(), n1.get_id());
+            assert_eq!(n1.neighbor_count(), n1.neighbor_count());
+
+            for (i, j) in n1.neighbors().zip(n0.neighbors()) {
+                assert_eq!(i, j);
+            }
+        }
+    }
+
     #[test]
-    fn test_printing_implemented() {
+    fn graph_parsing() {
         let mut graph: Graph<PhaseNode> = Graph::new(4);
         for i in 0..4 {
             graph.add_edge(i, (i + 1) % 4).unwrap();
         }
-        println!("{}",graph.get_container(0));
-        let _ = format!("{}", graph);
+        format!("{}",graph.get_container(0));
+        println!("{}", graph);
+        let g = graph.to_string();
+        let try_parse = Graph::<PhaseNode>::parse_str(&g);
+
+        let (_, parsed_graph) = try_parse.unwrap();
+
+        println!("parsed: {}", parsed_graph);
+
+        // check, that graphs are equal
+        equal_graphs(graph, parsed_graph);
+
+        // bigger graph
+        let mut graph: Graph<PhaseNode> = Graph::new(40);
+        for i in 0..40 {
+            for j in i+1..40 {
+                graph.add_edge(i, j).unwrap();
+            }
+        }
+
+        let s = graph.to_string();
+        let try_parse = Graph::<PhaseNode>::parse_str(&s);
+        let (_, parsed_graph) = try_parse.unwrap();
+        // check, that graphs are equal
+        equal_graphs(graph, parsed_graph);
+
+        graph_parsing_compare_random(232, 30);
+    }
+
+    #[test]
+    #[ignore]
+    fn graph_parsing_big_random() {
+        graph_parsing_compare_random(23545635745, 1000);
+    }
+
+    fn graph_parsing_compare_random(seed: u64, size: u32) {
+        // now check with a random graph
+        let mut rng = Pcg64::seed_from_u64(seed);
+        let mut graph: Graph<PhaseNode> = Graph::new(size);
+        for i in 0..size {
+            for j in i+1..size {
+                if rng.gen::<f64>() <= 0.6 {
+                    graph.add_edge(i, j).unwrap();
+                }
+            }
+        }
+
+        let s = graph.to_string();
+        let try_parse = Graph::<PhaseNode>::parse_str(&s);
+        let (_, parsed_graph) = try_parse.unwrap();
+        // check, that graphs are equal
+        for i in 0..size as usize {
+            assert_eq!(
+                graph.at(i).get_phase(),
+                parsed_graph.at(i).get_phase()
+            );
+        }
+
+        equal_graphs(graph, parsed_graph);
     }
 
     #[test]
@@ -1141,7 +1260,7 @@ mod tests {
 
         let c0 = graph.get_container(0);
 
-        let s = format!("{}", c0);
+        let s = c0.to_string();
         let try_parse = NodeContainer::<PhaseNode>::parse_str(&s);
 
         // also asserts, that result is Some
