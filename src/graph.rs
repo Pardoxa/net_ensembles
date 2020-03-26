@@ -216,7 +216,7 @@ impl<T: Node> NodeContainer<T> {
     }
 }
 
-/// # Contains the Topology and implements functions for analyzing topology
+/// # Contains the topology and **implements functions** for analyzing topology
 /// used for graph ensembles
 /// # Example:
 /// A graph, where each node stores a phase
@@ -638,11 +638,11 @@ impl<T: Node> Graph<T> {
         &self.vertices[index]
     }
 
-    /// # returns `Some(Iterator)`
+    /// # returns `Iterator`
     ///
-    /// * `None` if iterator would be invalid!
     /// * the iterator will iterate over the vertices in depth first search order,
     /// beginning with vertex `index`.
+    /// * iterator returns `node`
     ///
     /// Order
     ///------------------------
@@ -653,13 +653,12 @@ impl<T: Node> Graph<T> {
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn dfs(&self, index: u32) -> Option<Dfs<T>> {
+    pub fn dfs(&self, index: u32) -> Dfs<T> {
         Dfs::new(&self, index)
     }
 
-    /// # returns `Some(Iterator)`
+    /// # returns `Iterator`
     ///
-    /// * `None` if iterator would be invalid!
     /// * the iterator will iterate over the vertices in depth first search order,
     /// beginning with vertex `index`.
     /// * Iterator returns tuple `(index, node)`
@@ -673,13 +672,12 @@ impl<T: Node> Graph<T> {
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn dfs_with_index(&self, index: u32) -> Option<DfsWithIndex<T>> {
+    pub fn dfs_with_index(&self, index: u32) -> DfsWithIndex<T> {
         DfsWithIndex::new(&self, index)
     }
 
-    /// # returns `Some(Iterator)`
+    /// # returns `Iterator`
     ///
-    /// * `None` if iterator would be invalid!
     /// * the iterator will iterate over the vertices in breadth first search order,
     /// beginning with vertex `index`.
     /// * Iterator returns tuple `(index, node, depth)`
@@ -698,7 +696,7 @@ impl<T: Node> Graph<T> {
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn bfs_index_depth(&self, index: u32) -> Option<Bfs<T>> {
+    pub fn bfs_index_depth(&self, index: u32) -> Bfs<T> {
         Bfs::new(&self, index)
     }
 
@@ -708,7 +706,11 @@ impl<T: Node> Graph<T> {
     /// | `Some(true)` | **else if** all vertices are connected by paths of edges |
     /// | `Some(false)`| **otherwise**                                            |
     pub fn is_connected(&self) -> Option<bool> {
-        Some(self.dfs(0)?.count() == self.vertex_count() as usize)
+        if self.vertex_count() == 0 {
+            None
+        } else {
+            Some(self.dfs(0).count() == self.vertex_count() as usize)
+        }
     }
 
     /// # definition
@@ -838,17 +840,12 @@ impl<T: Node> Graph<T> {
             if component_id[i as usize] != -1 {
                 continue;
             }
+
             // start depth first search over indices of vertices connected with vertex i
-            if let Some(iter) = self.dfs_with_index(i) {
-                for (j, _) in iter {
-                    component_id[j as usize] = current_id;
-                }
-                current_id += 1;
-            } else {
-                // should NEVER enter this
-                // if this panic shows, there might be a logic error
-                panic!("something went horribly wrong - connected_components");
+            for (j, _) in self.dfs_with_index(i) {
+                component_id[j as usize] = current_id;
             }
+            current_id += 1;
 
         }
         // cast current_id as usize
@@ -977,22 +974,11 @@ impl<T: Node> Graph<T> {
         s
     }
 
-    /// * returns `None` **if** graph not connected **or** does not contain vertices
+    /// * returns `None` **if** graph not connected **or** does not contain any vertices
     /// * uses repeated breadth first search
-    /// * fast if graph has a small but non vanishing number of leaves
-    /// (or not connected at all)
     pub fn diameter(&self) -> Option<u32> {
         if !self.is_connected()? {
             None
-        } else if self.leaf_count() > 0 {
-            // if there are leafs, the diameter has to start from one
-            // therefore, I only look at leafs
-            self.node_container_iter()
-                .filter(|n| n.neighbor_count() == 1 )
-                .map(|n|
-                    self.longest_shortest_path_from_index(n.get_id())
-                        .expect("diameter ERROR 0")
-                ).max()
         } else {
             // well, then calculate from every node
             // (except 1 node) and use maximum foun
@@ -1008,13 +994,14 @@ impl<T: Node> Graph<T> {
     /// calculate the size of the longest shortest path **starting from** vertex with **index** `index`
     /// using breadth first search
     pub fn longest_shortest_path_from_index(&self, index: u32) -> Option<u32> {
-        let iter = Bfs::new(&self, index)?;
+        let iter = Bfs::new(&self, index);
         let (.., depth) = iter.last()?;
         Some(depth)
     }
 }
 
-/// Breadth first search Iterator with index of corresponding nodes
+/// # Breadth first search Iterator with **index** and **depth** of corresponding nodes
+/// * iterator returns tuple: `(index, node, depth)`
 pub struct Bfs<'a, T>
     where T: 'a + Node {
         graph: &'a Graph<T>,
@@ -1026,16 +1013,15 @@ pub struct Bfs<'a, T>
 
 impl<'a, T> Bfs<'a, T>
     where T: 'a + Node {
-        fn new(graph: &'a Graph<T>, index: u32) -> Option<Self> {
-            if index >= graph.vertex_count() {
-                return None;
-            }
+        fn new(graph: &'a Graph<T>, index: u32) -> Self {
             let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
             let mut queue0 = VecDeque::with_capacity(graph.vertex_count() as usize);
             let queue1 = VecDeque::with_capacity(graph.vertex_count() as usize);
             let depth = 0;
-            queue0.push_back(index);
-            handled[index as usize] = true;
+            if index < graph.vertex_count() {
+                queue0.push_back(index);
+                handled[index as usize] = true;
+            }
             let result = Bfs {
                 graph,
                 handled,
@@ -1043,11 +1029,12 @@ impl<'a, T> Bfs<'a, T>
                 queue1,
                 depth,
             };
-            Some(result)
+            result
         }
 }
 
-/// Iterator: index, node, depth
+/// # Iterator
+/// - returns tuple: `(index, node, depth)`
 impl<'a, T> Iterator for Bfs<'a, T>
     where T: 'a + Node {
         type Item = (u32, &'a T, u32);
@@ -1072,7 +1059,7 @@ impl<'a, T> Iterator for Bfs<'a, T>
         }
 }
 
-/// Depth first search Iterator with index of corresponding nodes
+/// Depth first search Iterator with **index** of corresponding nodes
 pub struct DfsWithIndex<'a, T>
     where T: 'a + Node {
         graph: &'a Graph<T>,
@@ -1082,21 +1069,19 @@ pub struct DfsWithIndex<'a, T>
 
 impl<'a, T> DfsWithIndex<'a, T>
     where T: 'a + Node {
-        fn new(graph: &'a Graph<T>, index: u32) -> Option<Self> {
-            if index >= graph.vertex_count() {
-                return None;
-            }
+        fn new(graph: &'a Graph<T>, index: u32) -> Self {
             let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
             let mut stack: Vec<u32> = Vec::with_capacity(graph.vertex_count() as usize);
-            stack.push(index);
-            handled[index as usize] = true;
-            let result = DfsWithIndex {
+            if index < graph.vertex_count() {
+                stack.push(index);
+                handled[index as usize] = true;
+            }
+
+            DfsWithIndex {
                 graph,
                 handled,
                 stack,
-            };
-            Some(result)
-
+            }
         }
 
 }
@@ -1133,20 +1118,19 @@ pub struct Dfs<'a, T>
 impl<'a, T> Dfs<'a, T>
     where T: 'a + Node{
     /// panics if `index` >= graph.vertex_count()
-    fn new(graph: &'a Graph<T>, index: u32) -> Option<Self> {
-        if index >= graph.vertex_count() {
-            return None;
-        }
+    fn new(graph: &'a Graph<T>, index: u32) -> Self {
         let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
         let mut stack: Vec<u32> = Vec::with_capacity(graph.vertex_count() as usize);
-        stack.push(index);
-        handled[index as usize] = true;
-        let result = Dfs {
+        if index < graph.vertex_count() {
+            stack.push(index);
+            handled[index as usize] = true;
+        }
+
+        Dfs {
             graph,
             handled,
             stack,
-        };
-        Some(result)
+        }
     }
 }
 
