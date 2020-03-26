@@ -18,7 +18,7 @@ pub const DEFAULT_DOT_OPTIONS: &str = "bgcolor=\"transparent\";\n\tfontsize=50;\
         node [shape=ellipse, penwidth=1, \
         fontname=\"Courier\", pin=true ];\n\tsplines=true;";
 
-/// all of my error messages
+/// Error messages
 #[derive(Debug)]
 pub enum GraphErrors{
     /// ### somehow, the existing of the edge is a problem
@@ -574,6 +574,10 @@ impl<T: Node> Graph<T> {
     /// returns number of vertices present in graph
     pub fn vertex_count(&self) -> u32 {
         self.next_id
+    }
+
+    pub fn average_neighbor_count(&self) -> f32 {
+        (2 * self.edge_count()) as f32 / self.vertex_count() as f32
     }
 
     /// Returns two mutable references in a tuple
@@ -1159,90 +1163,6 @@ impl<'a, T> Iterator for Dfs<'a, T>
 mod tests {
     use super::*;
     use crate::node::TestNode;
-    use std::fs::File;
-    use std::io::prelude::*;
-    use rand_pcg::Pcg64;
-    use rand_core::SeedableRng;
-    use rand::Rng;
-
-    #[derive(Debug, Clone)]
-    pub struct PhaseNode {phase: f64,}
-
-    impl PhaseNode {
-        pub fn set_phase(&mut self, phase: f64) {
-            self.phase = phase;
-        }
-
-        pub fn get_phase(&self) -> f64 {
-            self.phase
-        }
-    }
-
-    impl Node for PhaseNode {
-        fn new_from_index(index: u32) -> Self {
-            PhaseNode { phase: 10.0 * index as f64 }
-        }
-
-        fn make_string(&self) -> Option<String> {
-            Some(format!("phase: {},", self.phase))
-        }
-
-        /// Override this, if you want to load the stored the network
-        fn parse_str(to_parse: &str) -> Option<(&str, Self)>
-            where Self: Sized
-        {
-            let identifier = "phase: ";
-            let mut split_index = to_parse.find(identifier)?;
-            split_index += identifier.len();
-            let remaining_to_parse = &to_parse[split_index..];
-
-            split_index = remaining_to_parse.find(",")?;
-            let (phase_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
-            remaining_to_parse = &remaining_to_parse[1..];
-            let phase = phase_str.parse::<f64>().ok()?;
-            let node = PhaseNode{ phase };
-
-            Some((remaining_to_parse, node))
-        }
-    }
-
-    #[test]
-    fn phase_test() {
-        let mut graph: Graph<PhaseNode> = Graph::new(4);
-        for i in 0..4 {
-            graph.add_edge(i, (i + 1) % 4).unwrap();
-        }
-
-        for i in 0..4 {
-            assert_eq!(
-                graph.at(i).get_phase(),
-                i as f64 * 10.0
-            );
-        }
-
-        for i in 0..4 {
-            graph.at_mut(i).set_phase(i as f64 * 0.5);
-        }
-
-        for i in 0..4 {
-            assert_eq!(
-                graph.at(i).get_phase(),
-                i as f64 * 0.5
-            );
-        }
-
-        let dot = graph.to_dot_with_labels(
-            "",
-            |contained, index| format!("Phase: {} at index {}", contained.get_phase(), index)
-        );
-
-        let mut read_in = File::open("TestData/phase_test.dot").expect("unable to open file");
-        let mut test_data = String::new();
-        read_in.read_to_string(&mut test_data).expect("unable to read file");
-        assert_eq!(test_data, dot);
-    }
-
-
 
 
     #[test]
@@ -1262,328 +1182,22 @@ mod tests {
         assert_eq!(0, c.get_id());
     }
 
-    #[test]
-    fn test_connected_components() {
-        let graph: Graph<TestNode> = Graph::new(20);
-        assert_eq!(vec![1;20], graph.connected_components());
 
-        let graph2: Graph<TestNode> = Graph::new(0);
-        assert_eq!(Vec::<u32>::new(), graph2.connected_components());
-    }
-
-    #[test]
-    fn test_multiple_connected_components() {
-        let graph = create_graph_1();
-        let components = graph.connected_components();
-        assert_eq!(components[0], 6);
-        assert_eq!(components[1], 4);
-        assert_eq!(components[2], 3);
-        for i in 3..components.len() {
-            assert_eq!(components[i], 1);
-        }
-    }
-
-    #[test]
-    fn test_q_core() {
-        let mut graph: Graph<TestNode> = Graph::new(20);
-        graph.add_edge(0, 1).unwrap();
-        graph.add_edge(0, 2).unwrap();
-        graph.add_edge(1, 2).unwrap();
-        assert_eq!(graph.q_core(2), Some(3));
-    }
-
-    #[test]
-    fn test_check_is_connected() {
-        let mut graph: Graph<TestNode> = Graph::new(10);
-        assert!(!graph.is_connected().unwrap());
-
-        // almost connect graph
-        for i in 0..8 {
-            graph.add_edge(i, i+1).unwrap();
-        }
-        assert!(!graph.is_connected().unwrap());
-
-        // connect graph
-        graph.add_edge(8, 9).unwrap();
-        assert!(graph.is_connected().unwrap());
-    }
-
-    #[test]
-    fn test_leaf_count() {
-        let graph = create_graph_1();
-        assert_eq!(2, graph.leaf_count());
-
-        let empty_graph: Graph<TestNode> = Graph::new(20);
-        assert_eq!(0, empty_graph.leaf_count());
-    }
-
-    fn create_graph_1() -> Graph<TestNode> {
-        let mut graph: Graph<TestNode> = Graph::new(20);
-
-        graph.add_edge(0, 1).unwrap();
-        graph.add_edge(0, 2).unwrap();
-        graph.add_edge(1, 2).unwrap();
-
-        // line of 6 vertices - no connected component
-        for i in 5..10 {
-            graph.add_edge(i, i + 1).unwrap();
-        }
-
-        // 4 completly connected nodes, each with 3 neighbors
-        for i in 11..15 {
-            for j in i+1..15 {
-                graph.add_edge(i, j).unwrap();
-            }
-        }
-        graph
-    }
-
-    #[test]
-    fn test_q_core_empty_graph() {
-        let graph: Graph<TestNode> = Graph::new(0);
-        assert_eq!(graph.q_core(1), None);
-        assert_eq!(graph.q_core(2), None);
-
-        let graph2: Graph<TestNode> = Graph::new(1);
-
-        assert_eq!(graph2.q_core(1), None);
-        assert_eq!(graph2.q_core(2), Some(0));
-    }
-
-    #[test]
-    fn test_q_core_multiple_components() {
-        let graph = create_graph_1();
-
-        assert_eq!(graph.q_core(2), Some(4));
-        assert_eq!(graph.q_core(3), Some(4));
-        assert_eq!(graph.q_core(4), Some(0));
-        assert_eq!(graph.q_core(1), None);
-    }
-
-    #[test]
-    fn test_q_core_complete_graph() {
-        let mut graph: Graph<TestNode> = Graph::new(20);
-        // create complete graph
-        for i in 0..graph.vertex_count() {
-            for j in i+1..graph.vertex_count() {
-                graph.add_edge(i, j).unwrap();
-            }
-        }
-
-        // since this is a complete graph, q core should always consist of 20 nodes
-        // as long as q < 20, as every node has 19 neighbors
-        for i in 2..20 {
-            assert_eq!(graph.q_core(i), Some(20));
-        }
-
-        assert_eq!(graph.q_core(20), Some(0));
-    }
-
-    #[test]
-    fn dot() {
-        let graph = create_graph_1();
-        let s = graph.to_dot();
-        let mut read_in = File::open("TestData/dotTest.dot").expect("unable to open file");
-        let mut test_data = String::new();
-        read_in.read_to_string(&mut test_data).expect("unable to read file");
-        assert_eq!(test_data, s);
-    }
-
-    #[test]
-    fn dot_labeled() {
-        let graph = create_graph_1();
-        let s = graph.to_dot_with_labels(DEFAULT_DOT_OPTIONS, |_, index| format!("Hey {}!", index));
-        let mut read_in = File::open("TestData/label_test.dot").expect("unable to open file");
-        let mut test_data = String::new();
-        // let mut f = File::create("label_test.dot").expect("Unable to create file");
-        // f.write_all(s.as_bytes()).expect("Unable to write data");
-        read_in.read_to_string(&mut test_data).expect("unable to read file");
-        assert_eq!(test_data, s);
-    }
+#[test]
+fn parsing_invalid_node_container() {
+    // parsing gibberish should return None, not panic!
+    let s = "geufgeiruwgeuwhuiwehfoipaerughpsiucvhuirhgvuir";
+    let res = NodeContainer::<TestNode>::parse_str(&s);
+    assert!(res.is_none());
+}
 
     #[test]
     #[should_panic]
     fn test_printing_default() {
-        let graph = create_graph_1();
-        println!("{}",graph.get_container(0));
+        let mut graph: Graph<TestNode> = Graph::new(20);
+        graph.add_edge(0, 1).unwrap();
+
+        println!("{}", graph.get_container(0));
     }
 
-    fn equal_graphs<T: Node>(g1: Graph<T>, g2: Graph<T>) {
-        assert_eq!(g1.edge_count(), g2.edge_count());
-        assert_eq!(g1.vertex_count(), g2.vertex_count());
-        for (n0, n1) in g2.node_container_iter().zip(g1.node_container_iter()) {
-            assert_eq!(n1.get_id(), n1.get_id());
-            assert_eq!(n1.neighbor_count(), n1.neighbor_count());
-
-            for (i, j) in n1.neighbors().zip(n0.neighbors()) {
-                assert_eq!(i, j);
-            }
-        }
-    }
-
-    #[test]
-    fn graph_parsing() {
-        let mut graph: Graph<PhaseNode> = Graph::new(4);
-        for i in 0..4 {
-            graph.add_edge(i, (i + 1) % 4).unwrap();
-        }
-        format!("{}",graph.get_container(0));
-        println!("{}", graph);
-        let g = graph.to_string();
-        let try_parse = Graph::<PhaseNode>::parse_str(&g);
-
-        let (_, parsed_graph) = try_parse.unwrap();
-
-        println!("parsed: {}", parsed_graph);
-
-        // check, that graphs are equal
-        equal_graphs(graph, parsed_graph);
-
-        // bigger graph
-        let mut graph: Graph<PhaseNode> = Graph::new(40);
-        for i in 0..40 {
-            for j in i+1..40 {
-                graph.add_edge(i, j).unwrap();
-            }
-        }
-
-        let s = graph.to_string();
-        let try_parse = Graph::<PhaseNode>::parse_str(&s);
-        let (_, parsed_graph) = try_parse.unwrap();
-        // check, that graphs are equal
-        equal_graphs(graph, parsed_graph);
-
-        graph_parsing_compare_random(232, 30);
-    }
-
-    #[test]
-    #[ignore]
-    fn graph_parsing_big_random() {
-        graph_parsing_compare_random(23545635745, 1000);
-    }
-
-    fn graph_parsing_compare_random(seed: u64, size: u32) {
-        // now check with a random graph
-        let mut rng = Pcg64::seed_from_u64(seed);
-        let mut graph: Graph<PhaseNode> = Graph::new(size);
-        for i in 0..size {
-            for j in i+1..size {
-                if rng.gen::<f64>() <= 0.6 {
-                    graph.add_edge(i, j).unwrap();
-                }
-            }
-        }
-
-        let s = graph.to_string();
-        let try_parse = Graph::<PhaseNode>::parse_str(&s);
-        let (_, parsed_graph) = try_parse.unwrap();
-        // check, that graphs are equal
-        for i in 0..size as usize {
-            assert_eq!(
-                graph.at(i).get_phase(),
-                parsed_graph.at(i).get_phase()
-            );
-        }
-
-        equal_graphs(graph, parsed_graph);
-    }
-
-    #[test]
-    fn parse_node_container() {
-        let mut graph: Graph<PhaseNode> = Graph::new(40);
-        for i in 0..40 {
-            for j in i+1..40 {
-                graph.add_edge(i, j).unwrap();
-            }
-        }
-
-        graph.at_mut(0).set_phase(0.8324567623382901);
-
-        assert_eq!(graph.at(0).get_phase(), 0.8324567623382901);
-
-        let c0 = graph.get_container(0);
-
-        let s = c0.to_string();
-        let try_parse = NodeContainer::<PhaseNode>::parse_str(&s);
-
-        // also asserts, that result is Some
-        let (_, container) = try_parse.unwrap();
-
-        assert_eq!(c0.get_id(), container.get_id());
-        assert_eq!(c0.neighbor_count(), container.neighbor_count());
-
-        for (i, j) in c0.neighbors().zip(container.neighbors()) {
-            assert_eq!(i, j);
-        }
-
-        assert_eq!(
-            c0.get_contained().get_phase(),
-            container.get_contained().get_phase()
-        );
-
-    }
-
-    #[test]
-    fn clone(){
-        let mut rng = Pcg64::seed_from_u64(123174123);
-        let mut graph: Graph<PhaseNode> = Graph::new(100);
-        for i in 0..100 {
-            for j in i+1..100 {
-                if rng.gen::<f64>() <= 0.6 {
-                    graph.add_edge(i, j).unwrap();
-                }
-            }
-        }
-
-        let clone = graph.clone();
-        for i in 0..100 as usize {
-            assert_eq!(
-                graph.at(i).get_phase(),
-                clone.at(i).get_phase()
-            );
-        }
-
-        equal_graphs(graph, clone);
-    }
-
-    #[test]
-    fn parsing_invalid_node_container() {
-        // parsing gibberish should return None, not panic!
-        let s = "geufgeiruwgeuwhuiwehfoipaerughpsiucvhuirhgvuir";
-        let res = NodeContainer::<PhaseNode>::parse_str(&s);
-        assert!(res.is_none());
-    }
-
-    #[test]
-    fn diameter_test() {
-        let mut graph: Graph<TestNode> = Graph::new(5);
-        for i in 0..4 {
-            graph.add_edge(i, i + 1).unwrap();
-        }
-        assert_eq!(4, graph.diameter().unwrap());
-
-        graph = Graph::new(4);
-
-        for i in 0..4 {
-            graph.add_edge(i, (i + 1) % 4).unwrap();
-        }
-        assert_eq!(2, graph.diameter().unwrap());
-
-        graph = Graph::new(40);
-        for i in 0..40 {
-            graph.add_edge(i, (i + 1) % 40).unwrap();
-        }
-        assert_eq!(20, graph.diameter().unwrap());
-
-        graph = Graph::new(40);
-        for i in 0..40 {
-            for j in i+1..40 {
-                graph.add_edge(i, j).unwrap();
-            }
-        }
-        assert_eq!(1, graph.diameter().unwrap());
-
-        graph = Graph::new(1);
-        graph.diameter();
-    }
 }
