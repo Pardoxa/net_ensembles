@@ -8,6 +8,7 @@
 //! use rand_core::SeedableRng;
 //!
 //! // Define your own node
+//! #[derive(Clone)]
 //! struct ExampleNode { }
 //!
 //! // it has to implement the Node trait
@@ -28,6 +29,7 @@
 use crate::node::Node;
 use rand_core::SeedableRng;
 use crate::graph::Graph;
+use crate::graph::GraphErrors;
 
 /// # Implements Erdős-Rényi graph
 pub struct ER<T: Node, R: rand::Rng + SeedableRng> {
@@ -65,14 +67,22 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
     }
 
     /// Add or remove edge according to ER-prob
-    pub fn random_step(&mut self) {
-        let (e1, e2) = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
+    ///
+    /// will be changed shortly
+    pub fn random_step(&mut self) -> ((u32, u32), Result<(), GraphErrors>) {
+        let edge = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
 
         // Try to add edge. else: remove edge
         if self.rng.gen::<f64>() <= self.prob {
-            let _ = self.graph.add_edge(e1, e2);
+            (
+                edge,
+                self.graph.add_edge(edge.0, edge.1)
+            )
         } else {
-            let _ = self.graph.remove_edge(e1, e2);
+            (
+                edge,
+                self.graph.remove_edge(edge.0, edge.1)
+            )
         }
     }
 
@@ -169,6 +179,16 @@ mod testing {
         assert_eq!(e.get_graph().edge_count(), 28);
         assert_eq!(20, e.get_graph().vertex_count());
     }
+
+    //#[test]
+    //fn bi_node_connected_components() {
+    //    let rng = Pcg64::seed_from_u64(7123256);
+    //    let e = ER::<TestNode, Pcg64>::new(20, 2.7, rng);
+    //    let components = e.get_graph().clone().bi_node_connected_component();
+    //    println!("{:?}", components);
+    //    println!("{}", e.get_graph().to_dot());
+    //    panic!("");
+    //}
 
     #[test]
     fn test_complete_graph() {

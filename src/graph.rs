@@ -7,6 +7,7 @@ use crate::node::Node;
 use std::cmp::max;
 use std::convert::TryFrom;
 use std::collections::VecDeque;
+use std::collections::HashSet;
 
 /// # constant for dot options
 /// ```
@@ -214,6 +215,10 @@ impl<T: Node> NodeContainer<T> {
 
         Ok(())
     }
+
+    fn get_adj_last(&self) -> Option<&u32> {
+        self.adj.last()
+    }
 }
 
 /// # Contains the topology and **implements functions** for analyzing topology
@@ -225,7 +230,7 @@ impl<T: Node> NodeContainer<T> {
 /// use std::fs::File;
 /// use std::io::prelude::*;
 /// // define your own vertices, if you need to store extra information at each vertex
-/// #[derive(Debug)]
+/// #[derive(Debug, Clone)]
 /// pub struct PhaseNode {phase: f64,}
 ///
 /// // implement whatever you need
@@ -309,7 +314,6 @@ impl<T: Node> NodeContainer<T> {
 /// Now you can use `circo` or similar programs to create a pdf from that.
 /// Search for **graphviz** for more info.
 /// # Example 2
-/// * if you want to be able to clone the graph, only `#[derive(Clone)]`
 /// * if you also want to be able to store your graph, you have to override two functions of the Node trait, as shown below
 /// ```
 /// use net_ensembles::{Node,Graph};
@@ -636,6 +640,16 @@ impl<T: Node> Graph<T> {
     /// returns total number of edges in graph
     pub fn edge_count(&self) -> u32 {
         self.edge_count
+    }
+
+
+    pub fn edge_count_at(&self, index: usize) -> Option<usize> {
+        Some(
+            self
+                .vertices
+                .get(index)?
+                .neighbor_count()
+        )
     }
 
     fn get_container(&self, index: usize) -> &NodeContainer<T> {
@@ -1002,6 +1016,155 @@ impl<T: Node> Graph<T> {
         let (.., depth) = iter.last()?;
         Some(depth)
     }
+
+
+    /// # calculate sizes of all binode connected components
+    /// * returns (reverse) **ordered vector of sizes**
+    /// i.e. the biggest component is of size `result[0]` and the smallest is of size `result[result.len() - 1]`
+    /// * destroys the underlying topology and therefore moves `self`
+    /// * if you still need your graph,
+    /// use `self.clone().vertex_biconnected_components(false/true)` for your calculations
+    /// # Definition: `vertex_biconnected_components(false)`
+    /// Here, the (vertex) biconnected component of a graph is defined as maximal subset of nodes,
+    /// where any one node could be removed and the remaining nodes would still be a connected component.
+    /// ## Note
+    /// Two vertices connected by an edge are considered to be biconnected, since after the
+    /// removal of one vertex (and the corresponding edge), only one vertex remains.
+    /// This vertex is in a connected component with itself.
+    /// # Alternative Definition: `vertex_biconnected_components(true)`
+    /// If you want to use the alternative definition:
+    /// > The biconnected component is defined as maximal subset of vertices, where each vertex can be
+    /// > reached by at least two node independent paths
+    ///
+    /// The alternative definition just removes all 2s from the result vector.
+    /// # Citations
+    /// I used the algorithm described in this paper:
+    /// >  J. Hobcroft and R. Tarjan, "Algorithm 447: Efficient Algorithms for Graph Manipulation"
+    /// > *Commun. ACM*, **16**:372-378, 1973, DOI: [10.1145/362248.362272](https://doi.org/10.1145/362248.362272)
+    ///
+    /// You can also take a look at:
+    /// > M. E. J. Newman, "Networks: an Introduction" *Oxfort University Press*, 2010, ISBN: 978-0-19-920665-0.
+    pub fn vertex_biconnected_components(mut self, alternative_definition: bool) -> Vec<usize> {
+
+        let mut low: Vec<usize> = vec![0; self.vertex_count() as usize];
+        let mut number: Vec<usize> = vec![0; self.vertex_count() as usize];
+        let mut handled: Vec<bool> = vec![false; self.vertex_count() as usize];
+        let mut edge_stack: Vec<(u32, u32)> = Vec::with_capacity(self.vertex_count() as usize);
+        let mut vertex_stack: Vec<u32> = Vec::with_capacity(self.vertex_count() as usize);
+        let mut biconnected_components: Vec<Vec<(u32, u32)>> = Vec::new();
+
+        let mut next_edge: (u32, u32);
+
+        for pivot in 0..self.vertex_count(){
+            let pivot_as_usize = pivot as usize;
+            if handled[pivot_as_usize] {
+                continue;
+            }
+            low[pivot_as_usize] = 0;
+            number[pivot_as_usize] = 0;
+            handled[pivot_as_usize] = true;
+            vertex_stack.push(pivot);
+
+            while let Some(top_vertex) = vertex_stack.last() {
+                // if it has neighbors
+                let top_vertex_usize = *top_vertex as usize;
+                // does the vertex have neighbors?
+                if self
+                    .edge_count_at(top_vertex_usize)
+                    .unwrap() > 0
+                    {
+                        // remove one edge from graph, put it on stack
+                        next_edge = (
+                            *top_vertex,
+                            *self
+                            .get_container(top_vertex_usize)
+                            .get_adj_last()
+                            .unwrap()
+                        );
+                        edge_stack.push(next_edge);
+                        let next_vertex = next_edge.1 as usize;
+                        self.remove_edge(next_edge.0, next_edge.1).unwrap();
+
+                        // check if next_vertex is not handled yet
+                        if !handled[next_vertex] {
+                            // number new point
+                            number[next_vertex] = vertex_stack.len();
+                            // add to stack of points
+                            vertex_stack.push(next_edge.1);
+                            // set LOWPOINT of the new point to NUMBER of current point
+                            low[next_vertex] = number[top_vertex_usize];
+                            // now the point was visited once -> handled
+                            handled[next_vertex] = true;
+                        }
+                        // Head of edge new point? NO -> Number of Head of edge lower than LOWPOINT of top point?
+                        else if number[next_vertex] < low[top_vertex_usize] {
+                            // Set LOWPOINT of top Point to that number
+                            low[top_vertex_usize] = number[next_vertex];
+                        }
+                    }
+                    // top point on stack has no edge
+                    else {
+                        vertex_stack.pop();
+                        // at least one point in stack?
+                        if let Some(next_vertex) = vertex_stack.last() {
+                            // LOWPOINT of top point equals NUMBER of next point on stack?
+                            if low[top_vertex_usize] == number[*next_vertex as usize]{
+                                let mut tmp_component: Vec<(u32, u32)> = Vec::new();
+
+                                while let Some(current_edge) = edge_stack.last() {
+                                    if number[current_edge.1 as usize] < number[*next_vertex as usize]
+                                    || number[current_edge.0 as usize] < number[*next_vertex as usize]
+                                    {
+                                        break;
+                                    }
+                                    tmp_component.push(*current_edge);
+                                    edge_stack.pop();
+                                }
+                                // add to biconnected_components
+                                if !tmp_component.is_empty(){
+                                    biconnected_components.push(tmp_component);
+                                }
+                            }
+                            // LOWPOINT of top point equals NUMBER of next point on stack? NO
+                            else if low[top_vertex_usize] < low[*next_vertex as usize] {
+                                // Set LOWPOINT of next point equal LOWPOINT of current point if less
+                                low[*next_vertex as usize] = low[top_vertex_usize]
+                            }
+
+                        }
+                        // no more vertices in stack stack?
+                        else {
+                            // exit loop
+                            break;
+                        }
+                    }
+                }
+        }
+        let mut result = Vec::with_capacity(biconnected_components.len());
+
+        for component in biconnected_components {
+            let mut size_set = HashSet::new();
+            for edge in component {
+                size_set.insert(edge.0);
+                size_set.insert(edge.1);
+            }
+            result.push(size_set.len());
+        }
+
+        if alternative_definition {
+            result.retain(|&val| val > 2);
+        }
+        // sort by reverse
+        // unstable here means inplace and ordering of equal elements is not guaranteed
+        result.sort_unstable_by(
+            |a, b|
+            a.partial_cmp(b)
+                .unwrap()
+                .reverse()
+        );
+
+        result
+    }
 }
 
 /// # Breadth first search Iterator with **index** and **depth** of corresponding nodes
@@ -1183,13 +1346,13 @@ mod tests {
     }
 
 
-#[test]
-fn parsing_invalid_node_container() {
-    // parsing gibberish should return None, not panic!
-    let s = "geufgeiruwgeuwhuiwehfoipaerughpsiucvhuirhgvuir";
-    let res = NodeContainer::<TestNode>::parse_str(&s);
-    assert!(res.is_none());
-}
+    #[test]
+    fn parsing_invalid_node_container() {
+        // parsing gibberish should return None, not panic!
+        let s = "geufgeiruwgeuwhuiwehfoipaerughpsiucvhuirhgvuir";
+        let res = NodeContainer::<TestNode>::parse_str(&s);
+        assert!(res.is_none());
+    }
 
     #[test]
     #[should_panic]

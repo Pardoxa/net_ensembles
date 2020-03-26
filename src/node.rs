@@ -2,7 +2,8 @@
 
 
 /// What every node should be able to do
-pub trait Node {
+pub trait Node
+where Self: Clone{
     /// how to construct a blank object
     fn new_from_index(index: u32) -> Self;
 
@@ -20,6 +21,7 @@ pub trait Node {
 }
 
 /// minimal example for a node
+#[derive(Clone)]
 pub struct TestNode {}
 
 

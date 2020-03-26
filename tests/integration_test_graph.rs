@@ -191,3 +191,43 @@ fn diameter_test() {
     graph = Graph::new(1);
     graph.diameter();
 }
+
+
+#[test]
+fn bi_test1() {
+    let mut graph: Graph<TestNode> = Graph::new(6);
+    graph.add_edge(0, 1).unwrap();
+    graph.add_edge(1, 2).unwrap();
+    graph.add_edge(2, 0).unwrap();
+    graph.add_edge(3, 4).unwrap();
+    graph.add_edge(5, 4).unwrap();
+
+    let components = graph.clone().vertex_biconnected_components(false);
+    assert_eq!(components, vec![3,2,2]);
+    assert_eq!(graph.vertex_biconnected_components(true), vec![3]);
+}
+
+#[test]
+fn bi_test2() {
+    let graph: Graph<TestNode> = Graph::new(6);
+
+    let components = graph.vertex_biconnected_components(false);
+    assert_eq!(components, vec![]);
+
+    let mut graph: Graph<TestNode> = Graph::new(6);
+    graph.add_edge(0, 1).unwrap();
+    graph.add_edge(1, 2).unwrap();
+    graph.add_edge(2, 0).unwrap();
+
+    let components = graph.vertex_biconnected_components(false);
+    assert_eq!(components, vec![3]);
+
+    let mut graph: Graph<TestNode> = Graph::new(5);
+    graph.add_edge(0, 1).unwrap();
+    graph.add_edge(1, 2).unwrap();
+    graph.add_edge(2, 0).unwrap();
+    graph.add_edge(2, 3).unwrap();
+    graph.add_edge(4, 3).unwrap();
+    graph.add_edge(4, 0).unwrap();
+    assert_eq!(vec![5], graph.vertex_biconnected_components(false));
+}

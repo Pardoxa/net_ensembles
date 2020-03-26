@@ -105,7 +105,7 @@ fn graph_parsing() {
     for i in 0..4 {
         graph.add_edge(i, (i + 1) % 4).unwrap();
     }
-    
+
     println!("{}", graph);
     let g = graph.to_string();
     let try_parse = Graph::<PhaseNode>::parse_str(&g);
