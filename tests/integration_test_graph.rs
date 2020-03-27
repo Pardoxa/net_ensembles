@@ -270,3 +270,36 @@ fn vertex_load() {
     println!("edge_betweenness: {:?}", edge_b);
     assert_eq!(edge_b, vec![0.0, 4.666666666666666, 8.0, 0.6666666666666665, 8.666666666666668, 10.0, 0.0, 0.0]);
 }
+
+
+#[test]
+fn transitivity() {
+    let mut graph: Graph<TestNode> = Graph::new(3);
+    graph.add_edge(0, 1).unwrap();
+    graph.add_edge(0, 2).unwrap();
+    graph.add_edge(2, 1).unwrap();
+
+    assert_eq!(1.0, graph.transitivity());
+
+    graph = Graph::new(6);
+    graph.add_edge(0,1).unwrap();
+    graph.add_edge(1,2).unwrap();
+    graph.add_edge(2,3).unwrap();
+    graph.add_edge(3,4).unwrap();
+    graph.add_edge(4,0).unwrap();
+    graph.add_edge(4,1).unwrap();
+    graph.add_edge(3,5).unwrap();
+
+    assert_eq!(3.0 / 11.0, graph.transitivity());
+
+    graph = Graph::new(6);
+    graph.add_edge(1,2).unwrap();
+    graph.add_edge(2,3).unwrap();
+    graph.add_edge(3,4).unwrap();
+    graph.add_edge(4,5).unwrap();
+    graph.add_edge(5,1).unwrap();
+    graph.add_edge(5,2).unwrap();
+    graph.add_edge(4,0).unwrap();
+
+    assert_eq!(3.0 / 11.0, graph.transitivity());
+}

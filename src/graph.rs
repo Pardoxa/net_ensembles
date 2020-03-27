@@ -1245,15 +1245,40 @@ impl<T: Node> Graph<T> {
         b
     }
 
-    //fn transitivity(&self) {
-    //    //let mut path_count;
-    //    //let mut closed_path_count;
-    //    for source_index in 0..self.vertex_count() as usize {
-    //        for neighbor_1 in self.container(source_index).neighbors(){
+    /// # Calculates transitivity of graph
+    /// * related to cluster coefficient (Note: transitivity and cluster coefficient are similar,
+    /// but **not** necessarily equal)
+    /// ## Definition
+    /// > transitivity = (number of closed paths of length two) / (number of paths of length two)
+    /// ## Citations
+    /// For the definition see for example:
+    /// > M. E. J. Newman, "Networks: an Introduction" *Oxfort University Press*, 2010, ISBN: 978-0-19-920665-0.
+    pub fn transitivity(&self) -> f64 {
+        let mut path_count = 0u64;
+        let mut closed_path_count = 0u64;
+        for source_index in 0..self.vertex_count() {
+            for neighbor_1 in self
+                                .container(source_index as usize)
+                                .neighbors()
+            {
+                for neighbor_2 in self
+                                    .container(*neighbor_1 as usize)
+                                    .neighbors()
+                                    .filter(|&i| *i != source_index)  // do not use edge we came from
+                {
+                    if self
+                        .container(*neighbor_2 as usize)
+                        .is_adjacent(&source_index)
+                    {
+                        closed_path_count += 1;
+                    }
+                    path_count += 1;
+                }
+            }
+        }
 
-    //        }
-    //    }
-    //}
+        closed_path_count as f64 / path_count as f64
+    }
 
 }
 
