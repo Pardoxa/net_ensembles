@@ -216,8 +216,8 @@ impl<T: Node> NodeContainer<T> {
         Ok(())
     }
 
-    fn get_adj_last(&self) -> Option<&u32> {
-        self.adj.last()
+    fn get_adj_first(&self) -> Option<&u32> {
+        self.adj.first()
     }
 }
 
@@ -999,7 +999,7 @@ impl<T: Node> Graph<T> {
             None
         } else {
             // well, then calculate from every node
-            // (except 1 node) and use maximum foun
+            // (except 1 node) and use maximum found
             self.node_container_iter()
             .skip(1)
             .map( |n|
@@ -1012,8 +1012,8 @@ impl<T: Node> Graph<T> {
     /// calculate the size of the longest shortest path **starting from** vertex with **index** `index`
     /// using breadth first search
     pub fn longest_shortest_path_from_index(&self, index: u32) -> Option<u32> {
-        let iter = Bfs::new(&self, index);
-        let (.., depth) = iter.last()?;
+        let (.., depth) = self.bfs_index_depth(index)
+                            .last()?;
         Some(depth)
     }
 
@@ -1078,7 +1078,7 @@ impl<T: Node> Graph<T> {
                             *top_vertex,
                             *self
                             .get_container(top_vertex_usize)
-                            .get_adj_last()
+                            .get_adj_first()
                             .unwrap()
                         );
                         edge_stack.push(next_edge);
@@ -1165,6 +1165,86 @@ impl<T: Node> Graph<T> {
 
         result
     }
+
+    /// # Closely related (most of the time equal) to betweeness
+    /// ## calculates vertex_load of all vertices in O(edges * vertices)
+    /// * calculates the vertex_load for every vertex
+    /// * defined as how many shortest paths pass through each vertex
+    ///
+    /// | variant             |                                                                                                                        |
+    /// |---------------------|------------------------------------------------------------------------------------------------------------------------|
+    /// | `vertex_load(true)`  | includes endpoints in calculation (for a complete graph with `N` vertices, every node will have vertex_load `N - 1`)  |
+    /// | `vertex_load(false)` | excludes endpoints in calculation (for a complete graph with `N` vertices, every node will have vertex_load `0`)      |
+    /// # Citations
+    /// I used the algorithm described in
+    /// > M. E. J. Newman, "Scientific collaboration networks. II. Shortest paths, weighted networks, and centrality",
+    /// > Phys. Rev. E **64**, 016132, 2001, DOI: [10.1103/PhysRevE.64.016132](https://doi.org/10.1103/PhysRevE.64.016132)
+    ///
+    /// see also:
+    /// > M. E. J. Newman, "Erratum: Scientific collaboration networks. II. Shortest paths, weighted networks, and centrality",
+    /// > Phys. Rev. E **73**, 039906, 2006, DOI: [10.1103/PhysRevE.73.039906](https://doi.org/10.1103/PhysRevE.73.039906)
+    pub fn vertex_load(&self, include_endpoints: bool) -> Vec<f64> {
+
+        let mut queue0 = VecDeque::with_capacity(self.vertex_count() as usize);
+        let mut queue1 = VecDeque::with_capacity(self.vertex_count() as usize);
+        let mut ordering: Vec<u32> = Vec::with_capacity(self.vertex_count() as usize);
+        let mut b = vec![0.0; self.vertex_count() as usize];
+        // init
+        for i in 0..self.vertex_count() {
+            let mut predecessor: Vec<Vec<u32>> = vec![Vec::new(); self.vertex_count() as usize];
+            let mut distance: Vec<Option<u32>> = vec![None; self.vertex_count() as usize];
+            let mut depth = 0;
+            queue0.push_back(i);
+            distance[i as usize] = Some(depth);
+            let mut b_k = vec![1f64; self.vertex_count() as usize];
+
+            // build up predecessor and ordering information
+            while let Some(index) = queue0.pop_front() {
+                ordering.push(index); // to get indices in reverse order of distance
+                let container = self.get_container(index as usize);
+                for neighbor in container.neighbors() {
+                    if let Some(d) = distance[*neighbor as usize] {
+                        if d == depth + 1 {
+                            predecessor[*neighbor as usize].push(index);
+                        }
+                    }
+                    // None
+                    else {
+                        distance[*neighbor as usize] = Some(depth + 1);
+                        queue1.push_back(*neighbor);
+                        predecessor[*neighbor as usize].push(index);
+                    }
+                }
+                if queue0.is_empty() {
+                    std::mem::swap(&mut queue0, &mut queue1);
+                    depth += 1;
+                }
+            }
+
+            // calculate vertex_load resulting from the shortest paths starting at vertex i
+            while let Some(index) = ordering.pop() {
+                // skip last vertex
+                if ordering.is_empty(){
+                    break;
+                }
+                // add number of shortest path to total count
+
+                b[index as usize] += b_k[index as usize];
+                if !include_endpoints {
+                    b[index as usize] -= 1.0;
+                }
+
+
+                let fraction = b_k[index as usize] / predecessor[index as usize].len() as f64;
+                for pred in predecessor[index as usize].iter() {
+                    b_k[*pred as usize] += fraction;
+                }
+            }
+
+        }
+        b
+    }
+
 }
 
 /// # Breadth first search Iterator with **index** and **depth** of corresponding nodes

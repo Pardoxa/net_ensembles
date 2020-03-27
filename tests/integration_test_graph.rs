@@ -231,3 +231,42 @@ fn bi_test2() {
     graph.add_edge(4, 0).unwrap();
     assert_eq!(vec![5], graph.vertex_biconnected_components(false));
 }
+
+#[test]
+fn vertex_load() {
+    let mut graph: Graph<TestNode> = Graph::new(4);
+    // create complete graph
+    for i in 0..graph.vertex_count() {
+        for j in i+1..graph.vertex_count() {
+            graph.add_edge(i, j).unwrap();
+        }
+    }
+    let edge_b = graph.vertex_load(true);
+    assert_eq!(edge_b, vec![3.0, 3.0, 3.0, 3.0]);
+    let edge_b = graph.vertex_load(false);
+    assert_eq!(edge_b, vec![0.0, 0.0, 0.0, 0.0]);
+
+    let graph: Graph<TestNode> = Graph::new(4);
+    let edge_b = graph.vertex_load(true);
+    assert_eq!(edge_b, vec![0.0, 0.0, 0.0, 0.0]);
+
+    // https://www.researchgate.net/publication/304065361_A_computationally_lightweight_and_localized_centrality_metric_in_lieu_of_betweenness_centrality_for_complex_network_analysis/figures?lo=1
+    let mut graph: Graph<TestNode> = Graph::new(8);
+    graph.add_edge(0, 1).unwrap();
+    graph.add_edge(0, 2).unwrap();
+    graph.add_edge(2, 1).unwrap();
+    graph.add_edge(5, 1).unwrap();
+    graph.add_edge(2, 3).unwrap();
+    graph.add_edge(2, 4).unwrap();
+    graph.add_edge(4, 3).unwrap();
+    graph.add_edge(5, 3).unwrap();
+    graph.add_edge(4, 5).unwrap();
+    graph.add_edge(4, 7).unwrap();
+    graph.add_edge(4, 6).unwrap();
+    graph.add_edge(5, 7).unwrap();
+    graph.add_edge(5, 6).unwrap();
+    graph.add_edge(6, 7).unwrap();
+    let edge_b = graph.vertex_load(false);
+    println!("edge_betweenness: {:?}", edge_b);
+    assert_eq!(edge_b, vec![0.0, 4.666666666666666, 8.0, 0.6666666666666665, 8.666666666666668, 10.0, 0.0, 0.0]);
+}

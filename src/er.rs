@@ -23,7 +23,7 @@
 //! // the following creates an ER graph with 20 vertices and a connectivity of 0.3
 //! // and uses thre random number generator rng
 //! let e = net_ensembles::ER::<ExampleNode, Pcg64>::new(20, 0.3, rng);
-//! assert_eq!(20, e.get_graph().vertex_count());
+//! assert_eq!(20, e.graph().vertex_count());
 //! ```
 //! Take a look at the struct `ER` for details
 use crate::node::Node;
@@ -104,12 +104,12 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
     /// returns reference to the underlying topology aka, the `Graph<T>`
     ///
     /// Use this to call functions regarding the topology
-    pub fn get_graph(&self) -> &Graph<T> {
+    pub fn graph(&self) -> &Graph<T> {
         &self.graph
     }
 
     #[allow(dead_code)]
-    fn get_mut_graph(&mut self) -> &mut Graph<T> {
+    fn graph_mut(&mut self) -> &mut Graph<T> {
         &mut self.graph
     }
 }
@@ -140,34 +140,34 @@ mod testing {
     fn test_edge_count() {
         // create empty graph
         let mut e = test_graph(12, 100, 0.0);
-        let ec = e.get_graph().edge_count();
+        let ec = e.graph().edge_count();
         assert_eq!(0, ec);
         // empty graph should not be connected:
         assert!(
-            !e.get_graph()
+            !e.graph()
                 .is_connected()
                 .expect("test_edge_count error 1")
         );
 
         // add edge
-        e.get_mut_graph()
+        e.graph_mut()
             .add_edge(0,1)
             .unwrap();
-        let ec_1 = e.get_graph().edge_count();
+        let ec_1 = e.graph().edge_count();
         assert_eq!(1, ec_1);
 
-        let mut res = e.get_mut_graph()
+        let mut res = e.graph_mut()
             .add_edge(0,1);
         assert!(res.is_err());
 
         // remove edge
-        e.get_mut_graph()
+        e.graph_mut()
             .remove_edge(0, 1)
             .unwrap();
-        let ec_0 = e.get_graph().edge_count();
+        let ec_0 = e.graph().edge_count();
         assert_eq!(0, ec_0);
 
-        res = e.get_mut_graph()
+        res = e.graph_mut()
             .remove_edge(0, 1);
         assert!(res.is_err());
     }
@@ -176,27 +176,17 @@ mod testing {
     fn test_graph_construction() {
         let rng = Pcg64::seed_from_u64(76);
         let e = ER::<TestNode, Pcg64>::new(20, 2.7, rng);
-        assert_eq!(e.get_graph().edge_count(), 28);
-        assert_eq!(20, e.get_graph().vertex_count());
+        assert_eq!(e.graph().edge_count(), 28);
+        assert_eq!(20, e.graph().vertex_count());
     }
-
-    //#[test]
-    //fn bi_node_connected_components() {
-    //    let rng = Pcg64::seed_from_u64(7123256);
-    //    let e = ER::<TestNode, Pcg64>::new(20, 2.7, rng);
-    //    let components = e.get_graph().clone().bi_node_connected_component();
-    //    println!("{:?}", components);
-    //    println!("{}", e.get_graph().to_dot());
-    //    panic!("");
-    //}
 
     #[test]
     fn test_complete_graph() {
         let rng = Pcg64::seed_from_u64(76);
         let e = ER::<TestNode, Pcg64>::new(20, 19.0, rng);
-        assert_eq!(20, e.get_graph().vertex_count());
-        assert_eq!(190, e.get_graph().edge_count());
-        assert!(e.get_graph().is_connected().expect("test_complete_graph error"));
+        assert_eq!(20, e.graph().vertex_count());
+        assert_eq!(190, e.graph().edge_count());
+        assert!(e.graph().is_connected().expect("test_complete_graph error"));
     }
 
     #[test]
