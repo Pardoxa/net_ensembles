@@ -152,12 +152,12 @@ impl<T: Node> NodeContainer<T> {
     }
 
     /// return reference to what the NodeContainer contains
-    pub fn get_contained(&self) -> &T {
+    pub fn contained(&self) -> &T {
         &self.node
     }
 
     /// return mut reference to what the NodeContainer contains
-    pub fn get_contained_mut(&mut self) -> &mut T {
+    pub fn contained_mut(&mut self) -> &mut T {
         &mut self.node
     }
 
@@ -174,7 +174,7 @@ impl<T: Node> NodeContainer<T> {
     /// returns id of container
     /// ## Note:
     /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
-    pub fn get_id(&self) -> u32 {
+    pub fn id(&self) -> u32 {
         self.id
     }
 
@@ -186,10 +186,10 @@ impl<T: Node> NodeContainer<T> {
     }
 
     fn push(&mut self, other: &mut NodeContainer<T>) -> Result<(),GraphErrors> {
-        if self.is_adjacent(&other.get_id()) {
+        if self.is_adjacent(&other.id()) {
             return Err(GraphErrors::EdgeExists);
         }
-        self.adj.push(other.get_id());
+        self.adj.push(other.id());
         other.adj.push(self.id);
         Ok(())
     }
@@ -206,12 +206,12 @@ impl<T: Node> NodeContainer<T> {
 
     /// Tries to remove edges, returns error `GraphErrors::EdgeDoesNotExist` if impossible
     fn remove(&mut self, other: &mut NodeContainer<T>) -> Result<(),GraphErrors> {
-        if !self.is_adjacent(&other.get_id()){
+        if !self.is_adjacent(&other.id()){
             return Err(GraphErrors::EdgeDoesNotExist);
         }
 
-        self.swap_delete_element(other.get_id());
-        other.swap_delete_element(self.get_id());
+        self.swap_delete_element(other.id());
+        other.swap_delete_element(self.id());
 
         Ok(())
     }
@@ -442,8 +442,8 @@ impl<T: Node> NodeContainer<T> {
 /// fn assert_equal_graphs(g1: &Graph<PhaseNode>, g2: &Graph<PhaseNode>) {
 ///     assert_eq!(g1.edge_count(), g2.edge_count());
 ///     assert_eq!(g1.vertex_count(), g2.vertex_count());
-///     for (n0, n1) in g2.node_container_iter().zip(g1.node_container_iter()) {
-///         assert_eq!(n1.get_id(), n1.get_id());
+///     for (n0, n1) in g2.container_iter().zip(g1.container_iter()) {
+///         assert_eq!(n1.id(), n1.id());
 ///         assert_eq!(n1.neighbor_count(), n1.neighbor_count());
 ///
 ///         for (i, j) in n1.neighbors().zip(n0.neighbors()) {
@@ -477,7 +477,7 @@ pub struct Graph<T: Node> {
 impl<T: Node> fmt::Display for Graph<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s = String::new();
-        for v in self.node_container_iter() {
+        for v in self.container_iter() {
             s += &format!("{}\n", v);
         }
         write!(f, "next_id: {}\nedge_count: {}\nvertices:\n{}", self.next_id, self.edge_count, s)
@@ -546,18 +546,22 @@ impl<T: Node> Graph<T> {
             ))
     }
 
-    /// borrows NodeContainer at index
-    pub fn get_node_container(&self, index: usize) -> &NodeContainer<T> {
+
+    /// # get NodeContainer at index
+    /// * use this to iterate over neighbors
+    /// * use this to check, if vertices are adjacent
+    /// # Warning
+    /// * **panics** if index out of bounds
+    pub fn container(&self, index: usize) -> &NodeContainer<T> {
         &self.vertices[index]
     }
 
     /// get iterator over NodeContainer in order of the indices
-    pub fn node_container_iter(&self) -> std::slice::Iter::<NodeContainer<T>> {
+    pub fn container_iter(&self) -> std::slice::Iter::<NodeContainer<T>> {
         self.vertices.iter()
     }
 
-
-    fn get_node_container_mut(&mut self, index: usize) -> &mut NodeContainer<T> {
+    fn container_mut(&mut self, index: usize) -> &mut NodeContainer<T> {
         &mut self.vertices[index]
     }
 
@@ -565,14 +569,14 @@ impl<T: Node> Graph<T> {
     /// * **read access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
     /// * see first **code example** (beginning of this page)
     pub fn at(&self, index: usize) -> &T {
-        self.get_node_container(index).get_contained()
+        self.container(index).contained()
     }
 
     /// # For your calculations etc.
     /// * **write access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
     /// * see first **code example** (beginning of this page)
     pub fn at_mut(&mut self, index: usize) -> &mut T {
-        self.get_node_container_mut(index).get_contained_mut()
+        self.container_mut(index).contained_mut()
     }
 
     /// returns number of vertices present in graph
@@ -650,10 +654,6 @@ impl<T: Node> Graph<T> {
                 .get(index)?
                 .neighbor_count()
         )
-    }
-
-    fn get_container(&self, index: usize) -> &NodeContainer<T> {
-        &self.vertices[index]
     }
 
     /// # returns `Iterator`
@@ -788,7 +788,7 @@ impl<T: Node> Graph<T> {
 
                 // handle possible overflow
                 let n_count = self
-                    .get_container(i)
+                    .container(i)
                     .neighbor_count();
                 let remaining_neighbors = if subtract[i] >= n_count {
                     0
@@ -801,7 +801,7 @@ impl<T: Node> Graph<T> {
 
                     // virtually remove vertex
                     handled[i] = true;
-                    for j in self.get_container(i).neighbors() {
+                    for j in self.container(i).neighbors() {
                         subtract[*j as usize] += 1;
                     }
                 }
@@ -823,7 +823,7 @@ impl<T: Node> Graph<T> {
             while let Some(index) = stack.pop() {
                 counter += 1;
                 for j in self
-                    .get_container(index)
+                    .container(index)
                     .neighbors()    // iterate over neighbors
                     .map(|k| *k as usize) // but as usize
                 {
@@ -910,7 +910,7 @@ impl<T: Node> Graph<T> {
         s += "\n";
 
         for i in 0..self.vertex_count() as usize {
-            for j in self.get_container(i).neighbors() {
+            for j in self.container(i).neighbors() {
                 if i < *j as usize {
                     s.push_str(&format!("\t{} -- {}\n", i, j));
                 }
@@ -978,11 +978,11 @@ impl<T: Node> Graph<T> {
         }
         s += ";\n";
         for (index, vertex) in self.vertices.iter().enumerate() {
-            s += &format!("\t\"{}\" [label=\"{}\"];\n", index, f(vertex.get_contained(), index));
+            s += &format!("\t\"{}\" [label=\"{}\"];\n", index, f(vertex.contained(), index));
         }
 
         for i in 0..self.vertex_count() as usize {
-            for j in self.get_container(i).neighbors() {
+            for j in self.container(i).neighbors() {
                 if i < *j as usize {
                     s.push_str(&format!("\t{} -- {}\n", i, j));
                 }
@@ -1000,10 +1000,10 @@ impl<T: Node> Graph<T> {
         } else {
             // well, then calculate from every node
             // (except 1 node) and use maximum found
-            self.node_container_iter()
+            self.container_iter()
             .skip(1)
             .map( |n|
-                self.longest_shortest_path_from_index(n.get_id())
+                self.longest_shortest_path_from_index(n.id())
                     .expect("diameter ERROR 1")
             ).max()
         }
@@ -1077,7 +1077,7 @@ impl<T: Node> Graph<T> {
                         next_edge = (
                             *top_vertex,
                             *self
-                            .get_container(top_vertex_usize)
+                            .container(top_vertex_usize)
                             .get_adj_first()
                             .unwrap()
                         );
@@ -1201,7 +1201,7 @@ impl<T: Node> Graph<T> {
             // build up predecessor and ordering information
             while let Some(index) = queue0.pop_front() {
                 ordering.push(index); // to get indices in reverse order of distance
-                let container = self.get_container(index as usize);
+                let container = self.container(index as usize);
                 for neighbor in container.neighbors() {
                     if let Some(d) = distance[*neighbor as usize] {
                         if d == depth + 1 {
@@ -1244,6 +1244,16 @@ impl<T: Node> Graph<T> {
         }
         b
     }
+
+    //fn transitivity(&self) {
+    //    //let mut path_count;
+    //    //let mut closed_path_count;
+    //    for source_index in 0..self.vertex_count() as usize {
+    //        for neighbor_1 in self.container(source_index).neighbors(){
+
+    //        }
+    //    }
+    //}
 
 }
 
@@ -1288,14 +1298,14 @@ impl<'a, T> Iterator for Bfs<'a, T>
         fn next(&mut self) -> Option<Self::Item> {
             // if queue0 is not empty, take element from queue, push neighbors to other queue
             if let Some(index) = self.queue0.pop_front() {
-                let container = self.graph.get_container(index as usize);
+                let container = self.graph.container(index as usize);
                 for i in container.neighbors() {
                     if !self.handled[*i as usize] {
                         self.handled[*i as usize] = true;
                         self.queue1.push_back(*i);
                     }
                 }
-                Some((index, container.get_contained(), self.depth))
+                Some((index, container.contained(), self.depth))
             }else if self.queue1.is_empty() {
                 None
             }else {
@@ -1339,14 +1349,14 @@ impl<'a, T> Iterator for DfsWithIndex<'a, T>
 
         fn next(&mut self) -> Option<Self::Item> {
             if let Some(index) = self.stack.pop(){
-                let container = self.graph.get_container(index as usize);
+                let container = self.graph.container(index as usize);
                 for i in container.neighbors() {
                     if !self.handled[*i as usize] {
                         self.handled[*i as usize] = true;
                         self.stack.push(*i);
                     }
                 }
-                Some((index, container.get_contained()))
+                Some((index, container.contained()))
             } else {
                 None
             }
@@ -1387,14 +1397,14 @@ impl<'a, T> Iterator for Dfs<'a, T>
 
         fn next(&mut self) -> Option<Self::Item> {
             if let Some(index) = self.stack.pop(){
-                let container = self.graph.get_container(index as usize);
+                let container = self.graph.container(index as usize);
                 for i in container.neighbors() {
                     if !self.handled[*i as usize] {
                         self.handled[*i as usize] = true;
                         self.stack.push(*i);
                     }
                 }
-                Some(container.get_contained())
+                Some(container.contained())
             } else {
                 None
             }
@@ -1422,7 +1432,7 @@ mod tests {
         let res = c.push(&mut c2);
         assert!(res.is_err());
 
-        assert_eq!(0, c.get_id());
+        assert_eq!(0, c.id());
     }
 
 
@@ -1440,7 +1450,7 @@ mod tests {
         let mut graph: Graph<TestNode> = Graph::new(20);
         graph.add_edge(0, 1).unwrap();
 
-        println!("{}", graph.get_container(0));
+        println!("{}", graph.container(0));
     }
 
 }

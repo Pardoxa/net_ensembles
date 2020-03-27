@@ -12,7 +12,7 @@ where Self: Clone{
         None
     }
 
-    /// Override this, if you want to load the stored the network
+    /// Override this, if you want to load the stored network
     fn parse_str(_to_parse: &str) -> Option<(&str, Self)>
         where Self: Sized
     {
