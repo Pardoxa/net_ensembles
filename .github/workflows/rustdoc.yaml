@@ -29,6 +29,11 @@ jobs:
     - name: Build Documentation
       run: cargo doc --all --no-deps
 
+    - name: Move Files
+      run: |
+       mkdir -p ./public/lib
+       cp -r ./target/doc ./public/lib
+
     - name: Deploy Docs
       uses: peaceiris/actions-gh-pages@364c31d33bb99327c77b3a5438a83a357a6729ad # v3.4.0
       with:
@@ -37,4 +42,4 @@ jobs:
         publish_branch: master
         keep_files: true
         enable_jekyll: true
-        publish_dir: ./target/doc
+        publish_dir: ./public
