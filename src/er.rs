@@ -164,7 +164,7 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
     /// # Sorting adjecency lists
     /// * calls `sort_unstable()` on all adjecency lists
     pub fn sort_adj(&mut self) {
-        self.graph.sort_adj();
+        self.graph_mut().sort_adj();
     }
 
     /// returns reference to the underlying topology aka, the `Graph<T>`
@@ -174,16 +174,17 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         &self.graph
     }
 
+    fn graph_mut(&mut self) -> &mut Graph<T> {
+        &mut self.graph
+    }
+
     /// # Access RNG
     /// If, for some reason, you want access to the internal random number generator: Here you go
     pub fn rng(&mut self) -> &mut R {
         &mut self.rng
     }
 
-    #[allow(dead_code)]
-    fn graph_mut(&mut self) -> &mut Graph<T> {
-        &mut self.graph
-    }
+
 }
 
 /// high is exclusive
@@ -203,15 +204,11 @@ mod testing {
     use rand_pcg::Pcg64;
     use crate::node::TestNode;
 
-    fn test_graph(seed: u64, size: u32, c: f64) -> ER::<TestNode, Pcg64> {
-        let rng = Pcg64::seed_from_u64(seed);
-        ER::<TestNode, Pcg64>::new(size, c, rng)
-    }
-
     #[test]
     fn test_edge_count() {
         // create empty graph
-        let mut e = test_graph(12, 100, 0.0);
+        let rng = Pcg64::seed_from_u64(12);
+        let mut e = ER::<TestNode, Pcg64>::new(100, 0.0, rng);
         let ec = e.graph().edge_count();
         assert_eq!(0, ec);
         // empty graph should not be connected:
@@ -242,23 +239,6 @@ mod testing {
         res = e.graph_mut()
             .remove_edge(0, 1);
         assert!(res.is_err());
-    }
-
-    #[test]
-    fn test_graph_construction() {
-        let rng = Pcg64::seed_from_u64(76);
-        let e = ER::<TestNode, Pcg64>::new(20, 2.7, rng);
-        assert_eq!(e.graph().edge_count(), 28);
-        assert_eq!(20, e.graph().vertex_count());
-    }
-
-    #[test]
-    fn test_complete_graph() {
-        let rng = Pcg64::seed_from_u64(76);
-        let e = ER::<TestNode, Pcg64>::new(20, 19.0, rng);
-        assert_eq!(20, e.graph().vertex_count());
-        assert_eq!(190, e.graph().edge_count());
-        assert!(e.graph().is_connected().expect("test_complete_graph error"));
     }
 
     #[test]
