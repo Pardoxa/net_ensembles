@@ -271,12 +271,17 @@ fn vertex_load() {
     assert_eq!(edge_b, vec![0.0, 4.666666666666666, 8.0, 0.6666666666666665, 8.666666666666668, 10.0, 0.0, 0.0]);
 }
 
-
 #[test]
 fn transitivity() {
+    let graph: Graph<TestNode> = Graph::new(3);
+    assert!(graph.transitivity().is_nan());
+
     let mut graph: Graph<TestNode> = Graph::new(3);
     graph.add_edge(0, 1).unwrap();
     graph.add_edge(0, 2).unwrap();
+
+    assert_eq!(0.0, graph.transitivity());
+
     graph.add_edge(2, 1).unwrap();
 
     assert_eq!(1.0, graph.transitivity());

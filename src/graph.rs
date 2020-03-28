@@ -216,6 +216,10 @@ impl<T: Node> NodeContainer<T> {
         Ok(())
     }
 
+    fn clear_edges(&mut self) {
+        self.adj.clear();
+    }
+
     fn get_adj_first(&self) -> Option<&u32> {
         self.adj.first()
     }
@@ -443,8 +447,8 @@ impl<T: Node> NodeContainer<T> {
 ///     assert_eq!(g1.edge_count(), g2.edge_count());
 ///     assert_eq!(g1.vertex_count(), g2.vertex_count());
 ///     for (n0, n1) in g2.container_iter().zip(g1.container_iter()) {
-///         assert_eq!(n1.id(), n1.id());
-///         assert_eq!(n1.neighbor_count(), n1.neighbor_count());
+///         assert_eq!(n1.id(), n0.id());
+///         assert_eq!(n0.neighbor_count(), n1.neighbor_count());
 ///
 ///         for (i, j) in n1.neighbors().zip(n0.neighbors()) {
 ///             assert_eq!(i, j);
@@ -497,6 +501,18 @@ impl<T: Node> Graph<T> {
             vertices,
             next_id: size,
             edge_count: 0,
+        }
+    }
+
+    /// # removes all edges from the graph
+    /// * inexpensive O(1), if there are no edges to begin with
+    /// * O(vertices) otherwise 
+    pub fn clear_edges(&mut self) {
+        if self.edge_count() != 0 {
+            self.edge_count = 0;
+            for container in self.vertices.iter_mut() {
+                container.clear_edges();
+            }
         }
     }
 
@@ -1248,6 +1264,7 @@ impl<T: Node> Graph<T> {
     /// # Calculates transitivity of graph
     /// * related to cluster coefficient (Note: transitivity and cluster coefficient are similar,
     /// but **not** necessarily equal)
+    /// * returns `NaN`, if there are no paths of length two in the graph
     /// ## Definition
     /// > transitivity = (number of closed paths of length two) / (number of paths of length two)
     /// ## Citations

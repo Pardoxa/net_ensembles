@@ -14,6 +14,7 @@ pub mod graph;
 pub mod er;
 pub use node::Node;
 pub use er::ER;
+pub use er::ErStep;
 pub use graph::Graph;
 pub use node::TestNode;
 pub use graph::DEFAULT_DOT_OPTIONS;

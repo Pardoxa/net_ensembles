@@ -31,19 +31,48 @@ use rand_core::SeedableRng;
 use crate::graph::Graph;
 use crate::graph::GraphErrors;
 
+#[derive(Debug, Clone)]
+pub enum ErStep {
+    Nothing,
+    AddedEdge((u32, u32)),
+    RemovedEdge((u32, u32)),
+}
+
 /// # Implements Erdős-Rényi graph
 pub struct ER<T: Node, R: rand::Rng + SeedableRng> {
     graph: Graph<T>,
     prob: f64,
-    c: f64,
+    c_target: f64,
     rng: R,
 }
 
 impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
-    fn random(&mut self) {
-        if self.graph.edge_count() > 0 {
-            panic!("cant randomize graph which already has edges in it -> not implemented yet")
-        }
+    /// # Initialize
+    /// * create new ER graph with `n` vertices
+    /// * target connectivity `c_target`
+    /// * `rng` is consumed and used as random number generator in the following
+    /// * internally uses `Graph<T>::new(n)`
+    /// * generates random edges according to ER probability (see `ER::randomize`)
+    pub fn new(n: u32, c_target: f64, rng: R) -> Self {
+        let prob = c_target / (n - 1) as f64;
+        let graph: Graph<T> = Graph::new(n);
+        let mut e = ER {
+            graph,
+            c_target,
+            prob,
+            rng,
+        };
+        e.randomize();
+        e
+    }
+
+
+    /// # Randomizes the edges according to Er probabilities
+    /// * this is used by `ER::new` to create the initial topology
+    /// * you can use this for sampling the ensemble
+    /// * runs in `O(vertices * vertices)`
+    pub fn randomize(&mut self) {
+        self.graph.clear_edges();
         // iterate over all possible edges once
         for i in 0..self.graph.vertex_count() {
             for j in i+1..self.graph.vertex_count() {
@@ -56,49 +85,75 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
 
     /// returns target connectivity
     /// # Explanation
-    /// The target connectivity is the connectivity used to
-    /// calculate the probability, that any two vertices a and b (where a != b)
+    /// The target connectivity `c_target` is used to
+    /// calculate the probability `p`, that any two vertices `i` and `j` (where `i != j`)
     /// are connected.
     ///
-    /// $p_{ij} = \frac{c_{target}}{N - 1}$
-    /// where $N$ is the number of vertices in the graph
-    pub fn get_target_connectivity(&self) -> f64 {
-        self.c
+    /// `p = c_target / (N - 1)`
+    /// where `N` is the number of vertices in the graph
+    pub fn target_connectivity(&self) -> f64 {
+        self.c_target
     }
 
-    /// Add or remove edge according to ER-prob
-    ///
-    /// will be changed shortly
-    pub fn random_step(&mut self) -> ((u32, u32), Result<(), GraphErrors>) {
+    /// # Monte Carlo steps
+    /// * use this to perform a Monte Carlo step
+    /// * result `ErStep` can be used to undo the step with `self.undo_step(result)`
+    pub fn random_step(&mut self) -> ErStep {
         let edge = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
 
         // Try to add edge. else: remove edge
         if self.rng.gen::<f64>() <= self.prob {
-            (
-                edge,
-                self.graph.add_edge(edge.0, edge.1)
-            )
+
+            let success = self.graph.add_edge(edge.0, edge.1);
+            match success {
+                Ok(_)  => ErStep::AddedEdge(edge),
+                Err(_) => ErStep::Nothing,
+            }
+
         } else {
-            (
-                edge,
-                self.graph.remove_edge(edge.0, edge.1)
-            )
+
+            let success =  self.graph.remove_edge(edge.0, edge.1);
+            match success {
+                Ok(_)  => ErStep::RemovedEdge(edge),
+                Err(_) => ErStep::Nothing,
+            }
         }
     }
 
-    /// create new graph with `size` nodes and connectivity `c`.
-    /// `rng` is consumed and used as rondom number generator in the following
-    pub fn new(size: u32, c: f64, rng: R) -> Self {
-        let prob = c / (size - 1) as f64;
-        let graph: Graph<T> = Graph::new(size);
-        let mut e = ER {
-            graph,
-            c,
-            prob,
-            rng,
-        };
-        e.random();
-        e
+    /// # Monte Carlo steps
+    /// * use this to perform multiple Monte Carlo steps at once
+    /// * result `Vec<ErStep>` can be used to undo the steps with `self.undo_steps(Vec<result>)`
+    pub fn random_steps(&mut self, count: usize) -> Vec<ErStep> {
+        (0..count)
+            .map(|_| self.random_step())
+            .collect()
+    }
+
+    /// # Undo a Monte Carlo step
+    /// * adds removed edge, or removes added edge, or does nothing
+    /// * if it returns an Err value, you probably used the function wrong
+    /// ## Important:
+    /// Restored graph is the same as before the random step **except** the order of nodes
+    /// in the adjacency list might be shuffled!
+    pub fn undo_step(&mut self, step: ErStep) -> Result<(),GraphErrors> {
+        match step {
+            ErStep::AddedEdge(edge)     => self.graph.remove_edge(edge.0, edge.1),
+            ErStep::Nothing             => Ok(()),
+            ErStep::RemovedEdge(edge)    => self.graph.add_edge(edge.0, edge.1)
+        }
+    }
+
+    /// # Undo a Monte Carlo step
+    /// * adds removed edges, removes added edge etc. in the correct order
+    /// * if it returns an Err value, you probably used the function wrong
+    /// ## Important:
+    /// Restored graph is the same as before the random steps **except** the order of nodes
+    /// in the adjacency list might be shuffled!
+    pub fn undo_steps(&mut self, mut steps: Vec<ErStep>) -> Result<(),GraphErrors> {
+        while let Some(step) = steps.pop() {
+            self.undo_step(step)?;
+        }
+        Ok(())
     }
 
     /// returns reference to the underlying topology aka, the `Graph<T>`
