@@ -35,5 +35,6 @@ jobs:
         deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
         external_repository: Pardoxa/Pardoxa.github.io
         publish_branch: master
+        keep_files: true
         enable_jekyll: true
         publish_dir: ./target/doc
