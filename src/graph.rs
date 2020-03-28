@@ -185,6 +185,12 @@ impl<T: Node> NodeContainer<T> {
         self.adj.contains(other_id)
     }
 
+    /// # Sorting adjecency lists
+    /// * calls `sort_unstable()` on all adjecency lists
+    fn sort_adj(&mut self) {
+        self.adj.sort_unstable();
+    }
+
     fn push(&mut self, other: &mut NodeContainer<T>) -> Result<(),GraphErrors> {
         if self.is_adjacent(&other.id()) {
             return Err(GraphErrors::EdgeExists);
@@ -506,13 +512,22 @@ impl<T: Node> Graph<T> {
 
     /// # removes all edges from the graph
     /// * inexpensive O(1), if there are no edges to begin with
-    /// * O(vertices) otherwise 
+    /// * O(vertices) otherwise
     pub fn clear_edges(&mut self) {
         if self.edge_count() != 0 {
             self.edge_count = 0;
             for container in self.vertices.iter_mut() {
                 container.clear_edges();
             }
+        }
+    }
+
+    /// # Sort adjecency lists
+    /// * If you depend on the order of the adjecency lists, you can sort them
+    /// * keep in mind, that this can be costly
+    pub fn sort_adj(&mut self) {
+        for container in self.vertices.iter_mut() {
+            container.sort_adj();
         }
     }
 

@@ -4,21 +4,8 @@ use std::io::prelude::*;
 use rand_pcg::Pcg64;
 use rand_core::SeedableRng;
 use rand::Rng;
-
-
-fn equal_graphs<T: Node>(g1: Graph<T>, g2: Graph<T>) {
-    assert_eq!(g1.edge_count(), g2.edge_count());
-    assert_eq!(g1.vertex_count(), g2.vertex_count());
-    for (n0, n1) in g2.container_iter().zip(g1.container_iter()) {
-        assert_eq!(n1.id(), n1.id());
-        assert_eq!(n1.neighbor_count(), n1.neighbor_count());
-
-        for (i, j) in n1.neighbors().zip(n0.neighbors()) {
-            assert_eq!(i, j);
-        }
-    }
-}
-
+mod common;
+use common::equal_graphs;
 
 #[derive(Debug, Clone)]
 pub struct PhaseNode {phase: f64,}
@@ -115,7 +102,7 @@ fn graph_parsing() {
     println!("parsed: {}", parsed_graph);
 
     // check, that graphs are equal
-    equal_graphs(graph, parsed_graph);
+    equal_graphs(&graph, &parsed_graph);
 
     // bigger graph
     let mut graph: Graph<PhaseNode> = Graph::new(40);
@@ -129,7 +116,7 @@ fn graph_parsing() {
     let try_parse = Graph::<PhaseNode>::parse_str(&s);
     let (_, parsed_graph) = try_parse.unwrap();
     // check, that graphs are equal
-    equal_graphs(graph, parsed_graph);
+    equal_graphs(&graph, &parsed_graph);
 
     graph_parsing_compare_random(232, 30);
 }
@@ -163,7 +150,7 @@ fn graph_parsing_compare_random(seed: u64, size: u32) {
         );
     }
 
-    equal_graphs(graph, parsed_graph);
+    equal_graphs(&graph, &parsed_graph);
 }
 
 #[test]
@@ -186,5 +173,5 @@ fn clone(){
         );
     }
 
-    equal_graphs(graph, clone);
+    equal_graphs(&graph, &clone);
 }

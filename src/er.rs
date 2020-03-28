@@ -31,14 +31,19 @@ use rand_core::SeedableRng;
 use crate::graph::Graph;
 use crate::graph::GraphErrors;
 
+/// # Returned by Monte Carlo Steps
 #[derive(Debug, Clone)]
 pub enum ErStep {
+    /// nothing was changed
     Nothing,
+    /// an edge was added
     AddedEdge((u32, u32)),
+    /// an edge was removed
     RemovedEdge((u32, u32)),
 }
 
 /// # Implements Erdős-Rényi graph
+#[derive(Debug, Clone)]
 pub struct ER<T: Node, R: rand::Rng + SeedableRng> {
     graph: Graph<T>,
     prob: f64,
@@ -139,7 +144,7 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         match step {
             ErStep::AddedEdge(edge)     => self.graph.remove_edge(edge.0, edge.1),
             ErStep::Nothing             => Ok(()),
-            ErStep::RemovedEdge(edge)    => self.graph.add_edge(edge.0, edge.1)
+            ErStep::RemovedEdge(edge)   => self.graph.add_edge(edge.0, edge.1)
         }
     }
 
@@ -156,11 +161,23 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         Ok(())
     }
 
+    /// # Sorting adjecency lists
+    /// * calls `sort_unstable()` on all adjecency lists
+    pub fn sort_adj(&mut self) {
+        self.graph.sort_adj();
+    }
+
     /// returns reference to the underlying topology aka, the `Graph<T>`
     ///
     /// Use this to call functions regarding the topology
     pub fn graph(&self) -> &Graph<T> {
         &self.graph
+    }
+
+    /// # Access RNG
+    /// If, for some reason, you want access to the internal random number generator: Here you go
+    pub fn rng(&mut self) -> &mut R {
+        &mut self.rng
     }
 
     #[allow(dead_code)]
