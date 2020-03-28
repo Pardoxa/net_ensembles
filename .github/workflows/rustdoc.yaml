@@ -36,4 +36,4 @@ jobs:
         external_repository: Pardoxa/Pardoxa.github.io
         publish_branch: master
         enable_jekyll: true
-        publish_dir: ./rust_libs/net_ensembles/v0.1.0
+        publish_dir: ./target/doc
