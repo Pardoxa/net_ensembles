@@ -151,12 +151,12 @@ fn average_neighbor_count () {
             graph.add_edge(i, j).unwrap();
         }
     }
-    assert_eq!(graph.average_neighbor_count(), 19.0);
+    assert_eq!(graph.average_degree(), 19.0);
 
 
     let empty: Graph<TestNode> = Graph::new(20);
 
-    assert_eq!(empty.average_neighbor_count(), 0.0);
+    assert_eq!(empty.average_degree(), 0.0);
 }
 
 #[test]

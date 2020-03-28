@@ -615,7 +615,7 @@ impl<T: Node> Graph<T> {
         self.next_id
     }
 
-    pub fn average_neighbor_count(&self) -> f32 {
+    pub fn average_degree(&self) -> f32 {
         (2 * self.edge_count()) as f32 / self.vertex_count() as f32
     }
 

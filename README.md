@@ -1,6 +1,10 @@
 # Rust library for network-ensembles
 
-### currently implementing network ensembles
+# Documentation:
+
+You can find the Documentation [here](https://www.yfeld.de/lib/doc/net_ensembles/).
+
+### currently implemented network ensembles
 
 * Erdős-Rényi
 

@@ -127,7 +127,7 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
 
     /// # Monte Carlo steps
     /// * use this to perform multiple Monte Carlo steps at once
-    /// * result `Vec<ErStep>` can be used to undo the steps with `self.undo_steps(Vec<result>)`
+    /// * result `Vec<ErStep>` can be used to undo the steps with `self.undo_steps(result)`
     pub fn random_steps(&mut self, count: usize) -> Vec<ErStep> {
         (0..count)
             .map(|_| self.random_step())
