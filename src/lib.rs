@@ -7,13 +7,14 @@
 //! ```
 //! use net_ensembles::*;
 //! use rand_pcg::Pcg64;
-//! use rand_core::SeedableRng;
+//! use rand::SeedableRng;
 //! use std::fs::File;
 //! use std::io::prelude::*;
+//!
 //! let rng = Pcg64::seed_from_u64(75676526);
-//! // create graph with 50 vertices, target connectivity of 2.7 using
-//! // Pcg64 as random number generator
-//! let mut er_graph = ER::<TestNode, Pcg64>::new(50, 2.7, rng);
+//! // create graph with 50 vertices and target connectivity of 2.7
+//! // using Pcg64 as random number generator
+//! let mut er_graph = ER::<EmptyNode, Pcg64>::new(50, 2.7, rng);
 //! // create dot file to visualize the graph
 //! let dot = er_graph.graph().to_dot();
 //! let mut f = File::create("50.dot")
@@ -36,29 +37,32 @@
 //! ```
 //! You can also try some of the other [roadmaps](https://www.graphviz.org/).
 //! # Example 2
-//! You can also compute variable measurable quantities:
+//! You can also compute different measurable quantities, look at `graph::Graph` for more.
 //! ```
 //! use net_ensembles::*;
 //! use rand_pcg::Pcg64;
-//! use rand_core::SeedableRng;
+//! use rand::SeedableRng;
 //! use std::fs::File;
 //! use std::io::prelude::*;
+//!
 //! let rng = Pcg64::seed_from_u64(26);
-//! // create graph with 50 vertices, target connectivity of 2.7 using
-//! // Pcg64 as random number generator
-//! let er_graph = ER::<TestNode, Pcg64>::new(50, 2.7, rng);
-//! println!("Number of vertices: {}",  er_graph.graph().vertex_count());
-//! println!("Number of edges: {}",     er_graph.graph().edge_count());
-//! println!("Average degree: {}",      er_graph.graph().average_degree());
-//! println!("diameter: {:?}",          er_graph.graph().connected_components());
-//! println!("transitivity: {}",        er_graph.graph().transitivity());
+//! // create graph with 50 vertices and target connectivity of 2.7
+//! // using Pcg64 as random number generator
+//! let er = ER::<EmptyNode, Pcg64>::new(50, 2.7, rng);
+//! println!("Number of vertices: {}",      er.graph().vertex_count());
+//! println!("Number of edges: {}",         er.graph().edge_count());
+//! println!("Average degree: {}",          er.graph().average_degree());
+//! println!("connected components: {:?}",  er.graph().connected_components());
+//! println!("transitivity: {}",            er.graph().transitivity());
 //! ```
 pub mod node;
 pub mod graph;
 pub mod er;
+
 pub use node::Node;
+pub use node::TestNode;
+pub use node::EmptyNode;
 pub use er::ER;
 pub use er::ErStep;
 pub use graph::Graph;
-pub use node::TestNode;
 pub use graph::DEFAULT_DOT_OPTIONS;

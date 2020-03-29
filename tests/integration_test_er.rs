@@ -2,7 +2,7 @@
 use rand_pcg::Pcg64;
 use net_ensembles::ER;
 use net_ensembles::TestNode;
-use rand_core::SeedableRng;
+use rand::SeedableRng;
 mod common;
 use common::equal_graphs;
 

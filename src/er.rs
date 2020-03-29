@@ -5,7 +5,7 @@
 //! use net_ensembles;
 //! use net_ensembles::Node;
 //! use rand_pcg::Pcg64;
-//! use rand_core::SeedableRng;
+//! use rand::SeedableRng;
 //!
 //! // Define your own node
 //! #[derive(Clone)]
@@ -27,7 +27,7 @@
 //! ```
 //! Take a look at the struct `ER` for details
 use crate::node::Node;
-use rand_core::SeedableRng;
+use rand::SeedableRng;
 use crate::graph::Graph;
 use crate::graph::GraphErrors;
 

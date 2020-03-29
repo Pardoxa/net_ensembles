@@ -2,7 +2,7 @@ use net_ensembles::*;
 use std::fs::File;
 use std::io::prelude::*;
 use rand_pcg::Pcg64;
-use rand_core::SeedableRng;
+use rand::SeedableRng;
 use rand::Rng;
 mod common;
 use common::equal_graphs;
