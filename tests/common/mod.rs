@@ -1,6 +1,6 @@
 use net_ensembles::Node;
 use net_ensembles::Graph;
-
+use net_ensembles::traits::*;
 
 pub fn equal_graphs<T: Node>(g1: &Graph<T>, g2: &Graph<T>) {
     assert_eq!(g1.edge_count(), g2.edge_count());

@@ -3,7 +3,7 @@
 //! # Minimal example:
 //! ```
 //! use net_ensembles;
-//! use net_ensembles::Node;
+//! use net_ensembles::traits::*;
 //! use rand_pcg::Pcg64;
 //! use rand::SeedableRng;
 //!
@@ -29,7 +29,8 @@
 use crate::node::Node;
 use rand::SeedableRng;
 use crate::graph::Graph;
-use crate::graph::GraphErrors;
+use crate::GraphErrors;
+use crate::traits::*;
 
 /// # Returned by Monte Carlo Steps
 #[derive(Debug, Clone)]

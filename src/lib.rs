@@ -58,11 +58,14 @@
 pub mod node;
 pub mod graph;
 pub mod er;
+pub mod graph_traits;
+pub mod traits;
 
-pub use node::Node;
 pub use node::TestNode;
 pub use node::EmptyNode;
 pub use er::ER;
 pub use er::ErStep;
 pub use graph::Graph;
 pub use graph::DEFAULT_DOT_OPTIONS;
+pub use graph_traits::GraphErrors;
+pub use traits::*;
