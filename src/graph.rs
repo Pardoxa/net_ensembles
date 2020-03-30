@@ -10,7 +10,6 @@ use std::collections::VecDeque;
 use std::collections::HashSet;
 use crate::GraphErrors;
 use crate::AdjContainer;
-use crate::GraphImpl;
 
 /// # constant for dot options
 /// ```
@@ -468,17 +467,10 @@ impl<T: Node> fmt::Display for Graph<T> {
     }
 }
 
-
-
-impl<T: Node> GraphImpl<T, NodeContainer<T>> for Graph<T>
-{
-
-    fn dfs(&self, index: u32) -> Self::I1{
-        self.dfs_helper()
-    }
+impl<T: Node> Graph<T> {
     /// Create new graph with `size` nodes
     /// and no edges
-    fn new(size: u32) -> Self {
+    pub fn new(size: u32) -> Self {
         let mut vertices = Vec::with_capacity(size as usize);
         for i in 0..size {
             let container = NodeContainer::new(i, T::new_from_index(i));
@@ -494,7 +486,7 @@ impl<T: Node> GraphImpl<T, NodeContainer<T>> for Graph<T>
     /// # removes all edges from the graph
     /// * inexpensive O(1), if there are no edges to begin with
     /// * O(vertices) otherwise
-    fn clear_edges(&mut self) {
+    pub fn clear_edges(&mut self) {
         if self.edge_count() != 0 {
             self.edge_count = 0;
             for container in self.vertices.iter_mut() {
@@ -506,7 +498,7 @@ impl<T: Node> GraphImpl<T, NodeContainer<T>> for Graph<T>
     /// # Sort adjecency lists
     /// * If you depend on the order of the adjecency lists, you can sort them
     /// * keep in mind, that this can be costly
-    fn sort_adj(&mut self) {
+    pub fn sort_adj(&mut self) {
         for container in self.vertices.iter_mut() {
             container.sort_adj();
         }
@@ -520,7 +512,7 @@ impl<T: Node> GraphImpl<T, NodeContainer<T>> for Graph<T>
     /// ## Return
     /// 1) returns string slice beginning directly after the part, that was used to parse
     /// 2) the `Graph` resulting form the parsing
-    fn parse_str(to_parse: &str) -> Option<(&str, Self)> {
+    pub fn parse_str(to_parse: &str) -> Option<(&str, Self)> {
         // skip identifier
         let mut split_index = to_parse.find("next_id: ")? + 9;
         let remaining_to_parse = &to_parse[split_index..];
@@ -564,96 +556,40 @@ impl<T: Node> GraphImpl<T, NodeContainer<T>> for Graph<T>
     /// * use this to check, if vertices are adjacent
     /// # Warning
     /// * **panics** if index out of bounds
-    fn container(&self, index: usize) -> &NodeContainer<T> {
+    pub fn container(&self, index: usize) -> &NodeContainer<T> {
         &self.vertices[index]
     }
 
     /// get iterator over NodeContainer in order of the indices
-    fn container_iter(&self) -> std::slice::Iter::<NodeContainer<T>> {
+    pub fn container_iter(&self) -> std::slice::Iter::<NodeContainer<T>> {
         self.vertices.iter()
+    }
+
+    fn container_mut(&mut self, index: usize) -> &mut NodeContainer<T> {
+        &mut self.vertices[index]
     }
 
     /// # For your calculations etc.
     /// * **read access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
     /// * see first **code example** (beginning of this page)
-    fn at(&self, index: usize) -> &T {
+    pub fn at(&self, index: usize) -> &T {
         self.container(index).contained()
     }
 
     /// # For your calculations etc.
     /// * **write access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
     /// * see first **code example** (beginning of this page)
-    fn at_mut(&mut self, index: usize) -> &mut T {
+    pub fn at_mut(&mut self, index: usize) -> &mut T {
         self.container_mut(index).contained_mut()
     }
 
     /// returns number of vertices present in graph
-    fn vertex_count(&self) -> u32 {
+    pub fn vertex_count(&self) -> u32 {
         self.next_id
     }
 
-    /// returns total number of edges in graph
-    fn edge_count(&self) -> u32 {
-        self.edge_count
-    }
-
-    fn average_degree(&self) -> f32 {
+    pub fn average_degree(&self) -> f32 {
         (2 * self.edge_count()) as f32 / self.vertex_count() as f32
-    }
-
-    /// Adds edge between nodes `index1` and `index2`
-    /// ## ErrorCases:
-    /// | Error | Reason |
-    /// | ---- | ---- |
-    /// | `GraphErrors::IndexOutOfRange` | `index1` or `index2` larger than `self.vertex_count()`  |
-    /// | `GraphErrors::IdenticalIndices` | `index2 == index1` not allowed! |
-    /// | `GraphErrors::EdgeExists` | requested edge already exists! |
-    fn add_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
-        let (r1, r2) = self.get_2_mut(index1, index2)?;
-        r1.push(r2)?;
-        self.edge_count += 1;
-        Ok(())
-    }
-
-    /// Removes edge between nodes *index1* and *index2*
-    /// ## ErrorCases:
-    /// | Error | Reason |
-    /// | ---- | ---- |
-    /// | `GraphErrors::IndexOutOfRange` | `index1` or `index2` larger than `self.vertex_count()`  |
-    /// | `GraphErrors::IdenticalIndices` | `index2 == index1` not allowed! |
-    /// | `GraphErrors::EdgeDoesNotExist` | requested edge does not exists |
-    fn remove_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
-        let (r1, r2) = self.get_2_mut(index1, index2)?;
-        r1.remove(r2)?;
-        self.edge_count -= 1;
-        Ok(())
-    }
-}
-
-
-impl<T: Node> Graph<T> {
-
-    /// # returns `Iterator`
-    ///
-    /// * the iterator will iterate over the vertices in depth first search order,
-    /// beginning with vertex `index`.
-    /// * iterator returns `node`
-    ///
-    /// Order
-    ///------------------------
-    /// Order is guaranteed to be in DFS order, however
-    /// if this order is not unambigouse
-    /// adding edges and especially removing edges will shuffle the order.
-    ///
-    /// Note:
-    /// ----------------------
-    /// Will only iterate over vertices within the connected component that contains vertex `index`
-    fn dfs_helper(&self) -> Dfs<T> {
-        Dfs::new(&self, 0)
-    }
-
-    fn container_mut(&mut self, index: usize) -> &mut NodeContainer<T> {
-        &mut self.vertices[index]
     }
 
     /// Returns two mutable references in a tuple
@@ -681,6 +617,40 @@ impl<T: Node> Graph<T> {
         Ok((r1, r2))
     }
 
+    /// Adds edge between nodes `index1` and `index2`
+    /// ## ErrorCases:
+    /// | Error | Reason |
+    /// | ---- | ---- |
+    /// | `GraphErrors::IndexOutOfRange` | `index1` or `index2` larger than `self.vertex_count()`  |
+    /// | `GraphErrors::IdenticalIndices` | `index2 == index1` not allowed! |
+    /// | `GraphErrors::EdgeExists` | requested edge already exists! |
+    pub fn add_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
+        let (r1, r2) = self.get_2_mut(index1, index2)?;
+        r1.push(r2)?;
+        self.edge_count += 1;
+        Ok(())
+    }
+
+    /// Removes edge between nodes *index1* and *index2*
+    /// ## ErrorCases:
+    /// | Error | Reason |
+    /// | ---- | ---- |
+    /// | `GraphErrors::IndexOutOfRange` | `index1` or `index2` larger than `self.vertex_count()`  |
+    /// | `GraphErrors::IdenticalIndices` | `index2 == index1` not allowed! |
+    /// | `GraphErrors::EdgeDoesNotExist` | requested edge does not exists |
+    pub fn remove_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
+        let (r1, r2) = self.get_2_mut(index1, index2)?;
+        r1.remove(r2)?;
+        self.edge_count -= 1;
+        Ok(())
+    }
+
+    /// returns total number of edges in graph
+    pub fn edge_count(&self) -> u32 {
+        self.edge_count
+    }
+
+
     pub fn edge_count_at(&self, index: usize) -> Option<usize> {
         Some(
             self
@@ -690,6 +660,24 @@ impl<T: Node> Graph<T> {
         )
     }
 
+    /// # returns `Iterator`
+    ///
+    /// * the iterator will iterate over the vertices in depth first search order,
+    /// beginning with vertex `index`.
+    /// * iterator returns `node`
+    ///
+    /// Order
+    ///------------------------
+    /// Order is guaranteed to be in DFS order, however
+    /// if this order is not unambigouse
+    /// adding edges and especially removing edges will shuffle the order.
+    ///
+    /// Note:
+    /// ----------------------
+    /// Will only iterate over vertices within the connected component that contains vertex `index`
+    pub fn dfs(&self, index: u32) -> Dfs<T> {
+        Dfs::new(&self, index)
+    }
 
     /// # returns `Iterator`
     ///
@@ -756,7 +744,6 @@ impl<T: Node> Graph<T> {
     /// ```
     /// use net_ensembles::TestNode;
     /// use net_ensembles::Graph;
-    /// use net_ensembles::traits::*;
     ///
     /// let graph: Graph<TestNode> = Graph::new(0);
     /// assert_eq!(graph.q_core(1), None);
@@ -941,7 +928,7 @@ impl<T: Node> Graph<T> {
     /// ```
     /// use std::fs::File;
     /// use std::io::prelude::*;
-    /// use net_ensembles::{Graph,TestNode,DEFAULT_DOT_OPTIONS,traits::*};
+    /// use net_ensembles::{Graph,TestNode,DEFAULT_DOT_OPTIONS};
     ///
     /// let mut graph: Graph<TestNode> = Graph::new(3);
     /// graph.add_edge(0, 1).unwrap();

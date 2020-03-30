@@ -5,7 +5,6 @@ use net_ensembles::TestNode;
 use rand::SeedableRng;
 mod common;
 use common::equal_graphs;
-use net_ensembles::traits::*;
 
 #[test]
 fn step_test() {

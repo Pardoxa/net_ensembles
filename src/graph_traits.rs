@@ -45,31 +45,3 @@ pub trait AdjContainer<T: Node> {
     fn id(&self) -> u32;
     fn is_adjacent(&self, other_id: &u32) -> bool;
 }
-
-
-pub trait GraphImpl<T: Node, N: AdjContainer<T>>
-where
-    T: Node,
-    N: AdjContainer<T>,
-    {
-    type I1: Iterator<Item=N>;
-    fn new(size: u32) -> Self;
-    fn clear_edges(&mut self);
-    fn sort_adj(&mut self);
-    fn parse_str(to_parse: &str) -> Option<(&str, Self)> where Self: Sized;
-    fn container(& self, index: usize) -> & N;
-    fn container_iter(&self) -> std::slice::Iter::<N>;
-
-    fn at(& self, index: usize) -> &T;
-    fn at_mut(&mut self, index: usize) -> &mut T;
-    fn vertex_count(&self) -> u32;
-    fn edge_count(&self) -> u32;
-
-    fn average_degree(&self) -> f32 {
-        (2 * self.edge_count()) as f32 / self.vertex_count() as f32
-    }
-
-    fn add_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors>;
-    fn remove_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors>;
-    fn dfs(&self, index: u32) -> Self::I1;
-}

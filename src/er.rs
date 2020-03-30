@@ -30,7 +30,6 @@ use crate::node::Node;
 use rand::SeedableRng;
 use crate::graph::Graph;
 use crate::GraphErrors;
-use crate::traits::*;
 
 /// # Returned by Monte Carlo Steps
 #[derive(Debug, Clone)]
