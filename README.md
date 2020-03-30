@@ -2,7 +2,7 @@
 
 # Documentation:
 
-You can find the Documentation [here](https://www.yfeld.de/lib/doc/net_ensembles/).
+You can find the Documentation [here](https://pardoxa.github.io/net_ensembles/net_ensembles/).
 
 ### currently implemented network ensembles
 
