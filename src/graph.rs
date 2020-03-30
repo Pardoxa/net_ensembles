@@ -10,6 +10,7 @@ use std::collections::VecDeque;
 use std::collections::HashSet;
 use crate::GraphErrors;
 use crate::AdjContainer;
+use std::marker::PhantomData;
 
 /// # constant for dot options
 /// ```
@@ -22,11 +23,10 @@ pub const DEFAULT_DOT_OPTIONS: &str = "bgcolor=\"transparent\";\n\tfontsize=50;\
         fontname=\"Courier\", pin=true ];\n\tsplines=true;";
 
 /// # Used for accessing neighbor information from graph
-/// Contains Adjacency list
+/// * Contains Adjacency list
 ///  and internal id. Normally the index in the graph.
-///
-///
-/// Also contains user specified data, i.e, `T` from `NodeContainer<T>`
+/// * Also contains user specified data, i.e, `T` from `NodeContainer<T>`
+/// * See trait **`AdjContainer`**
 #[derive(Debug, Clone)]
 pub struct NodeContainer<T: Node>{
     id: u32,
@@ -58,6 +58,14 @@ impl<T: Node> fmt::Display for NodeContainer<T> {
 
 
 impl<T: Node> AdjContainer<T> for NodeContainer<T> {
+
+    fn new(id: u32, node: T) -> Self {
+        NodeContainer{
+            id,
+            adj: Vec::new(),
+            node,
+        }
+    }
 
     /// # parse from str
     /// * tries to parse a NodeContainer from a `str`.
@@ -147,16 +155,6 @@ impl<T: Node> AdjContainer<T> for NodeContainer<T> {
     fn is_adjacent(&self, other_id: &u32) -> bool {
         self.adj.contains(other_id)
     }
-}
-
-impl<T: Node> NodeContainer<T> {
-    fn new(id: u32, node: T) -> Self {
-        NodeContainer{
-            id,
-            adj: Vec::new(),
-            node,
-        }
-    }
 
     /// # Sorting adjecency lists
     /// * calls `sort_unstable()` on all adjecency lists
@@ -164,7 +162,13 @@ impl<T: Node> NodeContainer<T> {
         self.adj.sort_unstable();
     }
 
-    fn push(&mut self, other: &mut NodeContainer<T>) -> Result<(),GraphErrors> {
+    fn clear_edges(&mut self) {
+        self.adj.clear();
+    }
+
+    fn push(&mut self, other: &mut Self)
+        -> Result<(), GraphErrors>
+    {
         if self.is_adjacent(&other.id()) {
             return Err(GraphErrors::EdgeExists);
         }
@@ -173,18 +177,10 @@ impl<T: Node> NodeContainer<T> {
         Ok(())
     }
 
-    fn swap_delete_element(&mut self, elem: u32) -> () {
-        let index = self.adj
-            .iter()
-            .position(|x| *x == elem)
-            .expect("swap_delete_element ERROR 0");
-
-        self.adj
-            .swap_remove(index);
-    }
-
     /// Tries to remove edges, returns error `GraphErrors::EdgeDoesNotExist` if impossible
-    fn remove(&mut self, other: &mut NodeContainer<T>) -> Result<(),GraphErrors> {
+    fn remove(&mut self, other: &mut Self)
+        -> Result<(), GraphErrors>
+    {
         if !self.is_adjacent(&other.id()){
             return Err(GraphErrors::EdgeDoesNotExist);
         }
@@ -195,12 +191,21 @@ impl<T: Node> NodeContainer<T> {
         Ok(())
     }
 
-    fn clear_edges(&mut self) {
-        self.adj.clear();
-    }
-
     fn get_adj_first(&self) -> Option<&u32> {
         self.adj.first()
+    }
+}
+
+impl<T: Node> NodeContainer<T> {
+
+    fn swap_delete_element(&mut self, elem: u32) -> () {
+        let index = self.adj
+            .iter()
+            .position(|x| *x == elem)
+            .expect("swap_delete_element ERROR 0");
+
+        self.adj
+            .swap_remove(index);
     }
 }
 
@@ -450,14 +455,17 @@ impl<T: Node> NodeContainer<T> {
 /// let clone2 = graph2.clone();
 /// assert_equal_graphs(&clone, &clone2);
 /// ```
+pub type Graph<T> = GenericGraph<T, NodeContainer<T>>;
+
 #[derive(Debug, Clone)]
-pub struct Graph<T: Node> {
+pub struct GenericGraph<T: Node, A: AdjContainer<T>> {
     next_id: u32,
     edge_count: u32,
-    vertices: Vec<NodeContainer<T>>,
+    vertices: Vec<A>,
+    phantom: PhantomData<T>,
 }
 
-impl<T: Node> fmt::Display for Graph<T> {
+impl<T: Node, A: AdjContainer<T>> fmt::Display for GenericGraph<T, A> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s = String::new();
         for v in self.container_iter() {
@@ -467,19 +475,20 @@ impl<T: Node> fmt::Display for Graph<T> {
     }
 }
 
-impl<T: Node> Graph<T> {
+impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// Create new graph with `size` nodes
     /// and no edges
     pub fn new(size: u32) -> Self {
         let mut vertices = Vec::with_capacity(size as usize);
         for i in 0..size {
-            let container = NodeContainer::new(i, T::new_from_index(i));
+            let container = A::new(i, T::new_from_index(i));
             vertices.push(container);
         }
         Self{
             vertices,
             next_id: size,
             edge_count: 0,
+            phantom: PhantomData,
         }
     }
 
@@ -532,9 +541,9 @@ impl<T: Node> Graph<T> {
         let edge_count = edge_count_str.parse::<u32>().ok()?;
 
         // Parse the vertex vector
-        let mut vertices = Vec::with_capacity(next_id as usize);
+        let mut vertices = Vec::<A>::with_capacity(next_id as usize);
         for _ in 0..next_id {
-            let result = NodeContainer::<T>::parse_str(&remaining_to_parse)?;
+            let result = A::parse_str(&remaining_to_parse)?;
             remaining_to_parse = result.0;
             let node = result.1;
 
@@ -546,6 +555,7 @@ impl<T: Node> Graph<T> {
                     vertices,
                     next_id,
                     edge_count,
+                    phantom: PhantomData,
                 }
             ))
     }
@@ -556,16 +566,16 @@ impl<T: Node> Graph<T> {
     /// * use this to check, if vertices are adjacent
     /// # Warning
     /// * **panics** if index out of bounds
-    pub fn container(&self, index: usize) -> &NodeContainer<T> {
+    pub fn container(&self, index: usize) -> &A {
         &self.vertices[index]
     }
 
     /// get iterator over NodeContainer in order of the indices
-    pub fn container_iter(&self) -> std::slice::Iter::<NodeContainer<T>> {
+    pub fn container_iter(&self) -> std::slice::Iter::<A> {
         self.vertices.iter()
     }
 
-    fn container_mut(&mut self, index: usize) -> &mut NodeContainer<T> {
+    fn container_mut(&mut self, index: usize) -> &mut A {
         &mut self.vertices[index]
     }
 
@@ -597,15 +607,15 @@ impl<T: Node> Graph<T> {
     /// `GraphErrors::IndexOutOfRange`  <-- index to large
     /// GraphErrors::IdenticalIndices <-- index1 == index2 not allowed!
     fn get_2_mut(&mut self, index1: u32, index2: u32) ->
-        Result<(&mut NodeContainer<T>, &mut NodeContainer<T>),GraphErrors>
+        Result<(&mut A, &mut A),GraphErrors>
     {
         if index1 >= self.next_id || index2 >= self.next_id {
             return Err(GraphErrors::IndexOutOfRange);
         } else if index1 == index2 {
             return Err(GraphErrors::IdenticalIndices);
         }
-        let r1: &mut NodeContainer<T>;
-        let r2: &mut NodeContainer<T>;
+        let r1: &mut A;
+        let r2: &mut A;
 
         let ptr = self.vertices.as_mut_ptr();
 
@@ -675,7 +685,7 @@ impl<T: Node> Graph<T> {
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn dfs(&self, index: u32) -> Dfs<T> {
+    pub fn dfs(&self, index: u32) -> Dfs<T, A> {
         Dfs::new(&self, index)
     }
 
@@ -694,7 +704,7 @@ impl<T: Node> Graph<T> {
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn dfs_with_index(&self, index: u32) -> DfsWithIndex<T> {
+    pub fn dfs_with_index(&self, index: u32) -> DfsWithIndex<T, A> {
         DfsWithIndex::new(&self, index)
     }
 
@@ -718,7 +728,7 @@ impl<T: Node> Graph<T> {
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn bfs_index_depth(&self, index: u32) -> Bfs<T> {
+    pub fn bfs_index_depth(&self, index: u32) -> Bfs<T, A> {
         Bfs::new(&self, index)
     }
 
@@ -1289,18 +1299,22 @@ impl<T: Node> Graph<T> {
 
 /// # Breadth first search Iterator with **index** and **depth** of corresponding nodes
 /// * iterator returns tuple: `(index, node, depth)`
-pub struct Bfs<'a, T>
-    where T: 'a + Node {
-        graph: &'a Graph<T>,
+pub struct Bfs<'a, T, A>
+where   T: 'a + Node,
+        A: AdjContainer<T>
+{
+        graph: &'a GenericGraph<T, A>,
         handled: Vec<bool>,
         queue0: VecDeque<u32>,
         queue1: VecDeque<u32>,
         depth: u32,
 }
 
-impl<'a, T> Bfs<'a, T>
-    where T: 'a + Node {
-        fn new(graph: &'a Graph<T>, index: u32) -> Self {
+impl<'a, T, A> Bfs<'a, T, A>
+where   T: 'a + Node,
+        A: AdjContainer<T>
+{
+        fn new(graph: &'a GenericGraph<T, A>, index: u32) -> Self {
             let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
             let mut queue0 = VecDeque::with_capacity(graph.vertex_count() as usize);
             let queue1 = VecDeque::with_capacity(graph.vertex_count() as usize);
@@ -1322,8 +1336,10 @@ impl<'a, T> Bfs<'a, T>
 
 /// # Iterator
 /// - returns tuple: `(index, node, depth)`
-impl<'a, T> Iterator for Bfs<'a, T>
-    where T: 'a + Node {
+impl<'a, T, A> Iterator for Bfs<'a, T, A>
+where   T: 'a + Node,
+        A: AdjContainer<T>
+{
         type Item = (u32, &'a T, u32);
         fn next(&mut self) -> Option<Self::Item> {
             // if queue0 is not empty, take element from queue, push neighbors to other queue
@@ -1347,16 +1363,20 @@ impl<'a, T> Iterator for Bfs<'a, T>
 }
 
 /// Depth first search Iterator with **index** of corresponding nodes
-pub struct DfsWithIndex<'a, T>
-    where T: 'a + Node {
-        graph: &'a Graph<T>,
+pub struct DfsWithIndex<'a, T, A>
+where   T: 'a + Node,
+        A: AdjContainer<T>
+{
+        graph: &'a GenericGraph<T, A>,
         handled: Vec<bool>,
         stack: Vec<u32>,
 }
 
-impl<'a, T> DfsWithIndex<'a, T>
-    where T: 'a + Node {
-        fn new(graph: &'a Graph<T>, index: u32) -> Self {
+impl<'a, T, A> DfsWithIndex<'a, T, A>
+    where   T: 'a + Node,
+            A: AdjContainer<T>
+{
+        fn new(graph: &'a GenericGraph<T, A>, index: u32) -> Self {
             let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
             let mut stack: Vec<u32> = Vec::with_capacity(graph.vertex_count() as usize);
             if index < graph.vertex_count() {
@@ -1373,8 +1393,10 @@ impl<'a, T> DfsWithIndex<'a, T>
 
 }
 
-impl<'a, T> Iterator for DfsWithIndex<'a, T>
-    where T: 'a + Node {
+impl<'a, T, A> Iterator for DfsWithIndex<'a, T, A>
+where   T: 'a + Node,
+        A: AdjContainer<T>
+{
         type Item = (u32, &'a T);
 
         fn next(&mut self) -> Option<Self::Item> {
@@ -1394,18 +1416,22 @@ impl<'a, T> Iterator for DfsWithIndex<'a, T>
 }
 
 /// Depth first search Iterator
-pub struct Dfs<'a, T>
-    where T: 'a + Node {
-        graph: &'a Graph<T>,
+pub struct Dfs<'a, T, A>
+where   T: 'a + Node,
+        A: AdjContainer<T>
+{
+        graph: &'a GenericGraph<T, A>,
         handled: Vec<bool>,
         stack: Vec<u32>,
 }
 
 
-impl<'a, T> Dfs<'a, T>
-    where T: 'a + Node{
+impl<'a, T, A> Dfs<'a, T, A>
+where   T: 'a + Node,
+        A: AdjContainer<T>
+{
     /// panics if `index` >= graph.vertex_count()
-    fn new(graph: &'a Graph<T>, index: u32) -> Self {
+    fn new(graph: &'a GenericGraph<T, A>, index: u32) -> Self {
         let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
         let mut stack: Vec<u32> = Vec::with_capacity(graph.vertex_count() as usize);
         if index < graph.vertex_count() {
@@ -1421,8 +1447,10 @@ impl<'a, T> Dfs<'a, T>
     }
 }
 
-impl<'a, T> Iterator for Dfs<'a, T>
-    where T: 'a + Node {
+impl<'a, T, A> Iterator for Dfs<'a, T, A>
+where   T: 'a + Node,
+        A: AdjContainer<T>
+{
         type Item = &'a T;
 
         fn next(&mut self) -> Option<Self::Item> {

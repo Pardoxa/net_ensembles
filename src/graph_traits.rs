@@ -36,12 +36,21 @@ impl fmt::Display for GraphErrors {
 }
 
 
-pub trait AdjContainer<T: Node> {
+pub trait AdjContainer<T: Node> where Self: fmt::Display {
+    fn new(id: u32, node: T) -> Self;
     fn parse_str(to_parse: &str) -> Option<(&str, Self)> where Self: Sized;
     fn contained<'a>(&'a self) -> &'a T;
     fn contained_mut(&mut self) -> &mut T;
     fn neighbors(&self) -> std::slice::Iter::<u32>;
     fn neighbor_count(&self) -> usize;
     fn id(&self) -> u32;
+    fn get_adj_first(&self) -> Option<&u32>;
     fn is_adjacent(&self, other_id: &u32) -> bool;
+
+    fn sort_adj(&mut self);
+    fn clear_edges(&mut self);
+    fn push(&mut self, other: &mut Self)
+        -> Result<(), GraphErrors>;
+    fn remove(&mut self, other: &mut Self)
+        -> Result<(), GraphErrors>;
 }
