@@ -38,19 +38,65 @@ impl fmt::Display for GraphErrors {
 
 pub trait AdjContainer<T: Node> where Self: fmt::Display {
     fn new(id: u32, node: T) -> Self;
+    /// # parse from str
+    /// * tries to parse a AdjContainer from a `str`.
+    /// * returns `None` if failed
+    ///
+    /// ## Returns `Option((a, b))`
+    /// **a)** string slice beginning directly after the part, that was used to parse
+    ///
+    /// **b)** the `AdjContainer` resulting form the parsing
     fn parse_str(to_parse: &str) -> Option<(&str, Self)> where Self: Sized;
+
+    /// return reference to what the AdjContainer contains
     fn contained<'a>(&'a self) -> &'a T;
+
+    /// return mut reference to what the AdjContainer contains
     fn contained_mut(&mut self) -> &mut T;
+
+    /// returns iterator over indices of neighbors
     fn neighbors(&self) -> std::slice::Iter::<u32>;
+
+    /// count number of neighbors, i.e. number of edges incident to `self`
     fn neighbor_count(&self) -> usize;
+
+    /// returns id of container
     fn id(&self) -> u32;
+
+    /// returns `Some(first element from the adjecency List)` or `None`
     fn get_adj_first(&self) -> Option<&u32>;
+
+    /// check if vertex with `other_id` is adjacent to self
+    /// ## Note:
+    /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
     fn is_adjacent(&self, other_id: &u32) -> bool;
 
+    /// Sorting adjecency lists
     fn sort_adj(&mut self);
-    fn clear_edges(&mut self);
-    fn push(&mut self, other: &mut Self)
+
+    /// Remove all edges
+    /// # Important
+    /// * will not clear edges of other AdjContainer
+    /// * only call this if you know exactly what you are doing
+    unsafe fn clear_edges(&mut self);
+
+    /// # What does it do?
+    /// Creates edge in `self` and `other`s adjecency Lists
+    /// # Why is it unsafe?
+    /// * No logic to see, if AdjContainer are part of the same graph
+    /// * Only intended for internal usage
+    /// ## What should I do?
+    /// * use members of `net_ensembles::GenericGraph` instead, that handles the logic
+    unsafe fn push(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>;
-    fn remove(&mut self, other: &mut Self)
+
+    /// # What does it do?
+    /// Removes edge in `self` and `other`s adjecency Lists
+    /// # Why is it unsafe?
+    /// * No logic to see, if AdjContainer are part of the same graph
+    /// * Only intended for internal usage
+    /// ## What should I do?
+    /// * use members of `net_ensembles::GenericGraph` instead, that handles the logic
+    unsafe fn remove(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>;
 }

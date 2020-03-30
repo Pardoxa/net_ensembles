@@ -162,11 +162,11 @@ impl<T: Node> AdjContainer<T> for NodeContainer<T> {
         self.adj.sort_unstable();
     }
 
-    fn clear_edges(&mut self) {
+    unsafe fn clear_edges(&mut self) {
         self.adj.clear();
     }
 
-    fn push(&mut self, other: &mut Self)
+    unsafe fn push(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>
     {
         if self.is_adjacent(&other.id()) {
@@ -178,7 +178,7 @@ impl<T: Node> AdjContainer<T> for NodeContainer<T> {
     }
 
     /// Tries to remove edges, returns error `GraphErrors::EdgeDoesNotExist` if impossible
-    fn remove(&mut self, other: &mut Self)
+    unsafe fn remove(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>
     {
         if !self.is_adjacent(&other.id()){
@@ -499,7 +499,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
         if self.edge_count() != 0 {
             self.edge_count = 0;
             for container in self.vertices.iter_mut() {
-                container.clear_edges();
+                unsafe { container.clear_edges(); }
             }
         }
     }
@@ -636,7 +636,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// | `GraphErrors::EdgeExists` | requested edge already exists! |
     pub fn add_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
         let (r1, r2) = self.get_2_mut(index1, index2)?;
-        r1.push(r2)?;
+        unsafe{ r1.push(r2)?; }
         self.edge_count += 1;
         Ok(())
     }
@@ -650,7 +650,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// | `GraphErrors::EdgeDoesNotExist` | requested edge does not exists |
     pub fn remove_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
         let (r1, r2) = self.get_2_mut(index1, index2)?;
-        r1.remove(r2)?;
+        unsafe{ r1.remove(r2)?; }
         self.edge_count -= 1;
         Ok(())
     }
@@ -1482,12 +1482,12 @@ mod tests {
         let mut c = NodeContainer::new(0, TestNode::new_from_index(0));
         let mut c2 = NodeContainer::new(1, TestNode::new_from_index(1));
         // create edge -> should not result in error!
-        let res = c.push(&mut c2);
+        let res = unsafe { c.push(&mut c2) };
         if let Err(e) = res {
             panic!(format!("error: {}", e));
         }
         // now edge exists, should not be able to add it again:
-        let res = c.push(&mut c2);
+        let res = unsafe { c.push(&mut c2) };
         assert!(res.is_err());
 
         assert_eq!(0, c.id());
