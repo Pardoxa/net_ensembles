@@ -29,17 +29,10 @@ jobs:
     - name: Build Documentation
       run: cargo doc --all --no-deps
 
-    - name: Move Files
-      run: |
-       mkdir -p ./public/lib
-       cp -r ./target/doc ./public/lib
-
     - name: Deploy Docs
       uses: peaceiris/actions-gh-pages@25ae83ba65b483195e2a1b7b9a5198c271d0d84c #v3.6.0
       with:
-        deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-        external_repository: Pardoxa/Pardoxa.github.io
-        enable_jekyll: true
-        keep_files: true
-        publish_branch: master
-        publish_dir: ./public
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-pages
+        publish_dir: ./target/doc
+        force_orphan: true
