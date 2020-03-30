@@ -3,13 +3,12 @@
 //!
 //! You probably want to take a look at the struct `Graph`
 use std::fmt;
-use crate::node::Node;
 use std::cmp::max;
 use std::convert::TryFrom;
 use std::collections::VecDeque;
 use std::collections::HashSet;
+use crate::traits::*;
 use crate::GraphErrors;
-use crate::AdjContainer;
 use std::marker::PhantomData;
 
 /// # constant for dot options
@@ -1473,7 +1472,7 @@ where   T: 'a + Node,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::node::TestNode;
+    use crate::TestNode;
 
 
     #[test]

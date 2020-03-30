@@ -55,14 +55,14 @@
 //! println!("connected components: {:?}",  er.graph().connected_components());
 //! println!("transitivity: {}",            er.graph().transitivity());
 //! ```
-pub mod node;
+pub mod example_nodes;
 pub mod graph;
 pub mod er;
 pub mod graph_traits;
 pub mod traits;
 
-pub use node::TestNode;
-pub use node::EmptyNode;
+pub use example_nodes::TestNode;
+pub use example_nodes::EmptyNode;
 pub use er::ER;
 pub use er::ErStep;
 pub use graph::Graph;

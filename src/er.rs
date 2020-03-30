@@ -26,10 +26,10 @@
 //! assert_eq!(20, e.graph().vertex_count());
 //! ```
 //! Take a look at the struct `ER` for details
-use crate::node::Node;
 use rand::SeedableRng;
 use crate::graph::Graph;
 use crate::GraphErrors;
+use crate::Node;
 
 /// # Returned by Monte Carlo Steps
 #[derive(Debug, Clone)]
@@ -202,7 +202,7 @@ fn draw_two_from_range<T: rand::Rng>(rng: &mut T, high: u32) -> (u32, u32){
 mod testing {
     use super::*;
     use rand_pcg::Pcg64;
-    use crate::node::TestNode;
+    use crate::TestNode;
 
     #[test]
     fn test_edge_count() {
