@@ -123,8 +123,8 @@ impl<T: Node> AdjContainer<T> for NodeContainer<T> {
     }
 
     /// returns iterator over indices of neighbors
-    fn neighbors(&self) -> std::slice::Iter::<u32> {
-        self.adj.iter()
+    fn neighbors(&self) -> IterWrapper {
+        IterWrapper::new_generic(self.adj.iter())
     }
 
     /// count number of neighbors, i.e. number of edges incident to `self`

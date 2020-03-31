@@ -1,5 +1,4 @@
-
-
+use crate::IterWrapper;
 /// What every node should be able to do
 pub trait Node
 where Self: Clone{
@@ -24,7 +23,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum GraphErrors{
     /// ### somehow, the existing of the edge is a problem
-    /// Did you try to add an edge, which is already present, to the graph
+    /// Did you try to add an edge, which is already present?
     EdgeExists,
     /// ### ERROR 404: Edge not found ;)
     /// Did you try to delete a non existing edge?
@@ -56,7 +55,9 @@ impl fmt::Display for GraphErrors {
 }
 
 
-pub trait AdjContainer<T: Node> where Self: fmt::Display {
+pub trait AdjContainer<T: Node>
+where   Self: fmt::Display,
+{
     fn new(id: u32, node: T) -> Self;
     /// # parse from str
     /// * tries to parse a AdjContainer from a `str`.
@@ -75,7 +76,7 @@ pub trait AdjContainer<T: Node> where Self: fmt::Display {
     fn contained_mut(&mut self) -> &mut T;
 
     /// returns iterator over indices of neighbors
-    fn neighbors(&self) -> std::slice::Iter::<u32>;
+    fn neighbors<'b>(&self) -> IterWrapper;
 
     /// count number of neighbors, i.e. number of edges incident to `self`
     fn neighbor_count(&self) -> usize;

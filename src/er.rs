@@ -100,7 +100,7 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
         self.c_target
     }
 
-    /// # Monte Carlo steps
+    /// # Monte Carlo step
     /// * use this to perform a Monte Carlo step
     /// * result `ErStep` can be used to undo the step with `self.undo_step(result)`
     pub fn random_step(&mut self) -> ErStep {

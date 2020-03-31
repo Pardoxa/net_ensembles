@@ -1,6 +1,6 @@
 //! I am writing this libary for my scientific simulations
 //!
-//! * You probably want to take a look at the struct `Graph` from the module `graph`.
+//! * You probably want to take a look at `graph::Graph`.
 //! * Also, take a look at the module `er` if you want to do something with Erdős-Rényi networks
 //! # Example 1
 //! Create an Erdős-Rényi graph
@@ -61,6 +61,8 @@ pub mod er;
 mod graph_traits;
 pub mod traits;
 pub mod constants;
+pub mod sw_graph;
+mod iter;
 
 pub use example_nodes::TestNode;
 pub use example_nodes::EmptyNode;
@@ -70,3 +72,4 @@ pub use graph::Graph;
 pub use graph_traits::GraphErrors;
 pub use constants::DEFAULT_DOT_OPTIONS;
 pub use traits::*;
+pub use iter::IterWrapper;
