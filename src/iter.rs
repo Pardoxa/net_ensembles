@@ -14,15 +14,13 @@ impl<'a> Iterator for IterWrapper<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::GenericIter(iter) => iter.next(),
-            Self::SwIter(iter) => iter.next(),
+            Self::SwIter(iter)      => iter.next(),
         }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        match self {
-            Self::GenericIter(iter) => iter.size_hint(),
-            Self::SwIter(iter) => iter.size_hint(),
-        }
+        let size = self.len();
+        (size, Some(size))
     }
 }
 
@@ -31,8 +29,19 @@ impl<'a> ExactSizeIterator for IterWrapper<'a> {
     fn len(&self) -> usize {
         match self {
             Self::GenericIter(iter) => iter.len(),
-            Self::SwIter(iter) => iter.len(),
+            Self::SwIter(iter)      => iter.len(),
         }
+    }
+}
+
+impl<'a> DoubleEndedIterator for IterWrapper<'a> {
+
+    fn next_back(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::GenericIter(iter) => iter.next_back(),
+            Self::SwIter(iter)      => iter.next_back(),
+        }
+
     }
 }
 

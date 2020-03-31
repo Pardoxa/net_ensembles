@@ -28,14 +28,27 @@ impl<'a> SwEdgeIterNeighbors<'a> {
 impl<'a> Iterator for SwEdgeIterNeighbors<'a> {
     type Item = &'a u32;
     fn next(&mut self) -> Option<Self::Item> {
-        let edge = self.sw_edge_slice.first()?;
-        self.sw_edge_slice = &self.sw_edge_slice[1..];
+
+        let (edge, next_slice) = self
+            .sw_edge_slice
+            .split_first()?;
+        self.sw_edge_slice = next_slice;
         Some(edge.to())
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let size = self.sw_edge_slice.len();
-        (size, Some(size))
+        (self.len(), Some(self.len()))
+    }
+}
+
+impl<'a> DoubleEndedIterator for SwEdgeIterNeighbors<'a> {
+
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let (edge, next_slice) = self
+            .sw_edge_slice
+            .split_last()?;
+        self.sw_edge_slice = next_slice;
+        Some(edge.to())
     }
 }
 
