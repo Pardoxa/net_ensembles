@@ -159,29 +159,26 @@ impl<T: Node> AdjContainer<T> for SwContainer<T>
         // skip identifier
         let mut split_index = to_parse.find("id: ")? + 4;
         let remaining_to_parse = &to_parse[split_index..];
-        println!("remain:{}", remaining_to_parse);
+
         // find index of next PARSE_SEPERATOR and split there
         split_index = remaining_to_parse.find(",")?;
         let (id_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
         let id = id_str.parse::<u32>().ok()?;
-        println!("id:{}", id);
 
         // parse Node
         split_index = remaining_to_parse.find("Node: ")? + 6;
         remaining_to_parse = &remaining_to_parse[split_index..];
-        println!("remain-N:{}", remaining_to_parse);
 
         let (mut remaining_to_parse, node) = T::parse_str(remaining_to_parse)?;
 
         // parse adj
         split_index = remaining_to_parse.find("adj: ")? + 5;
         remaining_to_parse = &remaining_to_parse[split_index..];
-        println!("adj remain:{}", remaining_to_parse);
+
         // how large is adj?
         split_index = remaining_to_parse.find("[")?;
         let (len_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
-        println!("adj_remain:{}", remaining_to_parse);
-        println!("len:{}", len_str);
+
         let len = len_str.parse::<usize>().ok()?;
 
         let mut adj = Vec::with_capacity(len);
@@ -364,7 +361,6 @@ mod tests {
         }
         let v = vec![c1, c2, c3];
         for c in v {
-            println!("{}", c);
             let s = c.to_string();
             let (_, parsed) = SwContainer::<EmptyNode>::parse_str(&s).unwrap();
             assert_eq!(parsed.degree(), c.degree());
