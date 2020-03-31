@@ -13,10 +13,10 @@ use std::marker::PhantomData;
 
 
 /// # Used for accessing neighbor information from graph
-/// * Contains Adjacency list
-///  and internal id. Normally the index in the graph.
-/// * Also contains user specified data, i.e, `T` from `NodeContainer<T>`
-/// * See trait **`AdjContainer`**
+/// * contains Adjacency list
+///  and internal id (normally the index in the graph).
+/// * also contains user specified data, i.e, `T` from `NodeContainer<T>`
+/// * see trait **`AdjContainer`**
 #[derive(Debug, Clone)]
 pub struct NodeContainer<T: Node>{
     id: u32,
@@ -128,7 +128,7 @@ impl<T: Node> AdjContainer<T> for NodeContainer<T> {
     }
 
     /// count number of neighbors, i.e. number of edges incident to `self`
-    fn neighbor_count(&self) -> usize {
+    fn degree(&self) -> usize {
         self.adj.len()
     }
 
@@ -175,8 +175,8 @@ impl<T: Node> AdjContainer<T> for NodeContainer<T> {
             return Err(GraphErrors::EdgeDoesNotExist);
         }
 
-        self.swap_delete_element(other.id());
-        other.swap_delete_element(self.id());
+        self.swap_remove_element(other.id());
+        other.swap_remove_element(self.id());
 
         Ok(())
     }
@@ -188,11 +188,11 @@ impl<T: Node> AdjContainer<T> for NodeContainer<T> {
 
 impl<T: Node> NodeContainer<T> {
 
-    fn swap_delete_element(&mut self, elem: u32) -> () {
+    fn swap_remove_element(&mut self, elem: u32) -> () {
         let index = self.adj
             .iter()
-            .position(|x| *x == elem)
-            .expect("swap_delete_element ERROR 0");
+            .position(|&x| x == elem)
+            .expect("swap_remove_element ERROR 0");
 
         self.adj
             .swap_remove(index);
@@ -422,7 +422,7 @@ impl<T: Node> NodeContainer<T> {
 ///     assert_eq!(g1.vertex_count(), g2.vertex_count());
 ///     for (n0, n1) in g2.container_iter().zip(g1.container_iter()) {
 ///         assert_eq!(n1.id(), n0.id());
-///         assert_eq!(n0.neighbor_count(), n1.neighbor_count());
+///         assert_eq!(n0.degree(), n1.degree());
 ///
 ///         for (i, j) in n1.neighbors().zip(n0.neighbors()) {
 ///             assert_eq!(i, j);
@@ -651,12 +651,12 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     }
 
 
-    pub fn edge_count_at(&self, index: usize) -> Option<usize> {
+    pub fn degree(&self, index: usize) -> Option<usize> {
         Some(
             self
                 .vertices
                 .get(index)?
-                .neighbor_count()
+                .degree()
         )
     }
 
@@ -793,7 +793,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
                 // handle possible overflow
                 let n_count = self
                     .container(i)
-                    .neighbor_count();
+                    .degree();
                 let remaining_neighbors = if subtract[i] >= n_count {
                     0
                 } else {
@@ -897,7 +897,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     pub fn leaf_count(&self) -> usize {
         self.vertices
             .iter()
-            .filter(|a| a.neighbor_count() == 1)
+            .filter(|a| a.degree() == 1)
             .count()
     }
 
@@ -1074,7 +1074,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
                 let top_vertex_usize = *top_vertex as usize;
                 // does the vertex have neighbors?
                 if self
-                    .edge_count_at(top_vertex_usize)
+                    .degree(top_vertex_usize)
                     .unwrap() > 0
                     {
                         // remove one edge from graph, put it on stack

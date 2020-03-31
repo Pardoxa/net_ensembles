@@ -79,7 +79,7 @@ where   Self: fmt::Display,
     fn neighbors<'b>(&self) -> IterWrapper;
 
     /// count number of neighbors, i.e. number of edges incident to `self`
-    fn neighbor_count(&self) -> usize;
+    fn degree(&self) -> usize;
 
     /// returns id of container
     fn id(&self) -> u32;
