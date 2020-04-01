@@ -74,7 +74,7 @@ fn phase_test() {
         );
     }
 
-    let dot = graph.to_dot_with_labels(
+    let dot = graph.to_dot_with_labels_from_contained(
         "",
         |contained, index| format!("Phase: {} at index {}", contained.get_phase(), index)
     );

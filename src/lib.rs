@@ -1,7 +1,8 @@
 //! I am writing this libary for my scientific simulations
 //!
-//! * You probably want to take a look at `graph::Graph`.
-//! * Also, take a look at the module `er` if you want to do something with Erdős-Rényi networks
+//! * you probably want to take a look at `net_ensembles::graph::GenericGraph`.
+//! * also, take a look at the module `er` if you want to do something with an Erdős-Rényi ensemble
+//! * if you want to work with small-world ensemble, look at module `sw`
 //! # Example 1
 //! Create an Erdős-Rényi graph
 //! ```

@@ -265,7 +265,7 @@ impl<T: Node> NodeContainer<T> {
 /// }
 ///
 /// // if you want to visualize your graph, you can generate a string with graphviz representation
-/// let dot = graph.to_dot_with_labels(
+/// let dot = graph.to_dot_with_labels_from_contained(
 ///     "",
 ///     |contained, index|
 ///            format!(
@@ -387,7 +387,7 @@ impl<T: Node> NodeContainer<T> {
 /// }
 ///
 /// // if you want to visualize your graph, you can generate a string with graphviz representation
-/// let dot = graph.to_dot_with_labels(
+/// let dot = graph.to_dot_with_labels_from_contained(
 ///     "",
 ///     |contained, index|
 ///            format!(
@@ -454,6 +454,8 @@ impl<T: Node> NodeContainer<T> {
 /// ```
 pub type Graph<T> = GenericGraph<T, NodeContainer<T>>;
 
+/// # Generic graph implementation
+/// * contains multiple measurable quantities
 #[derive(Debug, Clone)]
 pub struct GenericGraph<T: Node, A: AdjContainer<T>> {
     next_id: u32,
@@ -953,7 +955,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// graph.add_edge(1, 2).unwrap();
     ///
     /// // create string of dotfile
-    /// let s = graph.to_dot_with_labels(
+    /// let s = graph.to_dot_with_labels_from_contained(
     ///    DEFAULT_DOT_OPTIONS,
     ///    |_contained, index| format!("Hey {}!", index)
     /// );
@@ -986,8 +988,75 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// ```
     /// to create a **pdf** representation from it.
     /// Search for **graphviz** to learn more.
-    pub fn to_dot_with_labels<F>(&self, dot_options: &str, f: F ) -> String
+    pub fn to_dot_with_labels_from_contained<F>(&self, dot_options: &str, f: F ) -> String
         where F: Fn(&T, usize) -> String
+    {
+        self.to_dot_with_labels_from_container(
+            dot_options,
+            |a, index|
+            f(a.contained(), index)
+        )
+    }
+
+    /// # Same as `to_dot_with_labels_from_contained` but with access to neighbor information
+    /// # Example
+    /// ```
+    /// use std::fs::File;
+    /// use std::io::prelude::*;
+    /// use net_ensembles::traits::*;
+    /// use net_ensembles::{Graph,EmptyNode,DEFAULT_DOT_OPTIONS};
+    ///
+    /// let mut graph: Graph<EmptyNode> = Graph::new(5);
+    /// graph.add_edge(0, 1).unwrap();
+    /// graph.add_edge(0, 2).unwrap();
+    /// graph.add_edge(1, 2).unwrap();
+    /// graph.add_edge(0, 3).unwrap();
+    /// graph.add_edge(3, 4).unwrap();
+    ///
+    /// // create string of dotfile
+    /// let s = graph.to_dot_with_labels_from_container(
+    ///    "splines=true;\n\toverlap = false;",
+    ///     |container, index|
+    ///     {
+    ///         container.contained();  // does nothing in this example, but you can still access
+    ///                                 // contained, as you could in
+    ///                                 // to_dot_with_labels_from_contained
+    ///         format!("index {}, degree: {}", index, container.degree())
+    ///     }
+    /// );
+    ///
+    /// // write to file
+    /// let mut f = File::create("example_2.dot").expect("Unable to create file");
+    /// f.write_all(s.as_bytes()).expect("Unable to write data");
+    ///
+    /// ```
+    /// In this example, `example_2.dot` now contains:
+    /// ```dot
+    /// graph G{
+    /// 	splines=true;
+    /// 	overlap = false;
+    /// 	0 1 2 3 4 ;
+    /// 	"0" [label="index 0, degree: 3"];
+    /// 	"1" [label="index 1, degree: 2"];
+    /// 	"2" [label="index 2, degree: 2"];
+    /// 	"3" [label="index 3, degree: 2"];
+    /// 	"4" [label="index 4, degree: 1"];
+    /// 	0 -- 1
+    /// 	0 -- 2
+    /// 	0 -- 3
+    /// 	1 -- 2
+    /// 	3 -- 4
+    /// }
+    /// ```
+    ///
+    /// Then you can use, e.g.,
+    /// ```console
+    /// foo@bar:~$ circo example_2.dot -Tpdf > example_2.pdf
+    /// ```
+    /// to create a **pdf** representation from it.
+    /// Search for **graphviz** to learn more.
+    pub fn to_dot_with_labels_from_container<F>(&self, dot_options: &str, f: F ) -> String
+        where F: Fn(&A, usize) -> String
     {
         let mut s = "graph G{\n\t"
                     .to_string();
@@ -999,7 +1068,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
         }
         s += ";\n";
         for (index, vertex) in self.vertices.iter().enumerate() {
-            s += &format!("\t\"{}\" [label=\"{}\"];\n", index, f(vertex.contained(), index));
+            s += &format!("\t\"{}\" [label=\"{}\"];\n", index, f(vertex, index));
         }
 
         for i in 0..self.vertex_count() as usize {
