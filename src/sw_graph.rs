@@ -159,7 +159,7 @@ impl<T: Node> fmt::Display for SwContainer<T> {
 
 impl<T: Node> AdjContainer<T> for SwContainer<T>
 {
-
+    /// Create new instance with id
     fn new(id: u32, node: T) -> Self {
         SwContainer{
             id,
@@ -262,11 +262,11 @@ impl<T: Node> AdjContainer<T> for SwContainer<T>
             .any(|x| x == other_id)
     }
 
-    /// Sorting adjecency lists
+    /// # Sorting adjecency lists
+    /// * worst case: `O(edges log(edges))`
     fn sort_adj(&mut self){
-        self.adj.sort_unstable_by(
-            |a, b|
-            a.to().partial_cmp(b.to()).unwrap()
+        self.adj.sort_unstable_by_key(
+            |k| *k.to()
         )
     }
 
@@ -274,6 +274,7 @@ impl<T: Node> AdjContainer<T> for SwContainer<T>
     /// # Important
     /// * will not clear edges of other AdjContainer
     /// * only call this if you know exactly what you are doing
+    #[doc(hidden)]
     unsafe fn clear_edges(&mut self){
         self.adj.clear();
     }
@@ -286,6 +287,7 @@ impl<T: Node> AdjContainer<T> for SwContainer<T>
     /// * Only intended for internal usage
     /// ## What should I do?
     /// * use members of `net_ensembles::GenericGraph` instead, that handles the logic
+    #[doc(hidden)]
     unsafe fn push(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>{
             if self.is_adjacent(&other.id()) {
@@ -315,6 +317,7 @@ impl<T: Node> AdjContainer<T> for SwContainer<T>
     /// * Only intended for internal usage
     /// ## What should I do?
     /// * use members of `net_ensembles::GenericGraph` instead, that handles the logic
+    #[doc(hidden)]
     unsafe fn remove(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>{
             if !self.is_adjacent(&other.id()){

@@ -71,7 +71,9 @@ pub enum SwErrors {
 pub trait AdjContainer<T: Node>
 where   Self: fmt::Display,
 {
+    /// Create new instance with id
     fn new(id: u32, node: T) -> Self;
+    
     /// # parse from str
     /// * tries to parse a AdjContainer from a `str`.
     /// * returns `None` if failed
@@ -112,6 +114,7 @@ where   Self: fmt::Display,
     /// # Important
     /// * will not clear edges of other AdjContainer
     /// * only call this if you know exactly what you are doing
+    #[doc(hidden)]
     unsafe fn clear_edges(&mut self);
 
     /// # What does it do?
@@ -121,6 +124,7 @@ where   Self: fmt::Display,
     /// * Only intended for internal usage
     /// ## What should I do?
     /// * use members of `net_ensembles::GenericGraph` instead, that handles the logic
+    #[doc(hidden)]
     unsafe fn push(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>;
 
@@ -131,6 +135,7 @@ where   Self: fmt::Display,
     /// * Only intended for internal usage
     /// ## What should I do?
     /// * use members of `net_ensembles::GenericGraph` instead, that handles the logic
+    #[doc(hidden)]
     unsafe fn remove(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>;
 }

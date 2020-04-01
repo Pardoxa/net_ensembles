@@ -52,6 +52,7 @@ impl<T: Node> fmt::Display for NodeContainer<T> {
 
 impl<T: Node> AdjContainer<T> for NodeContainer<T> {
 
+    /// Create new instance with id
     fn new(id: u32, node: T) -> Self {
         NodeContainer{
             id,
@@ -155,10 +156,12 @@ impl<T: Node> AdjContainer<T> for NodeContainer<T> {
         self.adj.sort_unstable();
     }
 
+    #[doc(hidden)]
     unsafe fn clear_edges(&mut self) {
         self.adj.clear();
     }
 
+    #[doc(hidden)]
     unsafe fn push(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>
     {
@@ -171,6 +174,7 @@ impl<T: Node> AdjContainer<T> for NodeContainer<T> {
     }
 
     /// Tries to remove edges, returns error `GraphErrors::EdgeDoesNotExist` if impossible
+    #[doc(hidden)]
     unsafe fn remove(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>
     {
@@ -498,8 +502,12 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     }
 
     /// # Sort adjecency lists
-    /// * If you depend on the order of the adjecency lists, you can sort them
-    /// * keep in mind, that this can be costly
+    /// If you depend on the order of the adjecency lists, you can sort them
+    /// # Performance
+    /// * internally uses [pattern-defeating quicksort](https://github.com/orlp/pdqsort)
+    /// as long as that is the standard
+    /// * sorts an adjecency list with length `d` in worst-case: `O(d log(d))`
+    /// * is called for each adjecency list, i.e., `self.vertex_count()` times
     pub fn sort_adj(&mut self) {
         for container in self.vertices.iter_mut() {
             container.sort_adj();
