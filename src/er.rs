@@ -20,12 +20,12 @@
 //!
 //! // now choose your random number generator
 //! let rng = Pcg64::seed_from_u64(76);
-//! // the following creates an ER graph with 20 vertices and a connectivity of 0.3
+//! // the following creates an ErEnsemble graph with 20 vertices and a connectivity of 0.3
 //! // and uses thre random number generator rng
-//! let e = net_ensembles::ER::<ExampleNode, Pcg64>::new(20, 0.3, rng);
+//! let e = net_ensembles::ErEnsemble::<ExampleNode, Pcg64>::new(20, 0.3, rng);
 //! assert_eq!(20, e.graph().vertex_count());
 //! ```
-//! Take a look at the struct `ER` for details
+//! Take a look at the struct `ErEnsemble` for details
 use rand::SeedableRng;
 use crate::graph::Graph;
 use crate::GraphErrors;
@@ -42,26 +42,26 @@ pub enum ErStep {
     RemovedEdge((u32, u32)),
 }
 
-/// # Implements Erdős-Rényi graph
+/// # Implements Erdős-Rényi graph ensemble
 #[derive(Debug, Clone)]
-pub struct ER<T: Node, R: rand::Rng + SeedableRng> {
+pub struct ErEnsemble<T: Node, R: rand::Rng + SeedableRng> {
     graph: Graph<T>,
     prob: f64,
     c_target: f64,
     rng: R,
 }
 
-impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
+impl<T: Node, R: rand::Rng + SeedableRng> ErEnsemble<T, R> {
     /// # Initialize
-    /// * create new ER graph with `n` vertices
+    /// * create new ErEnsemble graph with `n` vertices
     /// * target connectivity `c_target`
     /// * `rng` is consumed and used as random number generator in the following
     /// * internally uses `Graph<T>::new(n)`
-    /// * generates random edges according to ER probability (see `ER::randomize`)
+    /// * generates random edges according to ErEnsemble probability (see `ErEnsemble::randomize`)
     pub fn new(n: u32, c_target: f64, rng: R) -> Self {
         let prob = c_target / (n - 1) as f64;
         let graph: Graph<T> = Graph::new(n);
-        let mut e = ER {
+        let mut e = ErEnsemble {
             graph,
             c_target,
             prob,
@@ -73,7 +73,7 @@ impl<T: Node, R: rand::Rng + SeedableRng> ER<T, R> {
 
 
     /// # Randomizes the edges according to Er probabilities
-    /// * this is used by `ER::new` to create the initial topology
+    /// * this is used by `ErEnsemble::new` to create the initial topology
     /// * you can use this for sampling the ensemble
     /// * runs in `O(vertices * vertices)`
     pub fn randomize(&mut self) {
@@ -213,7 +213,7 @@ mod testing {
     fn test_edge_count() {
         // create empty graph
         let rng = Pcg64::seed_from_u64(12);
-        let mut e = ER::<TestNode, Pcg64>::new(100, 0.0, rng);
+        let mut e = ErEnsemble::<TestNode, Pcg64>::new(100, 0.0, rng);
         let ec = e.graph().edge_count();
         assert_eq!(0, ec);
         // empty graph should not be connected:

@@ -14,7 +14,7 @@
 //! let rng = Pcg64::seed_from_u64(75676526);
 //! // create graph with 50 vertices and target connectivity of 2.7
 //! // using Pcg64 as random number generator
-//! let mut er_graph = ER::<EmptyNode, Pcg64>::new(50, 2.7, rng);
+//! let mut er_graph = ErEnsemble::<EmptyNode, Pcg64>::new(50, 2.7, rng);
 //! // create dot file to visualize the graph
 //! let dot = er_graph.graph().to_dot();
 //! let mut f = File::create("50.dot")
@@ -48,7 +48,7 @@
 //! let rng = Pcg64::seed_from_u64(26);
 //! // create graph with 50 vertices and target connectivity of 2.7
 //! // using Pcg64 as random number generator
-//! let er = ER::<EmptyNode, Pcg64>::new(50, 2.7, rng);
+//! let er = ErEnsemble::<EmptyNode, Pcg64>::new(50, 2.7, rng);
 //! println!("Number of vertices: {}",      er.graph().vertex_count());
 //! println!("Number of edges: {}",         er.graph().edge_count());
 //! println!("Average degree: {}",          er.graph().average_degree());
@@ -66,7 +66,7 @@ mod iter;
 
 pub use example_nodes::TestNode;
 pub use example_nodes::EmptyNode;
-pub use er::ER;
+pub use er::ErEnsemble;
 pub use er::ErStep;
 pub use graph::Graph;
 pub use graph_traits::GraphErrors;

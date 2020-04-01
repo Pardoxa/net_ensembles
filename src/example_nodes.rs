@@ -1,4 +1,4 @@
-//! Trait needed for ER graphs etc.
+//! Trait needed for ErEnsemble graphs etc.
 use crate::traits::*;
 
 /// minimal example for a node
