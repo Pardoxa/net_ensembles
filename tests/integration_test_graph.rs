@@ -2,6 +2,7 @@
 use net_ensembles::*;
 use std::fs::File;
 use std::io::prelude::*;
+use net_ensembles::dot_constants::*;
 
 fn create_graph_1() -> Graph<TestNode> {
     let mut graph: Graph<TestNode> = Graph::new(20);

@@ -614,13 +614,13 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// Returns two mutable references in a tuple
     /// ## ErrorCases:
     /// `GraphErrors::IndexOutOfRange`  <-- index to large
-    /// GraphErrors::IdenticalIndices <-- index1 == index2 not allowed!
-    pub(crate) fn get_2_mut(&mut self, index1: u32, index2: u32) ->
+    /// GraphErrors::IdenticalIndices <-- index0 == index1 not allowed!
+    pub(crate) fn get_2_mut(&mut self, index0: u32, index1: u32) ->
         Result<(&mut A, &mut A),GraphErrors>
     {
-        if index1 >= self.next_id || index2 >= self.next_id {
+        if index0 >= self.next_id || index1 >= self.next_id {
             return Err(GraphErrors::IndexOutOfRange);
-        } else if index1 == index2 {
+        } else if index0 == index1 {
             return Err(GraphErrors::IdenticalIndices);
         }
         let r1: &mut A;
@@ -629,11 +629,43 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
         let ptr = self.vertices.as_mut_ptr();
 
         unsafe {
-            r1 = &mut *ptr.offset(index1 as isize);
-            r2 = &mut *ptr.offset(index2 as isize);
+            r1 = &mut *ptr.offset(index0 as isize);
+            r2 = &mut *ptr.offset(index1 as isize);
         }
 
         Ok((r1, r2))
+    }
+
+    /// Returns three mutable references in a tuple
+    /// ## ErrorCases:
+    /// panics if invalid, in debug: panics if indices are not unique
+    pub(crate) fn get_3_mut(&mut self, index0: u32, index1: u32, index2: u32) ->
+        (&mut A, &mut A, &mut A)
+    {
+        assert!(
+            index0 < self.next_id &&
+            index1 < self.next_id &&
+            index2 < self.next_id
+        );
+        debug_assert!(
+            index0 != index1 &&
+            index1 != index2 &&
+            index2 != index0
+        );
+
+        let r1: &mut A;
+        let r2: &mut A;
+        let r3: &mut A;
+
+        let ptr = self.vertices.as_mut_ptr();
+
+        unsafe {
+            r1 = &mut *ptr.offset(index0 as isize);
+            r2 = &mut *ptr.offset(index1 as isize);
+            r3 = &mut *ptr.offset(index2 as isize);
+        }
+
+        (r1, r2, r3)
     }
 
     /// Adds edge between nodes `index1` and `index2`
@@ -947,7 +979,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// ```
     /// use std::fs::File;
     /// use std::io::prelude::*;
-    /// use net_ensembles::{Graph,TestNode,EXAMPLE_DOT_OPTIONS};
+    /// use net_ensembles::{Graph, TestNode, dot_constants::EXAMPLE_DOT_OPTIONS};
     ///
     /// let mut graph: Graph<TestNode> = Graph::new(3);
     /// graph.add_edge(0, 1).unwrap();
@@ -1016,7 +1048,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     ///
     /// // create string of dotfile
     /// let s = graph.to_dot_with_labels_from_container(
-    ///     &[DOT_SPLINES, DOT_NO_OVERLAP].join("\n\t"),
+    ///     &[SPLINES, NO_OVERLAP].join("\n\t"),
     ///     |container, index|
     ///     {
     ///         container.contained();  // does nothing in this example, but you can still access

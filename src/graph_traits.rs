@@ -48,8 +48,8 @@ impl GraphErrors {
        }
    }
 
-   pub fn to_sw_error(self) -> SwErrors {
-       SwErrors::GError(self)
+   pub(crate) fn to_sw_state(self) -> SwChangeState {
+       SwChangeState::GError(self)
    }
 }
 
@@ -60,20 +60,23 @@ impl fmt::Display for GraphErrors {
     }
 }
 
-#[derive(Debug)]
-pub enum SwErrors {
-    Nothing,
-    GError(GraphErrors),
-    BlockedByExistingEdge,
-}
 
+#[derive(Debug)]
+pub enum SwChangeState {
+    InvalidAdjecency,
+    BlockedByExistingEdge,
+    Nothing,
+    Rewire(u32, u32, u32),
+    Reset(u32, u32, usize, u32),
+    GError(GraphErrors),
+}
 
 pub trait AdjContainer<T: Node>
 where   Self: fmt::Display,
 {
     /// Create new instance with id
     fn new(id: u32, node: T) -> Self;
-    
+
     /// # parse from str
     /// * tries to parse a AdjContainer from a `str`.
     /// * returns `None` if failed

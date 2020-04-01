@@ -2,7 +2,7 @@ use crate::traits::*;
 use std::fmt;
 use crate::GraphErrors;
 use crate::graph::GenericGraph;
-use crate::SwErrors;
+use crate::SwChangeState;
 
 #[derive(Debug, Clone)]
 pub(crate) struct SwEdge {
@@ -25,6 +25,10 @@ impl SwEdge {
 
     fn reset(&mut self) {
         self.to = self.originally_to.unwrap();
+    }
+
+    fn rewire(&mut self, other_id: u32) {
+        self.to = other_id;
     }
 
     fn is_at_root(&self) -> bool {
@@ -359,27 +363,72 @@ impl<T: Node> SwContainer<T> {
     }
 
     /// # Add something like an "directed" edge
-    /// * panics, if edge exists already
+    /// * unsafe, if edge exists already
+    /// * panics in debug, if edge exists already
     /// * intended for usage after `reset`
     /// * No guarantees whatsoever, if you use it for something else
     unsafe fn push_single(&mut self, other_id: u32) {
-        if self.is_adjacent(&other_id){
-            panic!("SwContainer, push single, pushed existing edge!");
-        }
+        debug_assert!(
+            !self.is_adjacent(&other_id),
+            "SwContainer::push single - ERROR: pushed existing edge!"
+        );
         self.adj
             .push( SwEdge{ to: other_id, originally_to: None } );
     }
 
+    unsafe fn rewire(&mut self, to_disconnect: &mut Self, to_rewire: &mut Self) -> SwChangeState {
+        // None if edge does not exist
+        let self_edge_index = self
+            .adj_position(to_disconnect.id());
+
+        // check if rewire request is invalid
+        if self_edge_index.is_none()
+        || self.is_adjacent(&to_rewire.id()) {
+            return SwChangeState::InvalidAdjecency;
+        }
+        let self_edge_index = self_edge_index.unwrap();
+
+        debug_assert!(
+            self.adj[self_edge_index].is_root(),
+            "rewire - edge (self, to_rewire) has to be rooted at self!"
+        );
+
+        // remove edge
+        to_disconnect.adj
+            .swap_remove(
+                to_disconnect
+                .adj_position(self.id())
+                .unwrap()
+            );
+
+        // rewire root
+        self.adj[self_edge_index]
+            .rewire(to_rewire.id());
+
+        // add corresponding edge
+        to_rewire.adj
+            .push( SwEdge{ to: self.id(), originally_to: None} );
+
+        SwChangeState::Rewire(
+            self.id(),
+            to_disconnect.id(),
+            to_rewire.id()
+        )
+    }
+
     /// # Intendet to reset a small world edge
     /// * If successful will return edge, that needs to be added to the graph **using `push_single`**
-    unsafe fn reset(&mut self, other: &mut Self) -> Result<(usize, u32), SwErrors> {
+    unsafe fn reset(&mut self, other: &mut Self) -> Result<(usize, u32), SwChangeState> {
 
         let self_index = self.adj_position(other.id());
-        let other_index = other.adj_position(self.id());
 
-        if self_index.is_none() && other_index.is_none(){
-            return Err(GraphErrors::EdgeDoesNotExist.to_sw_error());
+        if self_index.is_none() {
+            return Err(GraphErrors::EdgeDoesNotExist.to_sw_state());
         }
+
+        let other_index = other.adj_position(self.id());
+        debug_assert!(other_index.is_some());
+
         let self_index = self_index.expect("ERROR 0 SwContainer reset");
         let other_index = other_index.expect("ERROR 1 SwContainer reset");
 
@@ -389,7 +438,7 @@ impl<T: Node> SwContainer<T> {
         // if edge is allready at root, there is nothing to be done
         if self_edge.is_at_root()
         || other_edge.is_at_root() {
-            Err(SwErrors::Nothing)
+            Err(SwChangeState::Nothing)
         }
         else if self_edge.is_root() {
             // check if edge exists
@@ -399,7 +448,7 @@ impl<T: Node> SwContainer<T> {
                     .unwrap()
                 ){
                 // edge already exists!
-                Err(SwErrors::BlockedByExistingEdge)
+                Err(SwChangeState::BlockedByExistingEdge)
             }else{
                 // self is root edge, reset it, remove other
                 self.adj[self_index].reset();
@@ -415,7 +464,7 @@ impl<T: Node> SwContainer<T> {
                     .unwrap()
                 ){
                 // edge already exists!
-                Err(SwErrors::BlockedByExistingEdge)
+                Err(SwChangeState::BlockedByExistingEdge)
             } else {
                 // self is root edge, reset it, remove other
                 other.adj[other_index].reset();
@@ -430,22 +479,40 @@ pub type SwGraph<T> = GenericGraph<T, SwContainer<T>>;
 
 impl<T: Node> SwGraph<T>{
     /// # Reset small-world edge to its root state
-    pub fn reset_edge(&mut self, index1: u32, index2: u32) -> Result<(u32, u32, usize, u32),SwErrors> {
-        let pair = self.get_2_mut(index1, index2);
+    pub fn reset_edge(&mut self, index0: u32, index1: u32) -> SwChangeState {
+        let pair = self.get_2_mut(index0, index1);
 
         let (e1, e2) = match pair {
-            Err(error) => return Err(error.to_sw_error()),
+            Err(error) => return error.to_sw_state(),
             Ok(container_tuple) => container_tuple
         };
 
 
-        let to_add = unsafe { e1.reset(e2)? };
+        let (vertex_index, edge_to_push) = unsafe {
+            match e1.reset(e2) {
+                Err(error) => return error,
+                Ok(container_tuple) => container_tuple
+            }
+        };
         unsafe {
             self
-                .get_mut_unchecked(to_add.0)
-                .push_single(to_add.1);
+                .get_mut_unchecked(vertex_index)
+                .push_single(edge_to_push);
         }
-        Ok((index1, index2, to_add.0, to_add.1))
+        SwChangeState::Reset(index0, index1, vertex_index, edge_to_push)
+    }
+
+    /// # Rewire edges
+    /// * rewire edge `(index0, index1)` to `(index0, index2)`
+    /// # panics
+    /// *  if indices are out of bounds
+    /// *  in **debug** mode: if indices are not unique
+    /// *  edge `(index0, index1)` has to be rooted at `index0`, else will panic in **debug** mode
+    pub fn rewire_edge(&mut self, index0: u32, index1: u32, index2: u32) -> SwChangeState {
+        let (c0, c1, c2) = self.get_3_mut(index0, index1, index2);
+        unsafe {
+            c0.rewire(c1, c2)
+        }
     }
 
     /// # initialize Ring2
