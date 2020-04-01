@@ -5,7 +5,7 @@ use crate::graph::GenericGraph;
 use crate::SwErrors;
 
 #[derive(Debug, Clone)]
-struct SwEdge {
+pub(crate) struct SwEdge {
     to: u32,
     originally_to: Option<u32>,
 }
@@ -344,6 +344,20 @@ impl<T: Node> SwContainer<T> {
         self.adj.swap_remove(index);
     }
 
+    /// Count how many root edges are contained
+    pub fn count_root(&self) -> usize {
+        self.adj
+        .iter()
+        .filter(|edge| edge.is_root())
+        .count()
+    }
+
+    /// Iterate over the concrete edge impl
+    #[allow(dead_code)]
+    pub(crate) fn iter_raw_edges(&self) -> std::slice::Iter::<SwEdge> {
+        self.adj.iter()
+    }
+
     /// # Add something like an "directed" edge
     /// * panics, if edge exists already
     /// * intended for usage after `reset`
@@ -433,6 +447,21 @@ impl<T: Node> SwGraph<T>{
         }
         Ok((index1, index2, to_add.0, to_add.1))
     }
+
+    /// # initialize Ring2
+    /// * every node is connected with its
+    /// next and second next neighbors
+    pub(crate) fn init_ring_2(&mut self) {
+        self.clear_edges();
+        let n = self.vertex_count();
+
+        for i in 0..n {
+            self.add_edge(i, (i+1) % n)
+                .unwrap();
+            self.add_edge(i, (i+2) % n)
+                .unwrap();
+        }
+    }
 }
 
 #[cfg(test)]
@@ -442,6 +471,41 @@ mod tests {
     use rand::Rng;
     use rand_pcg::Pcg64;
     use rand::SeedableRng;
+
+    #[test]
+    fn sw_ring_2() {
+        let size = 300u32;
+        let mut graph = SwGraph::<EmptyNode>::new(size);
+        graph.init_ring_2();
+
+        assert_eq!(graph.vertex_count(), size);
+        assert_eq!(graph.edge_count(), size * 2);
+
+        for i in 0..size {
+            assert_eq!(2, graph.container(i as usize).count_root());
+        }
+
+        graph.sort_adj();
+
+        for i in 0..size {
+            let container = graph.container(i as usize);
+            assert_eq!(container.id(), i);
+            let m2 = if i >= 2 {i - 2} else { (i + size - 2) % size };
+            let m1 = if i >= 1 {i - 1} else { (i + size - 1) % size };
+            let p1 = (i + 1) % size;
+            let p2 = (i + 2) % size;
+            let mut v = vec![(m2, None), (m1, None), (p1, Some(p1)), (p2, Some(p2))];
+            v.sort_unstable_by_key(|x| x.0);
+
+            let iter = graph
+                .get_mut_unchecked(i as usize)
+                .iter_raw_edges();
+            for (edge, other_edge) in iter.zip(v.iter()) {
+                assert_eq!(edge.to(), &other_edge.0);
+            }
+        }
+
+    }
 
     #[test]
     fn sw_edge_parse(){

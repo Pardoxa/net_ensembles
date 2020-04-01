@@ -26,7 +26,6 @@
 //! assert_eq!(20, e.graph().vertex_count());
 //! ```
 //! Take a look at the struct `ErEnsemble` for details
-use rand::SeedableRng;
 use crate::graph::Graph;
 use crate::GraphErrors;
 use crate::Node;
@@ -44,14 +43,14 @@ pub enum ErStep {
 
 /// # Implements Erdős-Rényi graph ensemble
 #[derive(Debug, Clone)]
-pub struct ErEnsemble<T: Node, R: rand::Rng + SeedableRng> {
+pub struct ErEnsemble<T: Node, R: rand::Rng> {
     graph: Graph<T>,
     prob: f64,
     c_target: f64,
     rng: R,
 }
 
-impl<T: Node, R: rand::Rng + SeedableRng> ErEnsemble<T, R> {
+impl<T: Node, R: rand::Rng> ErEnsemble<T, R> {
     /// # Initialize
     /// * create new ErEnsemble graph with `n` vertices
     /// * target connectivity `c_target`
@@ -208,6 +207,7 @@ mod testing {
     use super::*;
     use rand_pcg::Pcg64;
     use crate::TestNode;
+    use rand::SeedableRng;
 
     #[test]
     fn test_edge_count() {

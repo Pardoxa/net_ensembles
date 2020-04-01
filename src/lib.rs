@@ -58,6 +58,7 @@
 pub mod example_nodes;
 pub mod graph;
 pub mod er;
+pub mod sw;
 mod graph_traits;
 pub mod traits;
 pub mod constants;
