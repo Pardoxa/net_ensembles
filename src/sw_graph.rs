@@ -479,14 +479,10 @@ pub type SwGraph<T> = GenericGraph<T, SwContainer<T>>;
 
 impl<T: Node> SwGraph<T>{
     /// # Reset small-world edge to its root state
+    /// * **panics** if index out of bounds
+    /// * in debug: panics if `index0 == index1`
     pub fn reset_edge(&mut self, index0: u32, index1: u32) -> SwChangeState {
-        let pair = self.get_2_mut(index0, index1);
-
-        let (e1, e2) = match pair {
-            Err(error) => return error.to_sw_state(),
-            Ok(container_tuple) => container_tuple
-        };
-
+        let (e1, e2) = self.get_2_mut(index0, index1);
 
         let (vertex_index, edge_to_push) = unsafe {
             match e1.reset(e2) {

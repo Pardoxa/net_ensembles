@@ -612,17 +612,29 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     }
 
     /// Returns two mutable references in a tuple
-    /// ## ErrorCases:
-    /// `GraphErrors::IndexOutOfRange`  <-- index to large
-    /// GraphErrors::IdenticalIndices <-- index0 == index1 not allowed!
-    pub(crate) fn get_2_mut(&mut self, index0: u32, index1: u32) ->
-        Result<(&mut A, &mut A),GraphErrors>
+    /// ## panics if:
+    /// * index out of bounds
+    /// * in debug: if indices are not unique
+    pub(crate) fn get_2_mut(&mut self, index0: u32, index1: u32) -> (&mut A, &mut A)
     {
-        if index0 >= self.next_id || index1 >= self.next_id {
-            return Err(GraphErrors::IndexOutOfRange);
-        } else if index0 == index1 {
-            return Err(GraphErrors::IdenticalIndices);
-        }
+        assert!(
+            index0 < self.next_id &&
+            index1 < self.next_id,
+            format!("net_ensembles - panic - index out of bounds! \
+                    vertex_count: {}, index_0: {}, index1: {} - \
+                    error probably results from trying to add or remove edges",
+                    self.vertex_count(),
+                    index0,
+                    index1
+            )
+        );
+
+        debug_assert!(
+            index0 != index1,
+            "net_ensembles - panic - indices have to be unique! \
+            error probably results from trying to add or remove self-loops"
+        );
+
         let r1: &mut A;
         let r2: &mut A;
 
@@ -633,12 +645,13 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
             r2 = &mut *ptr.offset(index1 as isize);
         }
 
-        Ok((r1, r2))
+        (r1, r2)
     }
 
     /// Returns three mutable references in a tuple
-    /// ## ErrorCases:
-    /// panics if invalid, in debug: panics if indices are not unique
+    /// ## panics:
+    /// * index out of bounds
+    /// * in debug: if indices are not unique
     pub(crate) fn get_3_mut(&mut self, index0: u32, index1: u32, index2: u32) ->
         (&mut A, &mut A, &mut A)
     {
@@ -647,6 +660,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
             index1 < self.next_id &&
             index2 < self.next_id
         );
+        
         debug_assert!(
             index0 != index1 &&
             index1 != index2 &&
@@ -673,10 +687,12 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// | Error | Reason |
     /// | ---- | ---- |
     /// | `GraphErrors::IndexOutOfRange` | `index1` or `index2` larger than `self.vertex_count()`  |
-    /// | `GraphErrors::IdenticalIndices` | `index2 == index1` not allowed! |
     /// | `GraphErrors::EdgeExists` | requested edge already exists! |
+    /// ## panics
+    /// * if indices out of bounds
+    /// * in debug: If `index0 == index1`
     pub fn add_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
-        let (r1, r2) = self.get_2_mut(index1, index2)?;
+        let (r1, r2) = self.get_2_mut(index1, index2);
         unsafe{ r1.push(r2)?; }
         self.edge_count += 1;
         Ok(())
@@ -687,10 +703,12 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// | Error | Reason |
     /// | ---- | ---- |
     /// | `GraphErrors::IndexOutOfRange` | `index1` or `index2` larger than `self.vertex_count()`  |
-    /// | `GraphErrors::IdenticalIndices` | `index2 == index1` not allowed! |
     /// | `GraphErrors::EdgeDoesNotExist` | requested edge does not exists |
+    /// # panics
+    /// * if index out of bounds
+    /// * in debug: If `index0 == index1`
     pub fn remove_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
-        let (r1, r2) = self.get_2_mut(index1, index2)?;
+        let (r1, r2) = self.get_2_mut(index1, index2);
         unsafe{ r1.remove(r2)?; }
         self.edge_count -= 1;
         Ok(())

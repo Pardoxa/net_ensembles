@@ -30,11 +30,6 @@ pub enum GraphErrors{
     /// ### ERROR 404: Edge not found ;)
     /// Did you try to delete a non existing edge?
     EdgeDoesNotExist,
-    /// ### Have you tried a smaller index?
-    IndexOutOfRange,
-    /// ### No self loops allowed!
-    /// Meaning you can't: `graph.add_edge(i, i);`
-    IdenticalIndices,
 }
 
 impl GraphErrors {
@@ -43,8 +38,6 @@ impl GraphErrors {
        match self {
            GraphErrors::EdgeExists          => &"EdgeExists",
            GraphErrors::EdgeDoesNotExist    => &"EdgeDoesNotExist",
-           GraphErrors::IndexOutOfRange     => &"IndexOutOfRange",
-           GraphErrors::IdenticalIndices    => &"IdenticalIndices",
        }
    }
 
