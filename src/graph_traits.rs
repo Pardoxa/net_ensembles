@@ -1,4 +1,5 @@
 use crate::IterWrapper;
+use std::fmt;
 /// What every node should be able to do
 pub trait Node
 where Self: Clone{
@@ -18,7 +19,8 @@ where Self: Clone{
     }
 }
 
-use std::fmt;
+
+
 /// Error messages
 #[derive(Debug)]
 pub enum GraphErrors{
@@ -45,6 +47,10 @@ impl GraphErrors {
            GraphErrors::IdenticalIndices    => &"IdenticalIndices",
        }
    }
+
+   pub fn to_sw_error(self) -> SwErrors {
+       SwErrors::GError(self)
+   }
 }
 
 impl fmt::Display for GraphErrors {
@@ -52,6 +58,13 @@ impl fmt::Display for GraphErrors {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_str())
     }
+}
+
+#[derive(Debug)]
+pub enum SwErrors {
+    Nothing,
+    GError(GraphErrors),
+    BlockedByExistingEdge,
 }
 
 

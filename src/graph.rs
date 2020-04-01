@@ -1,7 +1,10 @@
 //! # Topology
 //! Implements a network.
 //!
-//! You probably want to take a look at the struct `Graph`
+//! You probably want to take a look at the struct `GenericGraph`,
+//! since it contains the topology information.
+//!
+//! For Erdős-Rényi Graphs, see struct `ER`
 use std::fmt;
 use std::cmp::max;
 use std::convert::TryFrom;
@@ -592,11 +595,17 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
         (2 * self.edge_count()) as f32 / self.vertex_count() as f32
     }
 
+    /// # Get mutable vertex
+    /// * panics if index out of range
+    pub(crate) fn get_mut_unchecked(&mut self, index: usize) -> &mut A {
+        &mut self.vertices[index]
+    }
+
     /// Returns two mutable references in a tuple
     /// ## ErrorCases:
     /// `GraphErrors::IndexOutOfRange`  <-- index to large
     /// GraphErrors::IdenticalIndices <-- index1 == index2 not allowed!
-    fn get_2_mut(&mut self, index1: u32, index2: u32) ->
+    pub(crate) fn get_2_mut(&mut self, index1: u32, index2: u32) ->
         Result<(&mut A, &mut A),GraphErrors>
     {
         if index1 >= self.next_id || index2 >= self.next_id {
@@ -650,7 +659,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
         self.edge_count
     }
 
-
+    /// returns number of vertices adjacent to vertex `index`
     pub fn degree(&self, index: usize) -> Option<usize> {
         Some(
             self

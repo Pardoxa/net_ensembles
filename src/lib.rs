@@ -70,6 +70,8 @@ pub use er::ER;
 pub use er::ErStep;
 pub use graph::Graph;
 pub use graph_traits::GraphErrors;
+pub use graph_traits::SwErrors;
 pub use constants::DEFAULT_DOT_OPTIONS;
 pub use traits::*;
 pub use iter::IterWrapper;
+pub use sw_graph::SwGraph;

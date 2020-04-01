@@ -1,6 +1,8 @@
 use crate::traits::*;
 use std::fmt;
 use crate::GraphErrors;
+use crate::graph::GenericGraph;
+use crate::SwErrors;
 
 #[derive(Debug, Clone)]
 struct SwEdge {
@@ -12,6 +14,25 @@ impl SwEdge {
     fn to(&self) -> &u32 {
         &self.to
     }
+
+    fn originally_to(&self) -> &Option<u32> {
+        &self.originally_to
+    }
+
+    fn is_root(&self) -> bool {
+        self.originally_to.is_some()
+    }
+
+    fn reset(&mut self) {
+        self.to = self.originally_to.unwrap();
+    }
+
+    fn is_at_root(&self) -> bool {
+        self
+            .originally_to
+            .map_or(false, |val| val == self.to)
+    }
+
 
     fn parse(to_parse: &str) -> Option<(&str, Self)> {
         // skip identifier PARSE_ID
@@ -235,9 +256,9 @@ impl<T: Node> AdjContainer<T> for SwContainer<T>
 
     /// check if vertex with `other_id` is adjacent to self
     /// ## Note:
-    /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
+    /// (in `GenericGraph<T>`: `id` equals the index corresponding to `self`)
     fn is_adjacent(&self, other_id: &u32) -> bool{
-        self.neighbors()
+        SwEdgeIterNeighbors::new(self.adj.as_slice())
             .any(|x| x == other_id)
     }
 
@@ -308,16 +329,108 @@ impl<T: Node> AdjContainer<T> for SwContainer<T>
 
 impl<T: Node> SwContainer<T> {
 
-    fn swap_remove_element(&mut self, elem: u32) -> () {
-        let index = self
-            .neighbors()
+    fn adj_position(&self, elem: u32) -> Option<usize> {
+        SwEdgeIterNeighbors::new(self.adj.as_slice())
             .position(|&x| x == elem)
+    }
+
+    fn swap_remove_element(&mut self, elem: u32) -> () {
+        let index = self.adj_position(elem)
             .expect("swap_remove_element ERROR 0");
 
         self.adj.swap_remove(index);
     }
+
+    /// # Add something like an "directed" edge
+    /// * panics, if edge exists already
+    /// * intended for usage after `reset`
+    /// * No guarantees whatsoever, if you use it for something else
+    unsafe fn push_single(&mut self, other_id: u32) {
+        if self.is_adjacent(&other_id){
+            panic!("SwContainer, push single, pushed existing edge!");
+        }
+        self.adj
+            .push( SwEdge{ to: other_id, originally_to: None } );
+    }
+
+    /// # Intendet to reset a small world edge
+    /// * If successful will return edge, that needs to be added to the graph **using `push_single`**
+    unsafe fn reset(&mut self, other: &mut Self) -> Result<(usize, u32), SwErrors> {
+
+        let self_index = self.adj_position(other.id());
+        let other_index = other.adj_position(self.id());
+
+        if self_index.is_none() && other_index.is_none(){
+            return Err(GraphErrors::EdgeDoesNotExist.to_sw_error());
+        }
+        let self_index = self_index.expect("ERROR 0 SwContainer reset");
+        let other_index = other_index.expect("ERROR 1 SwContainer reset");
+
+        let self_edge  = self. adj.get_unchecked(self_index);
+        let other_edge = other.adj.get_unchecked(other_index);
+
+        // if edge is allready at root, there is nothing to be done
+        if self_edge.is_at_root()
+        || other_edge.is_at_root() {
+            Err(SwErrors::Nothing)
+        }
+        else if self_edge.is_root() {
+            // check if edge exists
+            if self.is_adjacent(
+                &self_edge
+                    .originally_to()
+                    .unwrap()
+                ){
+                // edge already exists!
+                Err(SwErrors::BlockedByExistingEdge)
+            }else{
+                // self is root edge, reset it, remove other
+                self.adj[self_index].reset();
+                other.adj.swap_remove(other_index);
+                Ok((*self.adj[self_index].to() as usize, self.id()))
+            }
+
+        } else {
+            // check if edge exists
+            if other.is_adjacent(
+                &other_edge
+                    .originally_to()
+                    .unwrap()
+                ){
+                // edge already exists!
+                Err(SwErrors::BlockedByExistingEdge)
+            } else {
+                // self is root edge, reset it, remove other
+                other.adj[other_index].reset();
+                self.adj.swap_remove(self_index);
+                Ok((*other.adj[other_index].to() as usize, other.id()))
+            }
+        }
+    }
 }
 
+pub type SwGraph<T> = GenericGraph<T, SwContainer<T>>;
+
+impl<T: Node> SwGraph<T>{
+    /// # Reset small-world edge to its root state
+    pub fn reset_edge(&mut self, index1: u32, index2: u32) -> Result<(u32, u32, usize, u32),SwErrors> {
+        let pair = self.get_2_mut(index1, index2);
+
+        let (e1, e2) = match pair {
+            Err(error) => return Err(error.to_sw_error()),
+            Ok(container_tuple) => container_tuple
+        };
+
+
+        let to_add = unsafe { e1.reset(e2)? };
+        unsafe {
+            self
+                .get_mut_unchecked(to_add.0)
+                .push_single(to_add.1);
+        }
+        Ok((index1, index2, to_add.0, to_add.1))
+    }
+}
 
 #[cfg(test)]
 mod tests {
