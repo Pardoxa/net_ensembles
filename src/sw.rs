@@ -1,6 +1,5 @@
 use crate::SwGraph;
 use crate::traits::*;
-use core::cmp::{min,max};
 use crate::SwChangeState;
 
 /// # Implementssmall-world graph ensemble
@@ -29,17 +28,13 @@ impl <T, R> SwEnsemble<T, R>
         result
     }
 
-    fn draw_remaining(&mut self, index0: u32, index1: u32, high: u32) -> u32 {
+    fn draw_remaining(&mut self, index: u32, high: u32) -> u32 {
         let num = self.rng.gen_range(0, high);
-        let min = min(index0, index1);
-        let max = max(index0, index1);
 
-        if num < min {
+        if num < index {
             num
-        } else if num + 1 < max {
-            num + 1
         } else {
-            num + 2
+            num + 1
         }
     }
 
@@ -48,7 +43,7 @@ impl <T, R> SwEnsemble<T, R>
 
         if self.rng.gen::<f64>() <= self.r_prob {
             let rewire_index = self.
-            draw_remaining(index0, index1, vertex_count - 2);
+            draw_remaining(index0, vertex_count - 1);
             self.graph.rewire_edge(index0, index1, rewire_index)
         }else {
             self.graph.reset_edge(index0, index1)

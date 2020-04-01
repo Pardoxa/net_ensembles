@@ -505,6 +505,9 @@ impl<T: Node> SwGraph<T>{
     /// *  in **debug** mode: if indices are not unique
     /// *  edge `(index0, index1)` has to be rooted at `index0`, else will panic in **debug** mode
     pub fn rewire_edge(&mut self, index0: u32, index1: u32, index2: u32) -> SwChangeState {
+        if index1 == index2 {
+            return SwChangeState::Nothing;
+        }
         let (c0, c1, c2) = self.get_3_mut(index0, index1, index2);
         unsafe {
             c0.rewire(c1, c2)
@@ -519,9 +522,9 @@ impl<T: Node> SwGraph<T>{
         let n = self.vertex_count();
 
         for i in 0..n {
-            self.add_edge(i, (i+1) % n)
+            self.add_edge(i, (i + 1) % n)
                 .unwrap();
-            self.add_edge(i, (i+2) % n)
+            self.add_edge(i, (i + 2) % n)
                 .unwrap();
         }
     }
