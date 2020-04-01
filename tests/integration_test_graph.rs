@@ -123,7 +123,7 @@ fn check_is_connected() {
 #[test]
 fn dot_labeled() {
     let graph = create_graph_1();
-    let s = graph.to_dot_with_labels_from_contained(DEFAULT_DOT_OPTIONS, |_, index| format!("Hey {}!", index));
+    let s = graph.to_dot_with_labels_from_contained(EXAMPLE_DOT_OPTIONS, |_, index| format!("Hey {}!", index));
     let mut read_in = File::open("TestData/label_test.dot").expect("unable to open file");
     let mut data = String::new();
     // let mut f = File::create("label_test.dot").expect("Unable to create file");

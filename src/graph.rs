@@ -947,7 +947,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// ```
     /// use std::fs::File;
     /// use std::io::prelude::*;
-    /// use net_ensembles::{Graph,TestNode,DEFAULT_DOT_OPTIONS};
+    /// use net_ensembles::{Graph,TestNode,EXAMPLE_DOT_OPTIONS};
     ///
     /// let mut graph: Graph<TestNode> = Graph::new(3);
     /// graph.add_edge(0, 1).unwrap();
@@ -956,7 +956,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     ///
     /// // create string of dotfile
     /// let s = graph.to_dot_with_labels_from_contained(
-    ///    DEFAULT_DOT_OPTIONS,
+    ///    EXAMPLE_DOT_OPTIONS,
     ///    |_contained, index| format!("Hey {}!", index)
     /// );
     ///
@@ -1004,7 +1004,8 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// use std::fs::File;
     /// use std::io::prelude::*;
     /// use net_ensembles::traits::*;
-    /// use net_ensembles::{Graph,EmptyNode,DEFAULT_DOT_OPTIONS};
+    /// use net_ensembles::dot_constants::*;
+    /// use net_ensembles::{Graph,EmptyNode};
     ///
     /// let mut graph: Graph<EmptyNode> = Graph::new(5);
     /// graph.add_edge(0, 1).unwrap();
@@ -1015,7 +1016,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     ///
     /// // create string of dotfile
     /// let s = graph.to_dot_with_labels_from_container(
-    ///    "splines=true;\n\toverlap = false;",
+    ///     &[DOT_SPLINES, DOT_NO_OVERLAP].join("\n\t"),
     ///     |container, index|
     ///     {
     ///         container.contained();  // does nothing in this example, but you can still access
@@ -1034,7 +1035,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// ```dot
     /// graph G{
     /// 	splines=true;
-    /// 	overlap = false;
+    /// 	overlap=false;
     /// 	0 1 2 3 4 ;
     /// 	"0" [label="index 0, degree: 3"];
     /// 	"1" [label="index 1, degree: 2"];

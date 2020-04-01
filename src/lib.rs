@@ -62,7 +62,7 @@ pub mod er;
 pub mod sw;
 mod graph_traits;
 pub mod traits;
-pub mod constants;
+pub mod dot_constants;
 pub mod sw_graph;
 mod iter;
 
@@ -73,7 +73,7 @@ pub use er::ErStep;
 pub use graph::Graph;
 pub use graph_traits::GraphErrors;
 pub use graph_traits::SwErrors;
-pub use constants::DEFAULT_DOT_OPTIONS;
+pub use dot_constants::EXAMPLE_DOT_OPTIONS;
 pub use traits::*;
 pub use iter::IterWrapper;
 pub use sw_graph::SwGraph;
