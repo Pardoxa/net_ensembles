@@ -11,7 +11,7 @@ pub(crate) struct SwEdge {
 }
 
 impl SwEdge {
-    fn to(&self) -> &u32 {
+    pub(crate) fn to(&self) -> &u32 {
         &self.to
     }
 
@@ -19,7 +19,7 @@ impl SwEdge {
         &self.originally_to
     }
 
-    fn is_root(&self) -> bool {
+    pub(crate) fn is_root(&self) -> bool {
         self.originally_to.is_some()
     }
 

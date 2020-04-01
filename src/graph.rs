@@ -578,7 +578,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
         self.vertices.iter()
     }
 
-    fn container_mut(&mut self, index: usize) -> &mut A {
+    pub(crate) fn container_mut(&mut self, index: usize) -> &mut A {
         &mut self.vertices[index]
     }
 
@@ -660,7 +660,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
             index1 < self.next_id &&
             index2 < self.next_id
         );
-        
+
         debug_assert!(
             index0 != index1 &&
             index1 != index2 &&

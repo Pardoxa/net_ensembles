@@ -76,3 +76,4 @@ pub use graph_traits::SwChangeState;
 pub use traits::*;
 pub use iter::IterWrapper;
 pub use sw_graph::SwGraph;
+pub use sw::SwEnsemble;

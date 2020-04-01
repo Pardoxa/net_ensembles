@@ -1,8 +1,8 @@
 
 use rand_pcg::Pcg64;
+use rand::SeedableRng;
 use net_ensembles::ErEnsemble;
 use net_ensembles::TestNode;
-use rand::SeedableRng;
 mod common;
 use common::equal_graphs;
 
