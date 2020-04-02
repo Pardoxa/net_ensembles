@@ -1,8 +1,10 @@
+//! # Topology for SwEnsemble
+
 use crate::traits::*;
 use std::fmt;
 use crate::GraphErrors;
-use crate::graph::GenericGraph;
 use crate::SwChangeState;
+use crate::GenericGraph;
 
 #[derive(Debug, Clone)]
 pub(crate) struct SwEdge {
@@ -376,15 +378,19 @@ impl<T: Node> SwContainer<T> {
             .push( SwEdge{ to: other_id, originally_to: None } );
     }
 
-    unsafe fn rewire(&mut self, to_disconnect: &mut Self, to_rewire: &mut Self) -> SwChangeState {
+    fn rewire(&mut self, to_disconnect: &mut Self, to_rewire: &mut Self) -> SwChangeState {
         // None if edge does not exist
         let self_edge_index = self
             .adj_position(to_disconnect.id());
 
         // check if rewire request is invalid
         if self_edge_index.is_none()
-        || self.is_adjacent(&to_rewire.id()) {
+        {
             return SwChangeState::InvalidAdjecency;
+        }
+        else if self.is_adjacent(&to_rewire.id())
+        {
+            return SwChangeState::BlockedByExistingEdge;
         }
         let self_edge_index = self_edge_index.unwrap();
 
@@ -418,7 +424,9 @@ impl<T: Node> SwContainer<T> {
 
     /// # Intendet to reset a small world edge
     /// * If successful will return edge, that needs to be added to the graph **using `push_single`**
-    unsafe fn reset(&mut self, other: &mut Self) -> Result<(usize, u32), SwChangeState> {
+    /// # panics
+    /// * in debug: if edge not rooted at self
+    fn reset(&mut self, other: &mut Self) -> Result<u32, SwChangeState> {
 
         let self_index = self.adj_position(other.id());
 
@@ -432,45 +440,35 @@ impl<T: Node> SwContainer<T> {
         let self_index = self_index.expect("ERROR 0 SwContainer reset");
         let other_index = other_index.expect("ERROR 1 SwContainer reset");
 
-        let self_edge  = self. adj.get_unchecked(self_index);
-        let other_edge = other.adj.get_unchecked(other_index);
+        // assert safty for get_unchecked
+        assert!(self_index < self.adj.len());
+        assert!(other_index < other.adj.len());
+
+        let self_edge  = unsafe{ self. adj.get_unchecked(self_index) };
+        let other_edge = unsafe{ other.adj.get_unchecked(other_index) };
+
+        debug_assert!(
+            !other_edge.is_root(),
+            "Error in reset: edge has to be rooted at self"
+        );
 
         // if edge is allready at root, there is nothing to be done
-        if self_edge.is_at_root()
-        || other_edge.is_at_root() {
+        if self_edge.is_at_root() {
             Err(SwChangeState::Nothing)
         }
-        else if self_edge.is_root() {
-            // check if edge exists
-            if self.is_adjacent(
-                &self_edge
-                    .originally_to()
-                    .unwrap()
-                ){
-                // edge already exists!
-                Err(SwChangeState::BlockedByExistingEdge)
-            }else{
-                // self is root edge, reset it, remove other
-                self.adj[self_index].reset();
-                other.adj.swap_remove(other_index);
-                Ok((*self.adj[self_index].to() as usize, self.id()))
-            }
-
+        // check if edge exists
+        else if self.is_adjacent(
+            &self_edge
+                .originally_to()
+                .unwrap()
+            ){
+            // edge already exists!
+            Err(SwChangeState::BlockedByExistingEdge)
         } else {
-            // check if edge exists
-            if other.is_adjacent(
-                &other_edge
-                    .originally_to()
-                    .unwrap()
-                ){
-                // edge already exists!
-                Err(SwChangeState::BlockedByExistingEdge)
-            } else {
-                // self is root edge, reset it, remove other
-                other.adj[other_index].reset();
-                self.adj.swap_remove(self_index);
-                Ok((*other.adj[other_index].to() as usize, other.id()))
-            }
+            // self is root edge, reset it, remove other
+            self.adj[self_index].reset();
+            other.adj.swap_remove(other_index);
+            Ok(*self.adj[self_index].to())
         }
     }
 }
@@ -484,18 +482,18 @@ impl<T: Node> SwGraph<T>{
     pub fn reset_edge(&mut self, index0: u32, index1: u32) -> SwChangeState {
         let (e1, e2) = self.get_2_mut(index0, index1);
 
-        let (vertex_index, edge_to_push) = unsafe {
+        let vertex_index =
             match e1.reset(e2) {
                 Err(error) => return error,
                 Ok(container_tuple) => container_tuple
-            }
-        };
+            };
+
         unsafe {
             self
-                .get_mut_unchecked(vertex_index)
-                .push_single(edge_to_push);
+                .get_mut_unchecked(vertex_index as usize)
+                .push_single(index0);
         }
-        SwChangeState::Reset(index0, index1, vertex_index, edge_to_push)
+        SwChangeState::Reset(index0, index1, vertex_index)
     }
 
     /// # Rewire edges
@@ -509,9 +507,8 @@ impl<T: Node> SwGraph<T>{
             return SwChangeState::Nothing;
         }
         let (c0, c1, c2) = self.get_3_mut(index0, index1, index2);
-        unsafe {
-            c0.rewire(c1, c2)
-        }
+
+        c0.rewire(c1, c2)
     }
 
     /// # initialize Ring2

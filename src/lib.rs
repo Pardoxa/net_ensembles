@@ -1,6 +1,6 @@
 //! I am writing this libary for my scientific simulations
 //!
-//! * you probably want to take a look at `net_ensembles::graph::GenericGraph`.
+//! * you probably want to take a look at `net_ensembles::GenericGraph`.
 //! * also, take a look at the module `er` if you want to do something with an Erdős-Rényi ensemble
 //! * if you want to work with small-world ensemble, look at module `sw`
 //! # Example 1
@@ -56,6 +56,7 @@
 //! println!("connected components: {:?}",  er.graph().connected_components());
 //! println!("transitivity: {}",            er.graph().transitivity());
 //! ```
+pub mod generic_graph;
 pub mod example_nodes;
 pub mod graph;
 pub mod er;
@@ -66,14 +67,15 @@ pub mod dot_constants;
 pub mod sw_graph;
 mod iter;
 
-pub use example_nodes::TestNode;
-pub use example_nodes::EmptyNode;
+pub use sw::SwEnsemble;
+pub use sw_graph::SwGraph;
 pub use er::ErEnsemble;
 pub use er::ErStep;
 pub use graph::Graph;
+pub use generic_graph::GenericGraph;
+pub use example_nodes::TestNode;
+pub use example_nodes::EmptyNode;
 pub use graph_traits::GraphErrors;
 pub use graph_traits::SwChangeState;
 pub use traits::*;
 pub use iter::IterWrapper;
-pub use sw_graph::SwGraph;
-pub use sw::SwEnsemble;

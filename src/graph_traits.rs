@@ -59,8 +59,10 @@ pub enum SwChangeState {
     InvalidAdjecency,
     BlockedByExistingEdge,
     Nothing,
+    /// old edge: (Rewire.0, Rewire.1), new edge (Rewire.0, Rewire.2)
     Rewire(u32, u32, u32),
-    Reset(u32, u32, usize, u32),
+    /// old edge: (Reset.0, Reset.1), new edge (Reset.0, Reset.2)
+    Reset(u32, u32, u32),
     GError(GraphErrors),
 }
 

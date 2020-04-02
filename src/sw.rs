@@ -17,7 +17,8 @@ impl <T, R> SwEnsemble<T, R>
 
     /// r_prob is probability of rewire
     pub fn new(n: u32, r_prob: f64, rng: R) -> Self {
-        let graph = SwGraph::new(n);
+        let mut graph = SwGraph::new(n);
+        graph.init_ring_2();
         let mut result =
             SwEnsemble {
                 graph,
@@ -50,9 +51,19 @@ impl <T, R> SwEnsemble<T, R>
         }
     }
 
+    fn debug_error_check(state: SwChangeState) -> bool {
+        match state {
+            SwChangeState::GError(_)                => panic!("GError"),
+            SwChangeState::InvalidAdjecency         => panic!("InvalidAdjecency"),
+            _                                       => true
+        }
+    }
+
+    /// # Randomizes the edges according to small-world model
+    /// * this is used by `SwEnsemble::new` to create the initial topology
+    /// * you can use this for sampling the ensemble
+    /// * runs in `O(vertices)`
     pub fn randomize(&mut self){
-        self.graph
-            .init_ring_2();
         let count = self.graph
             .vertex_count();
 
@@ -68,13 +79,37 @@ impl <T, R> SwEnsemble<T, R>
             let first   = *root_iter.next().unwrap();
             let second  = *root_iter.next().unwrap();
             debug_assert!(root_iter.next().is_none());
-            self.randomize_edge(i, first);
-            self.randomize_edge(i, second);
+
+            let state = self.randomize_edge(i, first);
+            debug_assert!(Self::debug_error_check(state));
+
+            let state = self.randomize_edge(i, second);
+            debug_assert!(Self::debug_error_check(state));
+
         }
     }
 
+    /// # Sort adjecency lists
+    /// If you depend on the order of the adjecency lists, you can sort them
+    /// # Performance
+    /// * internally uses [pattern-defeating quicksort](https://github.com/orlp/pdqsort)
+    /// as long as that is the standard
+    /// * sorts an adjecency list with length `d` in worst-case: `O(d log(d))`
+    /// * is called for each adjecency list, i.e., `self.vertex_count()` times
+    pub fn sort_adj(&mut self) {
+        self.graph.sort_adj();
+    }
+
+    /// * returns reference to the underlying topology aka, the `SwGraph<T>`
+    /// * use this to call functions regarding the topology
     pub fn graph(&self) -> &SwGraph<T> {
         &self.graph
     }
 
+
+    /// # Access RNG
+    /// If, for some reason, you want access to the internal random number generator: Here you go
+    pub fn rng(&mut self) -> &mut R {
+        &mut self.rng
+    }
 }
