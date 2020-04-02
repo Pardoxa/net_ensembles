@@ -1,8 +1,21 @@
+//! # Small-world ensemble
+//! In this specific small-world ensemble each vertex has at least degree 2.
+//! That means, this small-world ensemble will never exhibit leaves.
+//!
+//! I implemented the same model, as I used in my paper
+//! > Yannick Feld and Alexander K. Hartmann,
+//! > "Large-deviations of the basin stability of power grids"
+//! > *Chaos* **29**:113113 (2019), DOI: [10.1063/1.5121415](https://dx.doi.org/10.1063/1.5121415)
+//!
+//! where it is described in more detail.
+//!
+//! You can find a list of my publications on my [homepage](https://www.yfeld.de/#publications).
 use crate::SwGraph;
 use crate::traits::*;
 use crate::SwChangeState;
 
-/// # Implementssmall-world graph ensemble
+/// # Implements small-world graph ensemble
+/// * for more details look at [documentation](index.html) of module `sw`
 #[derive(Debug, Clone)]
 pub struct SwEnsemble<T: Node, R: rand::Rng> {
     graph: SwGraph<T>,
@@ -14,8 +27,11 @@ impl <T, R> SwEnsemble<T, R>
     where   T: Node,
             R: rand::Rng,
 {
-
-    /// r_prob is probability of rewire
+    /// # Initialize
+    /// * create new SwEnsemble graph with `n` vertices
+    /// * `r_prob` is probability of rewiring for each edge
+    /// * `rng` is consumed and used as random number generator in the following
+    /// * internally uses `SwGraph<T>::new(n)`
     pub fn new(n: u32, r_prob: f64, rng: R) -> Self {
         let mut graph = SwGraph::new(n);
         graph.init_ring_2();
@@ -104,6 +120,19 @@ impl <T, R> SwEnsemble<T, R>
     /// * use this to call functions regarding the topology
     pub fn graph(&self) -> &SwGraph<T> {
         &self.graph
+    }
+
+    /// * returns rewiring probability
+    pub fn r_prob(&self) -> f64 {
+        self.r_prob
+    }
+
+    /// * set new value for rewiring probability
+    /// ## Note
+    /// * will only set the value, which will be used from now on
+    /// * if you also want to create a new sample, call `randomize` afterwards
+    pub fn set_r_prob(&mut self, r_prob: f64) {
+        self.r_prob = r_prob;
     }
 
 

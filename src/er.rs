@@ -1,4 +1,4 @@
-//! # Create Erdős-Rényi networks
+//! # Erdős-Rényi ensemble
 //!
 //! # Minimal example:
 //! ```
@@ -97,6 +97,16 @@ impl<T: Node, R: rand::Rng> ErEnsemble<T, R> {
     /// where `N` is the number of vertices in the graph
     pub fn target_connectivity(&self) -> f64 {
         self.c_target
+    }
+
+    /// * set new value for target connectivity
+    /// ## Note
+    /// * will only set the value (and probability), which will be used from now on
+    /// * if you also want to create a new sample, call `randomize` afterwards
+    pub fn set_target_connectivity(&mut self, c_target: f64) {
+        let prob = c_target / (self.graph().vertex_count() - 1) as f64;
+        self.prob = prob;
+        self.c_target = c_target;
     }
 
     /// # Monte Carlo step

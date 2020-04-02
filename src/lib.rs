@@ -1,8 +1,8 @@
 //! I am writing this libary for my scientific simulations
 //!
-//! * you probably want to take a look at `net_ensembles::GenericGraph`.
-//! * also, take a look at the module `er` if you want to do something with an Erdős-Rényi ensemble
-//! * if you want to work with small-world ensemble, look at module `sw`
+//! * you probably want to [take a look](generic_graph/struct.GenericGraph.html) at `net_ensembles::GenericGraph`.
+//! * [take a look](er/index.html) at the module `er` if you want to do something with an Erdős-Rényi ensemble
+//! * if you want to work with small-world ensemble, [look at](sw/index.html) module `sw`
 //! # Example 1
 //! Create an Erdős-Rényi graph
 //! ```

@@ -500,7 +500,7 @@ impl<T: Node> SwGraph<T>{
     /// * rewire edge `(index0, index1)` to `(index0, index2)`
     /// # panics
     /// *  if indices are out of bounds
-    /// *  in **debug** mode: if indices are not unique
+    /// *  in debug: panics if `index0 == index2`
     /// *  edge `(index0, index1)` has to be rooted at `index0`, else will panic in **debug** mode
     pub fn rewire_edge(&mut self, index0: u32, index1: u32, index2: u32) -> SwChangeState {
         if index1 == index2 {
