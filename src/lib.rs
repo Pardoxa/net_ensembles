@@ -62,6 +62,7 @@ pub mod graph;
 pub mod er_c;
 pub mod sw;
 mod graph_traits;
+mod ensemble_traits;
 pub mod traits;
 pub mod dot_constants;
 pub mod sw_graph;
