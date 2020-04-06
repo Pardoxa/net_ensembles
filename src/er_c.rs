@@ -20,19 +20,19 @@
 //!
 //! // now choose your random number generator
 //! let rng = Pcg64::seed_from_u64(76);
-//! // the following creates an ErEnsemble graph with 20 vertices and a connectivity of 0.3
+//! // the following creates an ErEnsembleC graph with 20 vertices and a connectivity of 0.3
 //! // and uses thre random number generator rng
-//! let e = net_ensembles::ErEnsemble::<ExampleNode, Pcg64>::new(20, 0.3, rng);
+//! let e = net_ensembles::ErEnsembleC::<ExampleNode, Pcg64>::new(20, 0.3, rng);
 //! assert_eq!(20, e.graph().vertex_count());
 //! ```
-//! Take a look at the struct `ErEnsemble` for details
+//! Take a look at the struct `ErEnsembleC` for details
 use crate::graph::Graph;
 use crate::GraphErrors;
 use crate::Node;
 
 /// # Returned by Monte Carlo Steps
 #[derive(Debug, Clone)]
-pub enum ErStep {
+pub enum ErStepC {
     /// nothing was changed
     Nothing,
     /// an edge was added
@@ -43,24 +43,24 @@ pub enum ErStep {
 
 /// # Implements Erdős-Rényi graph ensemble
 #[derive(Debug, Clone)]
-pub struct ErEnsemble<T: Node, R: rand::Rng> {
+pub struct ErEnsembleC<T: Node, R: rand::Rng> {
     graph: Graph<T>,
     prob: f64,
     c_target: f64,
     rng: R,
 }
 
-impl<T: Node, R: rand::Rng> ErEnsemble<T, R> {
+impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
     /// # Initialize
-    /// * create new ErEnsemble graph with `n` vertices
+    /// * create new ErEnsembleC graph with `n` vertices
     /// * target connectivity `c_target`
     /// * `rng` is consumed and used as random number generator in the following
     /// * internally uses `Graph<T>::new(n)`
-    /// * generates random edges according to ErEnsemble probability (see `ErEnsemble::randomize`)
+    /// * generates random edges according to ErEnsembleC probability (see `ErEnsembleC::randomize`)
     pub fn new(n: u32, c_target: f64, rng: R) -> Self {
         let prob = c_target / (n - 1) as f64;
         let graph: Graph<T> = Graph::new(n);
-        let mut e = ErEnsemble {
+        let mut e = ErEnsembleC {
             graph,
             c_target,
             prob,
@@ -72,7 +72,7 @@ impl<T: Node, R: rand::Rng> ErEnsemble<T, R> {
 
 
     /// # Randomizes the edges according to Er probabilities
-    /// * this is used by `ErEnsemble::new` to create the initial topology
+    /// * this is used by `ErEnsembleC::new` to create the initial topology
     /// * you can use this for sampling the ensemble
     /// * runs in `O(vertices * vertices)`
     pub fn randomize(&mut self) {
@@ -111,8 +111,8 @@ impl<T: Node, R: rand::Rng> ErEnsemble<T, R> {
 
     /// # Monte Carlo step
     /// * use this to perform a Monte Carlo step
-    /// * result `ErStep` can be used to undo the step with `self.undo_step(result)`
-    pub fn random_step(&mut self) -> ErStep {
+    /// * result `ErStepC` can be used to undo the step with `self.undo_step(result)`
+    pub fn random_step(&mut self) -> ErStepC {
         let edge = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
 
         // Try to add edge. else: remove edge
@@ -120,24 +120,24 @@ impl<T: Node, R: rand::Rng> ErEnsemble<T, R> {
 
             let success = self.graph.add_edge(edge.0, edge.1);
             match success {
-                Ok(_)  => ErStep::AddedEdge(edge),
-                Err(_) => ErStep::Nothing,
+                Ok(_)  => ErStepC::AddedEdge(edge),
+                Err(_) => ErStepC::Nothing,
             }
 
         } else {
 
             let success =  self.graph.remove_edge(edge.0, edge.1);
             match success {
-                Ok(_)  => ErStep::RemovedEdge(edge),
-                Err(_) => ErStep::Nothing,
+                Ok(_)  => ErStepC::RemovedEdge(edge),
+                Err(_) => ErStepC::Nothing,
             }
         }
     }
 
     /// # Monte Carlo steps
     /// * use this to perform multiple Monte Carlo steps at once
-    /// * result `Vec<ErStep>` can be used to undo the steps with `self.undo_steps(result)`
-    pub fn random_steps(&mut self, count: usize) -> Vec<ErStep> {
+    /// * result `Vec<ErStepC>` can be used to undo the steps with `self.undo_steps(result)`
+    pub fn random_steps(&mut self, count: usize) -> Vec<ErStepC> {
         (0..count)
             .map(|_| self.random_step())
             .collect()
@@ -149,11 +149,11 @@ impl<T: Node, R: rand::Rng> ErEnsemble<T, R> {
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
-    pub fn undo_step(&mut self, step: ErStep) -> Result<(),GraphErrors> {
+    pub fn undo_step(&mut self, step: ErStepC) -> Result<(),GraphErrors> {
         match step {
-            ErStep::AddedEdge(edge)     => self.graph.remove_edge(edge.0, edge.1),
-            ErStep::Nothing             => Ok(()),
-            ErStep::RemovedEdge(edge)   => self.graph.add_edge(edge.0, edge.1)
+            ErStepC::AddedEdge(edge)     => self.graph.remove_edge(edge.0, edge.1),
+            ErStepC::Nothing             => Ok(()),
+            ErStepC::RemovedEdge(edge)   => self.graph.add_edge(edge.0, edge.1)
         }
     }
 
@@ -163,7 +163,7 @@ impl<T: Node, R: rand::Rng> ErEnsemble<T, R> {
     /// ## Important:
     /// Restored graph is the same as before the random steps **except** the order of nodes
     /// in the adjacency list might be shuffled!
-    pub fn undo_steps(&mut self, mut steps: Vec<ErStep>) -> Result<(),GraphErrors> {
+    pub fn undo_steps(&mut self, mut steps: Vec<ErStepC>) -> Result<(),GraphErrors> {
         while let Some(step) = steps.pop() {
             self.undo_step(step)?;
         }
@@ -223,7 +223,7 @@ mod testing {
     fn test_edge_count() {
         // create empty graph
         let rng = Pcg64::seed_from_u64(12);
-        let mut e = ErEnsemble::<TestNode, Pcg64>::new(100, 0.0, rng);
+        let mut e = ErEnsembleC::<TestNode, Pcg64>::new(100, 0.0, rng);
         let ec = e.graph().edge_count();
         assert_eq!(0, ec);
         // empty graph should not be connected:
@@ -235,13 +235,13 @@ mod testing {
 
         // add edge
         e.graph_mut()
-            .add_edge(0,1)
+            .add_edge(0, 1)
             .unwrap();
         let ec_1 = e.graph().edge_count();
         assert_eq!(1, ec_1);
 
         let mut res = e.graph_mut()
-            .add_edge(0,1);
+            .add_edge(0, 1);
         assert!(res.is_err());
 
         // remove edge
