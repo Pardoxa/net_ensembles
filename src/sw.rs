@@ -128,7 +128,9 @@ impl <T, R> SwEnsemble<T, R>
 
     /// # Undo a Monte Carlo step
     /// * *rewires* edge to old state
-    /// * **panics** if you try to undo `InvalidAdjecency` or `GError`
+    /// * Note: cannot undo `InvalidAdjecency` or `GError`,
+    /// will just return `InvalidAdjecency` or `GError` respectively
+    /// * returns result of *rewire*
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
@@ -137,24 +139,65 @@ impl <T, R> SwEnsemble<T, R>
             SwChangeState::Rewire(root, old_to, new_to) |
             SwChangeState::Reset (root, old_to, new_to)  => self.graph.rewire_edge(root, new_to, old_to), // swap old to and new to in rewire
             SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge         => SwChangeState::Nothing,
+            SwChangeState::BlockedByExistingEdge |
+            SwChangeState::InvalidAdjecency |
+            SwChangeState::GError(_)                     => step
+        }
+    }
+
+    /// # Undo a Monte Carlo step
+    /// * *rewires* edge to old state
+    /// * **panics** if you try to undo `InvalidAdjecency` or `GError`
+    /// * **panics** if rewire result (`SwChangeState`) is invalid (i.e. `!result.is_valid()`)
+    /// ## Important:
+    /// Restored graph is the same as before the random step **except** the order of nodes
+    /// in the adjacency list might be shuffled!
+    pub fn undo_step_quiet(&mut self, step: SwChangeState) -> () {
+        match step {
+            SwChangeState::Rewire(root, old_to, new_to) |
+            SwChangeState::Reset (root, old_to, new_to)  => {
+                let state = self.graph.rewire_edge(root, new_to, old_to);
+                if state.is_valid() {
+                    ()
+                } else {
+                    panic!("undo step - rewire error: {:?}", state);
+                }
+            }, // swap old to and new to in rewire
+            SwChangeState::Nothing |
+            SwChangeState::BlockedByExistingEdge         => (),
             SwChangeState::InvalidAdjecency              => panic!("undo_step - InvalidAdjecency - corrupt step?"),
             SwChangeState::GError(error)                 => panic!(format!("undo_step - GError {}- corrupt step?", error))
         }
     }
 
     /// # Undo Monte Carlo steps
-    /// * *rewires* edge to old state
-    /// * **panics** if you try to undo `InvalidAdjecency` or `GError`
+    /// * *rewires* edges to restore old state
+    /// * Note: cannot undo `InvalidAdjecency` or `GError`,
+    /// will just append `InvalidAdjecency` or `GError` respectively
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
     pub fn undo_steps(&mut self, steps: Vec<SwChangeState>) -> Vec<SwChangeState> {
         steps.into_iter()
             .rev()
-            .filter(|step| step.not_nothing_or_blocked() )
             .map(|step| self.undo_step(step))
             .collect()
+    }
+
+    /// # Undo Monte Carlo steps
+    /// * *rewires* edges to restore old state
+    /// * **panics** if you try to undo `InvalidAdjecency` or `GError`
+    /// * **panics** if rewire result of any step is invalid (i.e. `!result.is_valid()`)
+    /// ## Important:
+    /// Restored graph is the same as before the random step **except** the order of nodes
+    /// in the adjacency list might be shuffled!
+    pub fn undo_steps_quiet(&mut self, steps: Vec<SwChangeState>) -> () {
+        let iter = steps.into_iter()
+            .rev()
+            .filter(|step| step.not_nothing_or_blocked() );
+        for step in iter {
+            self.undo_step_quiet(step);
+        }
     }
 
     /// # Randomizes the edges according to small-world model
