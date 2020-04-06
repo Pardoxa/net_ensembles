@@ -14,6 +14,8 @@ use crate::SwGraph;
 use crate::traits::*;
 use crate::SwChangeState;
 
+const ROOT_EDGES_PER_VERTEX: u32 = 2;
+
 /// # Implements small-world graph ensemble
 /// * for more details look at [documentation](index.html) of module `sw`
 #[derive(Debug, Clone)]
@@ -45,6 +47,7 @@ impl <T, R> SwEnsemble<T, R>
         result
     }
 
+    /// draw number <= high but not index
     fn draw_remaining(&mut self, index: u32, high: u32) -> u32 {
         let num = self.rng.gen_range(0, high);
 
@@ -55,6 +58,7 @@ impl <T, R> SwEnsemble<T, R>
         }
     }
 
+    /// edge `(index0, index1)` has to be rooted at `index0`
     fn randomize_edge(&mut self, index0: u32, index1: u32) -> SwChangeState {
         let vertex_count = self.graph.vertex_count();
 
@@ -67,12 +71,90 @@ impl <T, R> SwEnsemble<T, R>
         }
     }
 
+    /// sanity check performed in debug mode
     fn debug_error_check(state: SwChangeState) -> bool {
         match state {
             SwChangeState::GError(_)                => panic!("GError"),
             SwChangeState::InvalidAdjecency         => panic!("InvalidAdjecency"),
             _                                       => true
         }
+    }
+
+    /// * draws random edge `(i0, i1)`
+    /// * edge rooted at `i0`
+    /// * uniform probability
+    /// * result dependent on order of adjecency lists
+    /// * `mut` because it uses the `rng`
+    pub fn draw_edge(&mut self) -> (u32, u32) {
+        // each vertex has the same number of root nodes
+        // the root nodes have an order -> adjecency lists
+        let rng_num = self.rng.gen_range(0, self.graph.edge_count());
+        let v_index = rng_num / ROOT_EDGES_PER_VERTEX;
+        let e_index = rng_num % ROOT_EDGES_PER_VERTEX;
+
+        let mut iter = self.graph
+            .container(v_index as usize)
+            .iter_raw_edges()
+            .filter(|x| x.is_root());
+
+        let &to = iter
+            .nth(e_index as usize)
+            .unwrap()
+            .to();
+
+        (v_index, to)
+    }
+
+    /// # Monte Carlo step
+    /// * use this to perform a Monte Carlo step
+    /// * keep in mind, that it is not unlikely for a step to do `Nothing` as it works by
+    /// drawing an edge and then reseting it with `r_prob`, else the edge is rewired
+    /// * result `SwChangeState` can be used to undo the step with `self.undo_step(result)`
+    /// * result should never be `InvalidAdjecency` or `GError` if used on a valid graph
+    pub fn random_step(&mut self) -> SwChangeState {
+        let edge = self.draw_edge();
+        self.randomize_edge(edge.0, edge.1)
+    }
+
+    /// # Monte Carlo steps
+    /// * use this to perform multiple Monte Carlo steps at once
+    /// * result `Vec<SwChangeState>` can be used to undo the steps with `self.undo_steps(result)`
+    /// * result should never contain `InvalidAdjecency` or `GError` if used on a valid graph
+    pub fn random_steps(&mut self, count: usize) -> Vec<SwChangeState> {
+        (0..count)
+            .map(|_| self.random_step())
+            .collect()
+    }
+
+    /// # Undo a Monte Carlo step
+    /// * *rewires* edge to old state
+    /// * **panics** if you try to undo `InvalidAdjecency` or `GError`
+    /// ## Important:
+    /// Restored graph is the same as before the random step **except** the order of nodes
+    /// in the adjacency list might be shuffled!
+    pub fn undo_step(&mut self, step: SwChangeState) -> SwChangeState {
+        match step {
+            SwChangeState::Rewire(root, old_to, new_to) |
+            SwChangeState::Reset (root, old_to, new_to)  => self.graph.rewire_edge(root, new_to, old_to), // swap old to and new to in rewire
+            SwChangeState::Nothing |
+            SwChangeState::BlockedByExistingEdge         => SwChangeState::Nothing,
+            SwChangeState::InvalidAdjecency              => panic!("undo_step - InvalidAdjecency - corrupt step?"),
+            SwChangeState::GError(error)                 => panic!(format!("undo_step - GError {}- corrupt step?", error))
+        }
+    }
+
+    /// # Undo Monte Carlo steps
+    /// * *rewires* edge to old state
+    /// * **panics** if you try to undo `InvalidAdjecency` or `GError`
+    /// ## Important:
+    /// Restored graph is the same as before the random step **except** the order of nodes
+    /// in the adjacency list might be shuffled!
+    pub fn undo_steps(&mut self, steps: Vec<SwChangeState>) -> Vec<SwChangeState> {
+        steps.into_iter()
+            .rev()
+            .filter(|step| step.not_nothing_or_blocked() )
+            .map(|step| self.undo_step(step))
+            .collect()
     }
 
     /// # Randomizes the edges according to small-world model
@@ -91,6 +173,8 @@ impl <T, R> SwEnsemble<T, R>
                 .iter_raw_edges()
                 .filter(|edge| edge.is_root())
                 .map(|edge| edge.to());
+
+            debug_assert_eq!(ROOT_EDGES_PER_VERTEX, 2);
 
             let first   = *root_iter.next().unwrap();
             let second  = *root_iter.next().unwrap();

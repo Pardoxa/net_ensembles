@@ -1,15 +1,14 @@
 
 use rand_pcg::Pcg64;
 use rand::SeedableRng;
-use net_ensembles::ErEnsembleC;
-use net_ensembles::TestNode;
+use net_ensembles::*;
 mod common;
 use common::equal_graphs;
 
 #[test]
 fn step_test() {
     let rng = Pcg64::seed_from_u64(7567526);
-    let mut e = ErEnsembleC::<TestNode, Pcg64>::new(500, 2.7, rng);
+    let mut e = ErEnsembleC::<EmptyNode, Pcg64>::new(500, 2.7, rng);
     let mut e_0 = e.clone();
     e_0.sort_adj();
 

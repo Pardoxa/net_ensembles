@@ -66,6 +66,32 @@ pub enum SwChangeState {
     GError(GraphErrors),
 }
 
+impl SwChangeState {
+    pub fn is_nothing(&self) -> bool {
+        if let SwChangeState::Nothing = self {
+            true
+        }else{
+            false
+        }
+    }
+
+    pub fn is_nothing_or_blocked(&self) -> bool {
+        match self {
+            SwChangeState::Nothing |
+            SwChangeState::BlockedByExistingEdge => true,
+            _                                    => false
+        }
+    }
+
+    pub fn not_nothing_or_blocked(&self) -> bool {
+        match self {
+            SwChangeState::Nothing |
+            SwChangeState::BlockedByExistingEdge => false,
+            _                                    => true
+        }
+    }
+}
+
 pub trait AdjContainer<T: Node>
 where   Self: fmt::Display,
 {

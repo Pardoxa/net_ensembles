@@ -1,8 +1,11 @@
 use net_ensembles::Node;
-use net_ensembles::Graph;
+use net_ensembles::GenericGraph;
 use net_ensembles::traits::*;
+use std::fmt::Debug;
 
-pub fn equal_graphs<T: Node>(g1: &Graph<T>, g2: &Graph<T>) {
+pub fn equal_graphs<T, A>(g1: &GenericGraph<T, A>, g2: &GenericGraph<T, A>)
+where T: Node, A: Debug + AdjContainer<T>
+{
     assert_eq!(g1.edge_count(), g2.edge_count());
     assert_eq!(g1.vertex_count(), g2.vertex_count());
     for (n0, n1) in g2.container_iter().zip(g1.container_iter()) {

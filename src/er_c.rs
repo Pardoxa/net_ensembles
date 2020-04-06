@@ -21,7 +21,7 @@
 //! // now choose your random number generator
 //! let rng = Pcg64::seed_from_u64(76);
 //! // the following creates an ErEnsembleC graph with 20 vertices and a connectivity of 0.3
-//! // and uses thre random number generator rng
+//! // and uses the random number generator `rng`
 //! let e = net_ensembles::ErEnsembleC::<ExampleNode, Pcg64>::new(20, 0.3, rng);
 //! assert_eq!(20, e.graph().vertex_count());
 //! ```
