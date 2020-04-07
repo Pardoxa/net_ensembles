@@ -122,6 +122,7 @@ pub mod example_nodes;
 pub mod graph;
 pub mod er_c;
 pub mod sw;
+mod er_m;
 mod graph_traits;
 mod ensemble_traits;
 pub mod traits;
@@ -131,6 +132,7 @@ mod iter;
 
 pub use sw::SwEnsemble;
 pub use sw_graph::SwGraph;
+pub use er_m::ErEnsembleM;
 pub use er_c::ErEnsembleC;
 pub use er_c::ErStepC;
 pub use graph::Graph;
