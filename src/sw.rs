@@ -53,7 +53,7 @@ const ROOT_EDGES_PER_VERTEX: u32 = 2;
 /// let mut sw_ensemble = SwEnsemble::<EmptyNode, Pcg64>::new(100, 0.3, rng);
 ///
 /// // setup file for writing
-/// let f = File::create("simple_sample_sw.dat")
+/// let f = File::create("simple_sample_sw_example.dat")
 ///     .expect("Unable to create file");
 /// let mut f = BufWriter::new(f);
 /// f.write_all(b"#diameter bi_connect_max average_degree\n")

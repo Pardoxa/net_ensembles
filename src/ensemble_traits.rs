@@ -18,28 +18,37 @@ where Self: Ensemble<A,B>,
 /// * monte carlo steps
 /// * simple sampling
 pub trait Ensemble<S, Res> {
-    /// undo a monte carlo step, return result-state
+    /// * undo a monte carlo step, return result-state
+    /// * if you want to undo more than one step
+    /// see [`undo_steps`](#method.undo_steps)
     fn undo_step(&mut self, step: S) -> Res;
 
-    /// undo a monte carlo step, **panic** on invalid result state
+    /// * undo a monte carlo step, **panic** on invalid result state
+    /// * for undoing multiple steps see [`undo_steps_quiet`](#method.undo_steps_quiet)
     fn undo_step_quiet(&mut self, step: S) -> ();
 
     /// # Randomizes self according to  model
     /// * this is intended for creation of initial sample
-    /// * you can use this for sampling the ensemble
+    /// * used in [`simple_sample`](#method.simple_sample)
+    /// and [`simple_sample_vec`](#method.simple_sample_vec)
     fn randomize(&mut self);
 
     /// # Monte Carlo step
     /// * use this to perform a Monte Carlo step
+    /// * for doing multiple mc steps at once, use [`mc_steps`](#method.mc_steps)
     fn mc_step(&mut self) -> S;
 
     /// # Monte Carlo steps
     /// * use this to perform multiple Monte Carlo steps at once
     /// * result `Vec<S>` can be used to undo the steps with `self.undo_steps(result)`
     fn mc_steps(&mut self, count: usize) -> Vec<S> {
-        (0..count)
-            .map(|_| self.mc_step())
-            .collect()
+        let mut vec = Vec::with_capacity(count);
+        for _ in 0..count {
+            vec.push(
+                self.mc_step()
+            );
+        }
+        vec
     }
 
     /// # do the following `times` times:
@@ -61,15 +70,12 @@ pub trait Ensemble<S, Res> {
     fn simple_sample_vec<F, G>(&mut self, times: usize, mut f: F) -> Vec<G>
         where F: FnMut(&Self) -> G
     {
-        (0..times).map(
-            |_|
-            {
-                let res = f(self);
-                self.randomize();
-                res
-            }
-        ).collect()
-
+        let mut vec = Vec::with_capacity(times);
+        for _ in 0..times {
+            vec.push(f(self));
+            self.randomize();
+        }
+        vec
     }
 
     /// # Undo Monte Carlo steps

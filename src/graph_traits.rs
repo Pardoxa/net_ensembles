@@ -22,7 +22,7 @@ where Self: Clone{
 
 
 /// Error messages
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum GraphErrors{
     /// ### somehow, the existing of the edge is a problem
     /// Did you try to add an edge, which is already present?

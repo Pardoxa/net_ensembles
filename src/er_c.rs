@@ -29,6 +29,7 @@
 use crate::graph::Graph;
 use crate::GraphErrors;
 use crate::Node;
+use crate::traits::{Ensemble, EnsembleRng};
 
 /// # Returned by Monte Carlo Steps
 #[derive(Debug, Clone)]
@@ -39,6 +40,30 @@ pub enum ErStepC {
     AddedEdge((u32, u32)),
     /// an edge was removed
     RemovedEdge((u32, u32)),
+    GError(GraphErrors),
+}
+
+impl ErStepC {
+    pub fn is_valid(&self) -> bool {
+        match self {
+            Self::GError(_)     => false,
+            _                   => true,
+        }
+    }
+
+    pub fn valid_or_panic(&self) {
+        match self {
+            Self::GError(error) => panic!("ErStepC - invalid - {}", error),
+            _                   => (),
+        }
+    }
+
+    pub fn valid_or_panic_msg(&self, msg: &str) {
+        match self {
+            Self::GError(error) => panic!("ErStepC - invalid {}- {}", msg, error),
+            _                   => (),
+        }
+    }
 }
 
 /// # Implements Erdős-Rényi graph ensemble
@@ -48,6 +73,124 @@ pub struct ErEnsembleC<T: Node, R: rand::Rng> {
     prob: f64,
     c_target: f64,
     rng: R,
+}
+
+impl<T, R> EnsembleRng<ErStepC, ErStepC, R> for ErEnsembleC<T, R>
+    where   T: Node,
+            R: rand::Rng,
+{
+    /// # Access RNG
+    /// If, for some reason, you want access to the internal random number generator: Here you go
+    fn rng(&mut self) -> &mut R {
+        &mut self.rng
+    }
+
+    /// # Swap random number generator
+    /// * uses `std::mem::swap`
+    /// * returns old internal rng
+    fn swap_rng(&mut self, mut rng: R) -> R {
+        std::mem::swap(&mut self.rng, &mut rng);
+        rng
+    }
+}
+
+impl<T, R> Ensemble<ErStepC, ErStepC> for ErEnsembleC<T, R>
+    where   T: Node,
+            R: rand::Rng,
+{
+    /// # Randomizes the edges according to Er probabilities
+    /// * this is used by `ErEnsembleC::new` to create the initial topology
+    /// * you can use this for sampling the ensemble
+    /// * runs in `O(vertices * vertices)`
+    fn randomize(&mut self) {
+        self.graph.clear_edges();
+        // iterate over all possible edges once
+        for i in 0..self.graph.vertex_count() {
+            for j in i+1..self.graph.vertex_count() {
+                if self.rng.gen::<f64>() <= self.prob {
+                    self.graph.add_edge(i, j).unwrap();
+                }
+            }
+        }
+    }
+
+    /// # Monte Carlo step
+    /// * use this to perform a Monte Carlo step
+    /// * result `ErStepC` can be used to undo the step with `self.undo_step(result)`
+    fn mc_step(&mut self) -> ErStepC {
+        let edge = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
+
+        // Try to add edge. else: remove edge
+        if self.rng.gen::<f64>() <= self.prob {
+
+            let success = self.graph.add_edge(edge.0, edge.1);
+            match success {
+                Ok(_)  => ErStepC::AddedEdge(edge),
+                Err(_) => ErStepC::Nothing,
+            }
+
+        } else {
+
+            let success =  self.graph.remove_edge(edge.0, edge.1);
+            match success {
+                Ok(_)  => ErStepC::RemovedEdge(edge),
+                Err(_) => ErStepC::Nothing,
+            }
+        }
+    }
+
+    /// # Undo a Monte Carlo step
+    /// * adds removed edge, or removes added edge, or does nothing
+    /// * if it returns an Err value, you probably used the function wrong
+    /// ## Important:
+    /// Restored graph is the same as before the random step **except** the order of nodes
+    /// in the adjacency list might be shuffled!
+    fn undo_step(&mut self, step: ErStepC) -> ErStepC {
+        match step {
+            ErStepC::AddedEdge(edge)     => {
+                let res = self.graph.remove_edge(edge.0, edge.1);
+                match res {
+                    Err(err)        => ErStepC::GError(err),
+                    Ok(_)           => ErStepC::RemovedEdge(edge),
+                }
+            },
+            ErStepC::RemovedEdge(edge)   => {
+                let res = self.graph.add_edge(edge.0, edge.1);
+                match res {
+                    Err(err)     => ErStepC::GError(err),
+                    Ok(_)        => ErStepC::AddedEdge(edge),
+                }
+            },
+            ErStepC::Nothing |
+            ErStepC::GError(_)   => step,
+        }
+    }
+
+    /// # Undo a Monte Carlo step
+    /// * adds removed edge, or removes added edge, or does nothing
+    /// * if it returns an Err value, you probably used the function wrong
+    /// ## Important:
+    /// Restored graph is the same as before the random step **except** the order of nodes
+    /// in the adjacency list might be shuffled!
+    fn undo_step_quiet(&mut self, step: ErStepC) -> () {
+        match step {
+            ErStepC::AddedEdge(edge)     => {
+                let res = self.graph.remove_edge(edge.0, edge.1);
+                if res.is_err() {
+                    panic!("ErEnsembleC - undo_step - panic {:?}", res.unwrap_err());
+                }
+                ()
+            },
+            ErStepC::RemovedEdge(edge)   => {
+                let res = self.graph.add_edge(edge.0, edge.1);
+                if res.is_err() {
+                    panic!("ErEnsembleC - undo_step - panic {:?}", res.unwrap_err());
+                }
+                ()
+            },
+            _       => step.valid_or_panic_msg("ErEnsembleC - quiet")
+        }
+    }
 }
 
 impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
@@ -68,23 +211,6 @@ impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
         };
         e.randomize();
         e
-    }
-
-
-    /// # Randomizes the edges according to Er probabilities
-    /// * this is used by `ErEnsembleC::new` to create the initial topology
-    /// * you can use this for sampling the ensemble
-    /// * runs in `O(vertices * vertices)`
-    pub fn randomize(&mut self) {
-        self.graph.clear_edges();
-        // iterate over all possible edges once
-        for i in 0..self.graph.vertex_count() {
-            for j in i+1..self.graph.vertex_count() {
-                if self.rng.gen::<f64>() <= self.prob {
-                    self.graph.add_edge(i, j).unwrap();
-                }
-            }
-        }
     }
 
     /// returns target connectivity
@@ -109,67 +235,6 @@ impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
         self.c_target = c_target;
     }
 
-    /// # Monte Carlo step
-    /// * use this to perform a Monte Carlo step
-    /// * result `ErStepC` can be used to undo the step with `self.undo_step(result)`
-    pub fn random_step(&mut self) -> ErStepC {
-        let edge = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
-
-        // Try to add edge. else: remove edge
-        if self.rng.gen::<f64>() <= self.prob {
-
-            let success = self.graph.add_edge(edge.0, edge.1);
-            match success {
-                Ok(_)  => ErStepC::AddedEdge(edge),
-                Err(_) => ErStepC::Nothing,
-            }
-
-        } else {
-
-            let success =  self.graph.remove_edge(edge.0, edge.1);
-            match success {
-                Ok(_)  => ErStepC::RemovedEdge(edge),
-                Err(_) => ErStepC::Nothing,
-            }
-        }
-    }
-
-    /// # Monte Carlo steps
-    /// * use this to perform multiple Monte Carlo steps at once
-    /// * result `Vec<ErStepC>` can be used to undo the steps with `self.undo_steps(result)`
-    pub fn random_steps(&mut self, count: usize) -> Vec<ErStepC> {
-        (0..count)
-            .map(|_| self.random_step())
-            .collect()
-    }
-
-    /// # Undo a Monte Carlo step
-    /// * adds removed edge, or removes added edge, or does nothing
-    /// * if it returns an Err value, you probably used the function wrong
-    /// ## Important:
-    /// Restored graph is the same as before the random step **except** the order of nodes
-    /// in the adjacency list might be shuffled!
-    pub fn undo_step(&mut self, step: ErStepC) -> Result<(),GraphErrors> {
-        match step {
-            ErStepC::AddedEdge(edge)     => self.graph.remove_edge(edge.0, edge.1),
-            ErStepC::Nothing             => Ok(()),
-            ErStepC::RemovedEdge(edge)   => self.graph.add_edge(edge.0, edge.1)
-        }
-    }
-
-    /// # Undo a Monte Carlo step
-    /// * adds removed edges, removes added edge etc. in the correct order
-    /// * if it returns an Err value, you probably used the function wrong
-    /// ## Important:
-    /// Restored graph is the same as before the random steps **except** the order of nodes
-    /// in the adjacency list might be shuffled!
-    pub fn undo_steps(&mut self, mut steps: Vec<ErStepC>) -> Result<(),GraphErrors> {
-        while let Some(step) = steps.pop() {
-            self.undo_step(step)?;
-        }
-        Ok(())
-    }
-
     /// # Sort adjecency lists
     /// If you depend on the order of the adjecency lists, you can sort them
     /// # Performance
@@ -191,14 +256,6 @@ impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
     fn graph_mut(&mut self) -> &mut Graph<T> {
         &mut self.graph
     }
-
-    /// # Access RNG
-    /// If, for some reason, you want access to the internal random number generator: Here you go
-    pub fn rng(&mut self) -> &mut R {
-        &mut self.rng
-    }
-
-
 }
 
 /// high is exclusive

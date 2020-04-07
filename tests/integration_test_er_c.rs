@@ -13,8 +13,8 @@ fn step_test() {
     e_0.sort_adj();
 
     for i in 0..=200 {
-        let steps = e.random_steps(i);
-        e.undo_steps(steps).unwrap();
+        let steps = e.mc_steps(i);
+        e.undo_steps_quiet(steps);
 
         e.sort_adj();
         equal_graphs(&e_0.graph(), &e.graph());
