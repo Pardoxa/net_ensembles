@@ -43,29 +43,30 @@ pub trait Ensemble<S, Res> {
     }
 
     /// # do the following `times` times:
-    /// 1) `self.randomize();`
-    /// 2) `f(self)`
-    fn simple_sample<F>(&mut self, times: usize, f: F)
-        where F: Fn(&Self) -> ()
+    /// 1) `f(self)`
+    /// 2) `self.randomize()`
+    fn simple_sample<F>(&mut self, times: usize, mut f: F)
+        where F: FnMut(&Self) -> ()
     {
         for _ in 0..times {
-            self.randomize();
             f(self);
+            self.randomize();
         }
     }
 
-    /// # do the following times` times:
-    /// 1) `self.randomize()`
-    /// 2) `res = f(self)`
+    /// # do the following `times` times:
+    /// 1) `res = f(self)`
+    /// 2) `self.randomize()`
     /// ## res is collected into Vector
-    fn simple_sample_vec<F, G>(&mut self, times: usize, f: F) -> Vec<G>
-        where F: Fn(&Self) -> G
+    fn simple_sample_vec<F, G>(&mut self, times: usize, mut f: F) -> Vec<G>
+        where F: FnMut(&Self) -> G
     {
         (0..times).map(
             |_|
             {
+                let res = f(self);
                 self.randomize();
-                f(self)
+                res
             }
         ).collect()
 
