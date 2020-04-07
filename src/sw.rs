@@ -223,7 +223,6 @@ where   T: Node,
     }
 
     /// # Swap random number generator
-    /// * uses `std::mem::swap`
     /// * returns old internal rng
     fn swap_rng(&mut self, mut rng: R) -> R {
         std::mem::swap(&mut self.rng, &mut rng);

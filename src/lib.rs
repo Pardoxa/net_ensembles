@@ -122,7 +122,7 @@ pub mod example_nodes;
 pub mod graph;
 pub mod er_c;
 pub mod sw;
-mod er_m;
+pub mod er_m;
 mod graph_traits;
 mod ensemble_traits;
 pub mod traits;

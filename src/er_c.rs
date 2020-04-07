@@ -67,6 +67,8 @@ impl ErStepC {
 }
 
 /// # Implements Erdős-Rényi graph ensemble
+/// * variable number of edges
+/// * targets a connectivity
 #[derive(Debug, Clone)]
 pub struct ErEnsembleC<T: Node, R: rand::Rng> {
     graph: Graph<T>,
@@ -86,7 +88,6 @@ impl<T, R> EnsembleRng<ErStepC, ErStepC, R> for ErEnsembleC<T, R>
     }
 
     /// # Swap random number generator
-    /// * uses `std::mem::swap`
     /// * returns old internal rng
     fn swap_rng(&mut self, mut rng: R) -> R {
         std::mem::swap(&mut self.rng, &mut rng);
@@ -195,11 +196,12 @@ impl<T, R> Ensemble<ErStepC, ErStepC> for ErEnsembleC<T, R>
 
 impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
     /// # Initialize
-    /// * create new ErEnsembleC graph with `n` vertices
+    /// create new `ErEnsembleC` with:
+    /// * `n` vertices
     /// * target connectivity `c_target`
     /// * `rng` is consumed and used as random number generator in the following
     /// * internally uses `Graph<T>::new(n)`
-    /// * generates random edges according to ErEnsembleC probability (see `ErEnsembleC::randomize`)
+    /// * generates random edges according to ER model
     pub fn new(n: u32, c_target: f64, rng: R) -> Self {
         let prob = c_target / (n - 1) as f64;
         let graph: Graph<T> = Graph::new(n);
