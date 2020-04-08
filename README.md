@@ -41,8 +41,8 @@ As such, you can easily define additional data that should be stored at each ver
 
 # Documentation:
 
-You can find the Documentation of [current working branch here](https://pardoxa.github.io/net_ensembles/master/doc/net_ensembles/).
-You can find the Documentation of [v0.1.0](https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/).
+* [current working branch](https://pardoxa.github.io/net_ensembles/master/doc/net_ensembles/)
+* [v0.1.0](https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/)
 
 # Notes
 
@@ -71,6 +71,22 @@ If I do, it will likely be a relatively costly operation, so keep that in mind.
 
 ## crates.io
 
-* I plan to publish this to crates.io soon
 * I might move the `Ensemble` trait into a different crate in the Future.
   If I do, the trait will be reexported at the same position as currently
+
+## License
+
+Licensed under either of
+
+ * Apache License, Version 2.0
+   ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+ * MIT license
+   ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
+
+## Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.

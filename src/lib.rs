@@ -138,11 +138,11 @@ pub use sw::SwEnsemble;
 pub use sw_graph::SwGraph;
 pub use er_m::ErEnsembleM;
 pub use er_c::ErEnsembleC;
-pub use er_c::ErStepC;
 pub use graph::Graph;
 pub use generic_graph::GenericGraph;
 pub use example_nodes::EmptyNode;
 pub use graph_traits::GraphErrors;
-pub use graph_traits::SwChangeState;
 pub use traits::*;
 pub use iter::IterWrapper;
+
+pub(crate) use graph_traits::SwChangeState;
