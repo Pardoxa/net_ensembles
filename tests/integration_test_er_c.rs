@@ -26,7 +26,7 @@ fn step_test() {
 #[test]
 fn test_graph_construction() {
     let rng = Pcg64::seed_from_u64(76);
-    let e = ErEnsembleC::<TestNode, Pcg64>::new(20, 2.7, rng);
+    let e = ErEnsembleC::<EmptyNode, Pcg64>::new(20, 2.7, rng);
     assert_eq!(e.graph().edge_count(), 28);
     assert_eq!(20, e.graph().vertex_count());
 }
@@ -34,7 +34,7 @@ fn test_graph_construction() {
 #[test]
 fn test_complete_graph() {
     let rng = Pcg64::seed_from_u64(76);
-    let e = ErEnsembleC::<TestNode, Pcg64>::new(20, 19.0, rng);
+    let e = ErEnsembleC::<EmptyNode, Pcg64>::new(20, 19.0, rng);
     assert_eq!(20, e.graph().vertex_count());
     assert_eq!(190, e.graph().edge_count());
     assert!(e.graph().is_connected().expect("test_complete_graph error"));

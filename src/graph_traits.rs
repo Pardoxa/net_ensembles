@@ -7,16 +7,11 @@ where Self: Clone{
     fn new_from_index(index: u32) -> Self;
 
     /// Override this, if you want to store the network
-    fn make_string(&self) -> Option<String> {
-        None
-    }
+    fn make_string(&self) -> Option<String>;
 
     /// Override this, if you want to load the stored network
     fn parse_str(_to_parse: &str) -> Option<(&str, Self)>
-        where Self: Sized
-    {
-        None
-    }
+        where Self: Sized;
 }
 
 

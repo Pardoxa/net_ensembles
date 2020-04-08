@@ -368,21 +368,21 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// returns `None` if impossible to calculate (e.g. `vertex_count == 0` or `q <= 1`)
     /// # Example
     /// ```
-    /// use net_ensembles::TestNode;
+    /// use net_ensembles::EmptyNode;
     /// use net_ensembles::Graph;
     ///
-    /// let graph: Graph<TestNode> = Graph::new(0);
+    /// let graph: Graph<EmptyNode> = Graph::new(0);
     /// assert_eq!(graph.q_core(1), None);
     /// assert_eq!(graph.q_core(2), None);
     ///
-    /// let graph2: Graph<TestNode> = Graph::new(1);
+    /// let graph2: Graph<EmptyNode> = Graph::new(1);
     ///
     /// assert_eq!(graph2.q_core(1), None);
     /// assert_eq!(graph2.q_core(2), Some(0));
     ///
     ///
     /// // create complete graph
-    /// let mut graph3: Graph<TestNode> = Graph::new(20);
+    /// let mut graph3: Graph<EmptyNode> = Graph::new(20);
     /// for i in 0..graph3.vertex_count() {
     ///     for j in i+1..graph3.vertex_count() {
     ///         graph3.add_edge(i, j).unwrap();
@@ -554,9 +554,9 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     /// ```
     /// use std::fs::File;
     /// use std::io::prelude::*;
-    /// use net_ensembles::{Graph, TestNode, dot_constants::EXAMPLE_DOT_OPTIONS};
+    /// use net_ensembles::{Graph, EmptyNode, dot_constants::EXAMPLE_DOT_OPTIONS};
     ///
-    /// let mut graph: Graph<TestNode> = Graph::new(3);
+    /// let mut graph: Graph<EmptyNode> = Graph::new(3);
     /// graph.add_edge(0, 1).unwrap();
     /// graph.add_edge(0, 2).unwrap();
     /// graph.add_edge(1, 2).unwrap();

@@ -230,6 +230,12 @@ impl<T: Node> NodeContainer<T> {
 ///     fn new_from_index(index: u32) -> Self {
 ///         PhaseNode { phase: index as f64 * 10.0}
 ///     }
+///
+///     // if you do not wish to print/load etc. you can do the following.
+///     // I do not recommend this though
+///     fn make_string(&self) -> Option<String> { unimplemented!() }
+///
+///     fn parse_str(_: &str) -> Option<(&str, Self)> { unimplemented!() }
 /// }
 ///
 /// // now you can create an empty graph
@@ -454,14 +460,14 @@ pub type Graph<T> = GenericGraph<T, NodeContainer<T>>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::TestNode;
+    use crate::EmptyNode;
 
 
     #[test]
     fn test_graph_container_push() {
         // create two nodes
-        let mut c = NodeContainer::new(0, TestNode::new_from_index(0));
-        let mut c2 = NodeContainer::new(1, TestNode::new_from_index(1));
+        let mut c = NodeContainer::new(0, EmptyNode::new_from_index(0));
+        let mut c2 = NodeContainer::new(1, EmptyNode::new_from_index(1));
         // create edge -> should not result in error!
         let res = unsafe { c.push(&mut c2) };
         if let Err(e) = res {
@@ -479,14 +485,13 @@ mod tests {
     fn parsing_invalid_node_container() {
         // parsing gibberish should return None, not panic!
         let s = "geufgeiruwgeuwhuiwehfoipaerughpsiucvhuirhgvuir";
-        let res = NodeContainer::<TestNode>::parse_str(&s);
+        let res = NodeContainer::<EmptyNode>::parse_str(&s);
         assert!(res.is_none());
     }
 
     #[test]
-    #[should_panic]
     fn test_printing_default() {
-        let mut graph: Graph<TestNode> = Graph::new(20);
+        let mut graph: Graph<EmptyNode> = Graph::new(20);
         graph.add_edge(0, 1).unwrap();
 
         println!("{}", graph.container(0));

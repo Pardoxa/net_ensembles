@@ -5,11 +5,14 @@
 //! I implemented the same model, as I used in my paper
 //! > Yannick Feld and Alexander K. Hartmann,
 //! > "Large-deviations of the basin stability of power grids"
-//! > *Chaos* **29**:113113 (2019), DOI: [10.1063/1.5121415](https://dx.doi.org/10.1063/1.5121415)
+//! > *Chaos*&nbsp;**29**:113113&nbsp;(2019), DOI: [10.1063/1.5121415](https://dx.doi.org/10.1063/1.5121415)
 //!
 //! where it is described in more detail.
 //!
 //! You can find a list of my publications on my [homepage](https://www.yfeld.de/#publications).
+//! # Citations
+//! > D. J. Watts and S. H. Strogatz, "Collective dynamics on 'small-world' networks,"
+//!   Nature **393**, 440-442 (1998), DOI:&nbsp;[10.1038/30918](https://doi.org/10.1038/30918)
 use crate::SwGraph;
 use crate::traits::*;
 use crate::SwChangeState;

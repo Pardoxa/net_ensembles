@@ -1,8 +1,11 @@
 //! I am writing this libary for my scientific simulations
 //!
-//! * you probably want to [take a look](generic_graph/struct.GenericGraph.html) at `net_ensembles::GenericGraph`.
-//! * [take a look](er/index.html) at the module `er` if you want to do something with an Erdős-Rényi ensemble
-//! * if you want to work with small-world ensemble, [look at](sw/index.html) module `sw`
+//! * you probably want to take a look at [`GenericGraph`](generic_graph/struct.GenericGraph.html).
+//! * take a look at the module [`er_c`](er_c/index.html)
+//!   or [`er_m`](er_m/index.html) if you want to do something with an Erdős-Rényi ensemble
+//! * if you want to work with small-world ensemble, look at module [`sw`](sw/index.html)
+//! * an example for implementing your own Node can be found [here](graph/type.Graph.html#example-2).
+//!   Note that the defined Node can be used in the Graph ensembles
 //! # Example 1
 //! Create an Erdős-Rényi graph
 //! ```
@@ -138,7 +141,6 @@ pub use er_c::ErEnsembleC;
 pub use er_c::ErStepC;
 pub use graph::Graph;
 pub use generic_graph::GenericGraph;
-pub use example_nodes::TestNode;
 pub use example_nodes::EmptyNode;
 pub use graph_traits::GraphErrors;
 pub use graph_traits::SwChangeState;

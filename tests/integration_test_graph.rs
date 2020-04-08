@@ -4,8 +4,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use net_ensembles::dot_constants::*;
 
-fn create_graph_1() -> Graph<TestNode> {
-    let mut graph: Graph<TestNode> = Graph::new(20);
+fn create_graph_1() -> Graph<EmptyNode> {
+    let mut graph: Graph<EmptyNode> = Graph::new(20);
 
     graph.add_edge(0, 1).unwrap();
     graph.add_edge(0, 2).unwrap();
@@ -30,16 +30,16 @@ fn leaf_count() {
     let graph = create_graph_1();
     assert_eq!(2, graph.leaf_count());
 
-    let empty_graph: Graph<TestNode> = Graph::new(20);
+    let empty_graph: Graph<EmptyNode> = Graph::new(20);
     assert_eq!(0, empty_graph.leaf_count());
 }
 
 #[test]
 fn connected_components() {
-    let graph: Graph<TestNode> = Graph::new(20);
+    let graph: Graph<EmptyNode> = Graph::new(20);
     assert_eq!(vec![1;20], graph.connected_components());
 
-    let graph2: Graph<TestNode> = Graph::new(0);
+    let graph2: Graph<EmptyNode> = Graph::new(0);
     assert_eq!(Vec::<u32>::new(), graph2.connected_components());
 }
 
@@ -57,11 +57,11 @@ fn multiple_connected_components() {
 
 #[test]
 fn q_core_empty_graph() {
-    let graph: Graph<TestNode> = Graph::new(0);
+    let graph: Graph<EmptyNode> = Graph::new(0);
     assert_eq!(graph.q_core(1), None);
     assert_eq!(graph.q_core(2), None);
 
-    let graph2: Graph<TestNode> = Graph::new(1);
+    let graph2: Graph<EmptyNode> = Graph::new(1);
 
     assert_eq!(graph2.q_core(1), None);
     assert_eq!(graph2.q_core(2), Some(0));
@@ -79,7 +79,7 @@ fn q_core_multiple_components() {
 
 #[test]
 fn q_core_complete_graph() {
-    let mut graph: Graph<TestNode> = Graph::new(20);
+    let mut graph: Graph<EmptyNode> = Graph::new(20);
     // create complete graph
     for i in 0..graph.vertex_count() {
         for j in i+1..graph.vertex_count() {
@@ -98,7 +98,7 @@ fn q_core_complete_graph() {
 
 #[test]
 fn q_core() {
-    let mut graph: Graph<TestNode> = Graph::new(20);
+    let mut graph: Graph<EmptyNode> = Graph::new(20);
     graph.add_edge(0, 1).unwrap();
     graph.add_edge(0, 2).unwrap();
     graph.add_edge(1, 2).unwrap();
@@ -107,7 +107,7 @@ fn q_core() {
 
 #[test]
 fn check_is_connected() {
-    let mut graph: Graph<TestNode> = Graph::new(10);
+    let mut graph: Graph<EmptyNode> = Graph::new(10);
     assert!(!graph.is_connected().unwrap());
 
     // almost connect graph
@@ -145,7 +145,7 @@ fn dot() {
 
 #[test]
 fn average_neighbor_count () {
-    let mut graph: Graph<TestNode> = Graph::new(20);
+    let mut graph: Graph<EmptyNode> = Graph::new(20);
     // create complete graph
     for i in 0..graph.vertex_count() {
         for j in i+1..graph.vertex_count() {
@@ -155,14 +155,14 @@ fn average_neighbor_count () {
     assert_eq!(graph.average_degree(), 19.0);
 
 
-    let empty: Graph<TestNode> = Graph::new(20);
+    let empty: Graph<EmptyNode> = Graph::new(20);
 
     assert_eq!(empty.average_degree(), 0.0);
 }
 
 #[test]
 fn diameter_test() {
-    let mut graph: Graph<TestNode> = Graph::new(5);
+    let mut graph: Graph<EmptyNode> = Graph::new(5);
     for i in 0..4 {
         graph.add_edge(i, i + 1).unwrap();
     }
@@ -196,7 +196,7 @@ fn diameter_test() {
 
 #[test]
 fn bi_test1() {
-    let mut graph: Graph<TestNode> = Graph::new(6);
+    let mut graph: Graph<EmptyNode> = Graph::new(6);
     graph.add_edge(0, 1).unwrap();
     graph.add_edge(1, 2).unwrap();
     graph.add_edge(2, 0).unwrap();
@@ -210,12 +210,12 @@ fn bi_test1() {
 
 #[test]
 fn bi_test2() {
-    let graph: Graph<TestNode> = Graph::new(6);
+    let graph: Graph<EmptyNode> = Graph::new(6);
 
     let components = graph.vertex_biconnected_components(false);
     assert_eq!(components, vec![]);
 
-    let mut graph: Graph<TestNode> = Graph::new(6);
+    let mut graph: Graph<EmptyNode> = Graph::new(6);
     graph.add_edge(0, 1).unwrap();
     graph.add_edge(1, 2).unwrap();
     graph.add_edge(2, 0).unwrap();
@@ -223,7 +223,7 @@ fn bi_test2() {
     let components = graph.vertex_biconnected_components(false);
     assert_eq!(components, vec![3]);
 
-    let mut graph: Graph<TestNode> = Graph::new(5);
+    let mut graph: Graph<EmptyNode> = Graph::new(5);
     graph.add_edge(0, 1).unwrap();
     graph.add_edge(1, 2).unwrap();
     graph.add_edge(2, 0).unwrap();
@@ -235,7 +235,7 @@ fn bi_test2() {
 
 #[test]
 fn vertex_load() {
-    let mut graph: Graph<TestNode> = Graph::new(4);
+    let mut graph: Graph<EmptyNode> = Graph::new(4);
     // create complete graph
     for i in 0..graph.vertex_count() {
         for j in i+1..graph.vertex_count() {
@@ -247,12 +247,12 @@ fn vertex_load() {
     let edge_b = graph.vertex_load(false);
     assert_eq!(edge_b, vec![0.0, 0.0, 0.0, 0.0]);
 
-    let graph: Graph<TestNode> = Graph::new(4);
+    let graph: Graph<EmptyNode> = Graph::new(4);
     let edge_b = graph.vertex_load(true);
     assert_eq!(edge_b, vec![0.0, 0.0, 0.0, 0.0]);
 
     // https://www.researchgate.net/publication/304065361_A_computationally_lightweight_and_localized_centrality_metric_in_lieu_of_betweenness_centrality_for_complex_network_analysis/figures?lo=1
-    let mut graph: Graph<TestNode> = Graph::new(8);
+    let mut graph: Graph<EmptyNode> = Graph::new(8);
     graph.add_edge(0, 1).unwrap();
     graph.add_edge(0, 2).unwrap();
     graph.add_edge(2, 1).unwrap();
@@ -274,10 +274,10 @@ fn vertex_load() {
 
 #[test]
 fn transitivity() {
-    let graph: Graph<TestNode> = Graph::new(3);
+    let graph: Graph<EmptyNode> = Graph::new(3);
     assert!(graph.transitivity().is_nan());
 
-    let mut graph: Graph<TestNode> = Graph::new(3);
+    let mut graph: Graph<EmptyNode> = Graph::new(3);
     graph.add_edge(0, 1).unwrap();
     graph.add_edge(0, 2).unwrap();
 

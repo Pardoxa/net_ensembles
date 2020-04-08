@@ -1,31 +1,12 @@
-//! # Erdős-Rényi ensemble
+//! # Erdős-Rényi ensemble with target connectivity
+//! * Draw from an Erdős-Rényi graph ensemble with a target connectivity.
+//! * In this model, all possible edges are equally likely
+//! * The number of edges is variable
 //!
-//! # Minimal example:
-//! ```
-//! use net_ensembles;
-//! use net_ensembles::traits::*;
-//! use rand_pcg::Pcg64;
-//! use rand::SeedableRng;
-//!
-//! // Define your own node
-//! #[derive(Clone)]
-//! struct ExampleNode { }
-//!
-//! // it has to implement the Node trait
-//! impl Node for ExampleNode {
-//!     fn new_from_index(index: u32) -> Self {
-//!         ExampleNode { }
-//!     }
-//! }
-//!
-//! // now choose your random number generator
-//! let rng = Pcg64::seed_from_u64(76);
-//! // the following creates an ErEnsembleC graph with 20 vertices and a connectivity of 0.3
-//! // and uses the random number generator `rng`
-//! let e = net_ensembles::ErEnsembleC::<ExampleNode, Pcg64>::new(20, 0.3, rng);
-//! assert_eq!(20, e.graph().vertex_count());
-//! ```
-//! Take a look at the struct `ErEnsembleC` for details
+//! # Citations
+//! > P. Erdős and A. Rényi, "On the evolution of random graphs,"
+//!   Publ. Math. Inst. Hungar. Acad. Sci. **5**, 17-61 (1960)
+
 use crate::graph::Graph;
 use crate::GraphErrors;
 use crate::Node;
@@ -275,14 +256,14 @@ fn draw_two_from_range<T: rand::Rng>(rng: &mut T, high: u32) -> (u32, u32){
 mod testing {
     use super::*;
     use rand_pcg::Pcg64;
-    use crate::TestNode;
+    use crate::EmptyNode;
     use rand::SeedableRng;
 
     #[test]
     fn test_edge_count() {
         // create empty graph
         let rng = Pcg64::seed_from_u64(12);
-        let mut e = ErEnsembleC::<TestNode, Pcg64>::new(100, 0.0, rng);
+        let mut e = ErEnsembleC::<EmptyNode, Pcg64>::new(100, 0.0, rng);
         let ec = e.graph().edge_count();
         assert_eq!(0, ec);
         // empty graph should not be connected:

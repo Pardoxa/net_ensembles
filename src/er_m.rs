@@ -1,4 +1,11 @@
-//! Erdős-Rényi with constant number of edges
+//! # Erdős-Rényi with constant number of edges
+//! * Draw from an Erdős-Rényi graph ensemble
+//! * In this model, all possible edges are equally likely
+//! * The number of edges is fixed
+//!
+//! # Citations
+//! > P. Erdős and A. Rényi, "On the evolution of random graphs,"
+//!   Publ. Math. Inst. Hungar. Acad. Sci. **5**, 17-61 (1960)
 use crate::graph::Graph;
 use crate::Node;
 use crate::traits::{Ensemble, EnsembleRng};
