@@ -17,8 +17,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-      run: |
-          git fetch --prune --unshallow
 
     - name: Install Rust toolchain
       uses: actions-rs/toolchain@v1
@@ -36,6 +34,7 @@ jobs:
       run: |
        mkdir -p ./versions/master
        cp -r ./target/doc ./versions/master
+       git fetch --prune --unshallow
        git checkout f01993b2c443bb800be5acd2c87ca2901f152582
        rm -r ./target/doc
 
