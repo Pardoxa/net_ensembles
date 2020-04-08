@@ -9,7 +9,7 @@ repository = "https://github.com/Pardoxa/net_ensembles"
 keywords = [
   "small-world",
   "Erdos-Renyi",
-  "random-graph-ensemble",
+  "random-graph",
   "ensemble",
   "graph"
 ]
