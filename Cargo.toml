@@ -3,7 +3,21 @@ name = "net_ensembles"
 version = "0.1.0"
 authors = ["Yannick Feld <yannick.feld@uol.de>"]
 edition = "2018"
-
+readme = "README.md"
+description = "Erdős-Rényi and small world ensembles. For simple sampling or Monte Carlo simulations"
+repository = "https://github.com/Pardoxa/net_ensembles"
+keywords = [
+  "network-ensembles",
+  "small-world",
+  "small-world networks",
+  "Erdős-Rènyi",
+  "Erdoes-Renyi",
+  "graph ensemble",
+  "graph ensembles",
+  "scientific",
+  "graph",
+  "random graph"
+  ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
