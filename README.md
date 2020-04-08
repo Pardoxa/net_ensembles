@@ -41,7 +41,8 @@ As such, you can easily define additional data that should be stored at each ver
 
 # Documentation:
 
-You can find the Documentation [here](https://pardoxa.github.io/net_ensembles/net_ensembles/).
+You can find the Documentation of [current working branch here](https://pardoxa.github.io/net_ensembles/master/doc/net_ensembles/).
+You can find the Documentation of [v0.1.0](https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/).
 
 # Notes
 
