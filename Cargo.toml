@@ -23,4 +23,4 @@ homepage = "https://www.yfeld.de/Library.html"
 rand = "0.7"
 
 [dev-dependencies]
-rand_pcg = "*"
+rand_pcg = "0.2.1"
