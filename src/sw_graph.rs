@@ -81,7 +81,7 @@ impl fmt::Display for SwEdge {
     }
 }
 
-
+/// Iterator over indices stored in adjecency list
 pub struct SwEdgeIterNeighbors<'a> {
     sw_edge_slice: &'a[SwEdge],
 }
@@ -473,6 +473,7 @@ impl<T: Node> SwContainer<T> {
     }
 }
 
+/// specific `GenericGraph` used for small-world ensemble
 pub type SwGraph<T> = GenericGraph<T, SwContainer<T>>;
 
 impl<T: Node> SwGraph<T>{

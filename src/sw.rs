@@ -201,6 +201,16 @@ impl <T, R> SwEnsemble<T, R>
         &self.graph
     }
 
+    /// * access additional information at
+    pub fn at(&self, index: usize) -> & T {
+        self.graph.at(index)
+    }
+
+    /// * mutable access of additional information at index
+    pub fn at_mut(&mut self, index: usize) -> &mut T {
+        self.graph.at_mut(index)
+    }
+
     /// * returns rewiring probability
     pub fn r_prob(&self) -> f64 {
         self.r_prob

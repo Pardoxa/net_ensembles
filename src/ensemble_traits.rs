@@ -1,4 +1,3 @@
-
 /// # Access random number generator of Ensemble
 pub trait EnsembleRng<A, B, Rng>
 where Self: Ensemble<A,B>,

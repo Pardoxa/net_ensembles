@@ -10,7 +10,7 @@
 use crate::graph::Graph;
 use crate::GraphErrors;
 use crate::Node;
-use crate::traits::{Ensemble, EnsembleRng};
+use crate::traits::*;
 
 /// # Returned by Monte Carlo Steps
 #[derive(Debug, Clone)]
@@ -21,10 +21,12 @@ pub enum ErStepC {
     AddedEdge((u32, u32)),
     /// an edge was removed
     RemovedEdge((u32, u32)),
+    /// a GraphError occured and is wrapped here
     GError(GraphErrors),
 }
 
 impl ErStepC {
+    /// `true` if `self` is not `GError` variant
     pub fn is_valid(&self) -> bool {
         match self {
             Self::GError(_)     => false,
@@ -32,6 +34,7 @@ impl ErStepC {
         }
     }
 
+    /// `panic!` if `self` is `GError` variant
     pub fn valid_or_panic(&self) {
         match self {
             Self::GError(error) => panic!("ErStepC - invalid - {}", error),
@@ -39,6 +42,7 @@ impl ErStepC {
         }
     }
 
+    /// `panic!(msg)` if `self` is `GError` variant 
     pub fn valid_or_panic_msg(&self, msg: &str) {
         match self {
             Self::GError(error) => panic!("ErStepC - invalid {}- {}", msg, error),
@@ -218,6 +222,10 @@ impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
         self.c_target = c_target;
     }
 
+    fn graph_mut(&mut self) -> &mut Graph<T> {
+        &mut self.graph
+    }
+
     /// # Sort adjecency lists
     /// If you depend on the order of the adjecency lists, you can sort them
     /// # Performance
@@ -236,8 +244,14 @@ impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
         &self.graph
     }
 
-    fn graph_mut(&mut self) -> &mut Graph<T> {
-        &mut self.graph
+    /// access additional information at vertex
+    pub fn at(&self, index: usize) -> & T {
+        self.graph.at(index)
+    }
+
+    /// mutable access of additional information at index
+    pub fn at_mut(&mut self, index: usize) -> &mut T {
+        self.graph.at_mut(index)
     }
 }
 

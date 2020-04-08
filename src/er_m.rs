@@ -12,11 +12,14 @@ use crate::traits::{Ensemble, EnsembleRng};
 use rand::seq::SliceRandom;
 use rand::distributions::{Distribution, Uniform};
 
+/// Storing the information about which edges were deleted or added
+#[derive(Debug)]
 pub struct ErStepM{
-    pub removed: (u32, u32),
-    pub i_removed: usize,
-    pub inserted: (u32, u32),
-    pub i_inserted: usize,
+    /// removed edge
+    pub(crate) removed: (u32, u32),
+    pub(crate) i_removed: usize,
+    pub(crate) inserted: (u32, u32),
+    pub(crate) i_inserted: usize,
 }
 
 impl ErStepM{
@@ -177,6 +180,20 @@ impl<T: Node, R: rand::Rng> ErEnsembleM<T, R> {
         e
     }
 
+    fn graph_mut(&mut self) -> &mut Graph<T> {
+        &mut self.graph
+    }
+
+    /// Return total number of edges
+    pub fn get_m(&self) -> usize {
+        self.m
+    }
+
+    fn shuffle_all_edges(&mut self) -> () {
+        self.all_edges
+            .shuffle(&mut self.rng);
+    }
+
     /// # Sort adjecency lists
     /// If you depend on the order of the adjecency lists, you can sort them
     /// # Performance
@@ -195,17 +212,13 @@ impl<T: Node, R: rand::Rng> ErEnsembleM<T, R> {
         &self.graph
     }
 
-    fn graph_mut(&mut self) -> &mut Graph<T> {
-        &mut self.graph
+    /// access additional information at vertex
+    pub fn at(&self, index: usize) -> & T {
+        self.graph.at(index)
     }
 
-    /// Return total number of edges
-    pub fn get_m(&self) -> usize {
-        self.m
-    }
-
-    fn shuffle_all_edges(&mut self) -> () {
-        self.all_edges
-            .shuffle(&mut self.rng);
+    /// mutable access of additional information at index
+    pub fn at_mut(&mut self, index: usize) -> &mut T {
+        self.graph.at_mut(index)
     }
 }

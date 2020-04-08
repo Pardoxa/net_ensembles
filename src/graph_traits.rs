@@ -48,16 +48,21 @@ impl fmt::Display for GraphErrors {
     }
 }
 
-
+/// # Returned by Monte Carlo Steps
+/// * information about the performed step and possible errors
 #[derive(Debug)]
 pub enum SwChangeState {
+    /// ERROR adjecency list invalid?
     InvalidAdjecency,
+    /// Can not add edge twice
     BlockedByExistingEdge,
+    /// Nothing happend
     Nothing,
     /// old edge: (Rewire.0, Rewire.1), new edge (Rewire.0, Rewire.2)
     Rewire(u32, u32, u32),
     /// old edge: (Reset.0, Reset.1), new edge (Reset.0, Reset.2)
     Reset(u32, u32, u32),
+    /// A GraphError occurred
     GError(GraphErrors),
 }
 
@@ -109,6 +114,8 @@ impl SwChangeState {
     }
 }
 
+/// Defines methods all adjecency containers should have
+/// such that `GenericGraph` can use it
 pub trait AdjContainer<T: Node>
 where   Self: fmt::Display,
 {

@@ -5,7 +5,9 @@ use crate::sw_graph::SwEdgeIterNeighbors;
 /// * intended to use for iterating over neighbors of `AdjContainer`
 /// * Iterator returns `&u32`
 pub enum IterWrapper<'a>{
+    /// contains generic slice iter
     GenericIter(std::slice::Iter::<'a,u32>),
+    /// contains iter from sw implementation
     SwIter(SwEdgeIterNeighbors::<'a>),
 }
 
@@ -47,10 +49,12 @@ impl<'a> DoubleEndedIterator for IterWrapper<'a> {
 
 
 impl<'a> IterWrapper<'a> {
+    /// Create new `IterWrapper` from generic slice iterator
     pub fn new_generic(iter: std::slice::Iter::<'a,u32>) -> Self {
         Self::GenericIter(iter)
     }
 
+    /// Create new `IterWrapper` from `SwEdgeIterNeighbors`
     pub fn new_sw(iter: SwEdgeIterNeighbors<'a>) -> Self {
         Self::SwIter(iter)
     }
