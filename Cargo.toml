@@ -8,10 +8,9 @@ description = "Erdős-Rényi and small world ensembles. For simple sampling or M
 repository = "https://github.com/Pardoxa/net_ensembles"
 keywords = [
   "small-world",
-  "Erdős-Rènyi",
-  "Erdoes-Renyi",
+  "Erdos-Renyi",
   "random graph ensemble"
-  ]
+]
 categories = ["science"]
 documentation = "https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/"
 license = "MIT OR Apache-2.0"
