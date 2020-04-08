@@ -1,4 +1,4 @@
-# Rust library for network-ensembles
+# Rust library for random graph ensembles
 
 Implements simple sampling and monte carlo (or rather markov-) steps,
 that can be used to create a markov chain.

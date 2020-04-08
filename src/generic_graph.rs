@@ -156,6 +156,8 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
         self.next_id
     }
 
+    /// calculates the average degree of the graph
+    /// * `(2 * edge_count) / vertex_count`
     pub fn average_degree(&self) -> f32 {
         (2 * self.edge_count()) as f32 / self.vertex_count() as f32
     }

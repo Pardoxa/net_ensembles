@@ -16,7 +16,8 @@ keywords = [
   "graph ensembles",
   "scientific",
   "graph",
-  "random graph"
+  "random graph",
+  "random graph ensemble"
   ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
