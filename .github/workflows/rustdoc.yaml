@@ -29,10 +29,26 @@ jobs:
     - name: Build Documentation
       run: cargo doc --all --no-deps
 
+
+    - name: Move Files Checkout
+      run: |
+       mkdir -p ./versions/master
+       cp -r ./target/doc ./versions/master
+       git checkout f01993b2c443bb800be5acd2c87ca2901f152582
+       rm -r ./target/doc
+
+    - name: Build Documentation v0.1.0
+      run: cargo doc --all --no-deps
+
+    - name: Move Files
+      run: |
+       mkdir -p ./versions/v0.1.0
+       cp -r ./target/doc ./versions/v0.1.0
+
     - name: Deploy Docs
       uses: peaceiris/actions-gh-pages@25ae83ba65b483195e2a1b7b9a5198c271d0d84c #v3.6.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_branch: gh-pages
-        publish_dir: ./target/doc
+        publish_dir: ./versions
         force_orphan: true
