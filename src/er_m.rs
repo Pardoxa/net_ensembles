@@ -8,7 +8,7 @@
 //!   Publ. Math. Inst. Hungar. Acad. Sci. **5**, 17-61 (1960)
 use crate::graph::Graph;
 use crate::Node;
-use crate::traits::{Ensemble, EnsembleRng};
+use crate::traits::{Ensemble, EnsembleRng, WithGraph};
 use rand::seq::SliceRandom;
 use rand::distributions::{Distribution, Uniform};
 
@@ -45,7 +45,7 @@ pub struct ErEnsembleM<T: Node, R: rand::Rng> {
     possible_uniform: rand::distributions::uniform::Uniform<usize>,
 }
 
-impl<T, R> EnsembleRng<ErStepM, ErStepM, R> for ErEnsembleM<T, R>
+impl<T, R> EnsembleRng<R> for ErEnsembleM<T, R>
     where   T: Node,
             R: rand::Rng,
 {
@@ -204,21 +204,21 @@ impl<T: Node, R: rand::Rng> ErEnsembleM<T, R> {
     pub fn sort_adj(&mut self) {
         self.graph_mut().sort_adj();
     }
+}
 
-    /// returns reference to the underlying topology aka, the `Graph<T>`
-    ///
-    /// Use this to call functions regarding the topology
-    pub fn graph(&self) -> &Graph<T> {
-        &self.graph
-    }
-
-    /// access additional information at vertex
-    pub fn at(&self, index: usize) -> & T {
+impl<T, R> WithGraph<T, Graph<T>> for ErEnsembleM<T, R>
+where   T: Node,
+        R: rand::Rng
+{
+    fn at(&self, index: usize) -> &T{
         self.graph.at(index)
     }
 
-    /// mutable access of additional information at index
-    pub fn at_mut(&mut self, index: usize) -> &mut T {
+    fn at_mut(&mut self, index: usize) -> &mut T{
         self.graph.at_mut(index)
+    }
+
+    fn graph(&self) -> &Graph<T> {
+        &self.graph
     }
 }

@@ -195,22 +195,6 @@ impl <T, R> SwEnsemble<T, R>
         self.graph.sort_adj();
     }
 
-    /// * returns reference to the underlying topology aka, the `SwGraph<T>`
-    /// * use this to call functions regarding the topology
-    pub fn graph(&self) -> &SwGraph<T> {
-        &self.graph
-    }
-
-    /// * access additional information at
-    pub fn at(&self, index: usize) -> & T {
-        self.graph.at(index)
-    }
-
-    /// * mutable access of additional information at index
-    pub fn at_mut(&mut self, index: usize) -> &mut T {
-        self.graph.at_mut(index)
-    }
-
     /// * returns rewiring probability
     pub fn r_prob(&self) -> f64 {
         self.r_prob
@@ -225,7 +209,26 @@ impl <T, R> SwEnsemble<T, R>
     }
 }
 
-impl<T, R> EnsembleRng<SwChangeState, SwChangeState, R> for SwEnsemble<T, R>
+
+
+impl<T, R> WithGraph<T, SwGraph<T>> for SwEnsemble<T, R>
+where   T: Node,
+        R: rand::Rng
+{
+    fn at(&self, index: usize) -> &T{
+        self.graph.at(index)
+    }
+
+    fn at_mut(&mut self, index: usize) -> &mut T{
+        self.graph.at_mut(index)
+    }
+
+    fn graph(&self) -> &SwGraph<T> {
+        &self.graph
+    }
+}
+
+impl<T, R> EnsembleRng<R> for SwEnsemble<T, R>
 where   T: Node,
         R: rand::Rng
 {

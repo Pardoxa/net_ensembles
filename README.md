@@ -28,6 +28,8 @@ As such, you can easily define additional data that should be stored at each ver
 
 * depth first search from index
 * breadth first search from index
+* over additional data
+* ...
 
 ## For each vertex
 
@@ -50,7 +52,7 @@ No warranties whatsoever, but since
 I am writing this library for my own scientific simulations,
 I do my best to avoid errors.
 
-You can learn more about me and my research on my [homepage](www.yfeld.de).
+You can learn more about me and my research on my [homepage](https://www.yfeld.de).
 
 If you like my library but feel like there is an iterator missing or something
 like that: feel free to create an issue on the repository, I might add it.

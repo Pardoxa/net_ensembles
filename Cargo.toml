@@ -1,6 +1,6 @@
 [package]
 name = "net_ensembles"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Yannick Feld"]
 edition = "2018"
 readme = "README.md"
@@ -17,6 +17,10 @@ categories = ["science"]
 documentation = "https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/"
 license = "MIT OR Apache-2.0"
 homepage = "https://www.yfeld.de/Library.html"
+exclude = [
+  "TestData/*",
+  "tests/*"
+]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

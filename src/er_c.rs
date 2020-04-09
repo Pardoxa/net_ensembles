@@ -42,7 +42,7 @@ impl ErStepC {
         }
     }
 
-    /// `panic!(msg)` if `self` is `GError` variant 
+    /// `panic!(msg)` if `self` is `GError` variant
     pub fn valid_or_panic_msg(&self, msg: &str) {
         match self {
             Self::GError(error) => panic!("ErStepC - invalid {}- {}", msg, error),
@@ -62,7 +62,7 @@ pub struct ErEnsembleC<T: Node, R: rand::Rng> {
     rng: R,
 }
 
-impl<T, R> EnsembleRng<ErStepC, ErStepC, R> for ErEnsembleC<T, R>
+impl<T, R> EnsembleRng<R> for ErEnsembleC<T, R>
     where   T: Node,
             R: rand::Rng,
 {
@@ -237,21 +237,22 @@ impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
         self.graph_mut().sort_adj();
     }
 
-    /// returns reference to the underlying topology aka, the `Graph<T>`
-    ///
-    /// Use this to call functions regarding the topology
-    pub fn graph(&self) -> &Graph<T> {
-        &self.graph
-    }
+}
 
-    /// access additional information at vertex
-    pub fn at(&self, index: usize) -> & T {
+impl<T, R> WithGraph<T, Graph<T>> for ErEnsembleC<T, R>
+where   T: Node,
+        R: rand::Rng
+{
+    fn at(&self, index: usize) -> &T{
         self.graph.at(index)
     }
 
-    /// mutable access of additional information at index
-    pub fn at_mut(&mut self, index: usize) -> &mut T {
+    fn at_mut(&mut self, index: usize) -> &mut T{
         self.graph.at_mut(index)
+    }
+
+    fn graph(&self) -> &Graph<T> {
+        &self.graph
     }
 }
 

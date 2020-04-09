@@ -1,7 +1,6 @@
 /// # Access random number generator of Ensemble
-pub trait EnsembleRng<A, B, Rng>
-where Self: Ensemble<A,B>,
-      Rng: rand::Rng
+pub trait EnsembleRng<Rng>
+where Rng: rand::Rng
 {
     /// # Access RNG
     /// If, for some reason, you want access to the internal random number generator: Here you go
@@ -99,4 +98,17 @@ pub trait Ensemble<S, Res> {
             self.undo_step_quiet(step);
         }
     }
+}
+
+/// unify graph ensembles in a trait
+pub trait WithGraph<T, G>{
+    /// * access additional information at index
+    fn at(&self, index: usize) -> &T;
+
+    /// * mutable access to additional information at index
+    fn at_mut(&mut self, index: usize) -> &mut T;
+
+    /// * returns reference to the underlying topology aka, the `GenericGraph`
+    /// * use this to call functions regarding the topology
+    fn graph(&self) -> &G;
 }

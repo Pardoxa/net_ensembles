@@ -35,7 +35,7 @@ jobs:
        mkdir -p ./versions/master
        cp -r ./target/doc ./versions/master
        git fetch --prune --unshallow
-       git checkout 7c2cf28b7bcd857d19614ec59f75d61f1b8b1faa
+       git checkout v0.1.0
        rm -r ./target/doc
 
     - name: Build Documentation v0.1.0
