@@ -3,7 +3,7 @@
 use crate::traits::*;
 use std::fmt;
 use crate::GraphErrors;
-use crate::SwChangeState;
+use crate::sw::SwChangeState;
 use crate::GenericGraph;
 
 #[derive(Debug, Clone)]

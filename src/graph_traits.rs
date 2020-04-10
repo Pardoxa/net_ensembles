@@ -1,5 +1,6 @@
 use crate::IterWrapper;
 use std::fmt;
+use crate::sw::SwChangeState;
 /// What every node should be able to do
 pub trait Node
 where Self: Clone{
@@ -45,72 +46,6 @@ impl fmt::Display for GraphErrors {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_str())
-    }
-}
-
-/// # Returned by Monte Carlo Steps
-/// * information about the performed step and possible errors
-#[derive(Debug)]
-pub enum SwChangeState {
-    /// ERROR adjecency list invalid?
-    InvalidAdjecency,
-    /// Can not add edge twice
-    BlockedByExistingEdge,
-    /// Nothing happend
-    Nothing,
-    /// old edge: (Rewire.0, Rewire.1), new edge (Rewire.0, Rewire.2)
-    Rewire(u32, u32, u32),
-    /// old edge: (Reset.0, Reset.1), new edge (Reset.0, Reset.2)
-    Reset(u32, u32, u32),
-    /// A GraphError occurred
-    GError(GraphErrors),
-}
-
-impl SwChangeState {
-    /// checks if self is `Nothing` variant
-    pub fn is_nothing(&self) -> bool {
-        if let SwChangeState::Nothing = self {
-            true
-        }else{
-            false
-        }
-    }
-
-    /// checks if self is `Nothing` or `BlockedByExistingEdge`
-    pub fn is_nothing_or_blocked(&self) -> bool {
-        match self {
-            SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge => true,
-            _                                    => false
-        }
-    }
-
-    /// result is equal to `!self.is_nothing_or_blocked()`
-    pub fn not_nothing_or_blocked(&self) -> bool {
-        match self {
-            SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge => false,
-            _                                    => true
-        }
-    }
-
-    /// # valid states:
-    /// * `SwChangeState::Rewire(..)`
-    /// * `SwChangeState::Reset(..)`
-    /// * `SwChangeState::Nothing`
-    /// * `SwChangeState::BlockedByExistingEdge`
-    /// # invalid states:
-    /// * `SwChangeState::InvalidAdjecency`
-    /// * `SwChangeState::GError(..)`
-    pub fn is_valid(&self) -> bool {
-        match self {
-            SwChangeState::Rewire(..) |
-            SwChangeState::Reset(..) |
-            SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge => true,
-            SwChangeState::InvalidAdjecency |
-            SwChangeState::GError(..)            => false,
-        }
     }
 }
 

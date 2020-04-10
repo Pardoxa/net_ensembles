@@ -132,7 +132,8 @@ mod ensemble_traits;
 pub mod traits;
 pub mod dot_constants;
 pub mod sw_graph;
-mod iter;
+pub mod iter;
+pub mod step_structs;
 
 pub use sw::SwEnsemble;
 pub use sw_graph::SwGraph;
@@ -144,5 +145,4 @@ pub use example_nodes::EmptyNode;
 pub use graph_traits::GraphErrors;
 pub use traits::*;
 pub use iter::IterWrapper;
-
-pub(crate) use graph_traits::SwChangeState;
+pub use step_structs::*;

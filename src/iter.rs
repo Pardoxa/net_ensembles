@@ -1,3 +1,6 @@
+//! Contains definitions of a few iterators. Not All of them though.
+//!
+//! They are returned by a few of the methods, you do not need to build them yourself.
 
 use crate::sw_graph::SwEdgeIterNeighbors;
 use crate::{Node, AdjContainer};
