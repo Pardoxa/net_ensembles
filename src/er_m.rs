@@ -8,7 +8,7 @@
 //!   Publ. Math. Inst. Hungar. Acad. Sci. **5**, 17-61 (1960)
 use crate::graph::Graph;
 use crate::Node;
-use crate::traits::{Ensemble, EnsembleRng, WithGraph};
+use crate::traits::*;
 use rand::seq::SliceRandom;
 use rand::distributions::{Distribution, Uniform};
 
@@ -63,27 +63,10 @@ impl<T, R> EnsembleRng<R> for ErEnsembleM<T, R>
     }
 }
 
-
-impl <T, R> Ensemble<ErStepM, ErStepM> for ErEnsembleM<T, R>
+impl<T, R> SimpleSample for ErEnsembleM<T, R>
     where   T: Node,
             R: rand::Rng,
 {
-    /// * undo a monte carlo step, return result-state
-    /// * if you want to undo more than one step
-    /// see [`undo_steps`](#method.undo_steps)
-    fn undo_step(&mut self, mut step: ErStepM) -> ErStepM {
-        step.invert();
-        self.step(&step);
-        step
-    }
-
-    /// * undo a monte carlo step, **panic** on invalid result state
-    /// * for undoing multiple steps see [`undo_steps_quiet`](#method.undo_steps_quiet)
-    fn undo_step_quiet(&mut self, mut step: ErStepM) -> (){
-        step.invert();
-        self.step(&step);
-    }
-
     /// # Randomizes self according to  model
     /// * this is intended for creation of initial sample
     /// * used in [`simple_sample`](#method.simple_sample)
@@ -108,11 +91,32 @@ impl <T, R> Ensemble<ErStepM, ErStepM> for ErEnsembleM<T, R>
         self.possible_edges
             .copy_from_slice(&self.all_edges[self.m..]);
     }
+}
+
+impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
+    where   T: Node,
+            R: rand::Rng,
+{
+    /// * undo a monte carlo step, return result-state
+    /// * if you want to undo more than one step
+    /// see [`undo_steps`](#method.undo_steps)
+    fn undo_step(&mut self, mut step: ErStepM) -> ErStepM {
+        step.invert();
+        self.step(&step);
+        step
+    }
+
+    /// * undo a monte carlo step, **panic** on invalid result state
+    /// * for undoing multiple steps see [`undo_steps_quiet`](#method.undo_steps_quiet)
+    fn undo_step_quiet(&mut self, mut step: ErStepM) -> (){
+        step.invert();
+        self.step(&step);
+    }
 
     /// # Monte Carlo step
     /// * use this to perform a Monte Carlo step
-    /// * for doing multiple mc steps at once, use [`mc_steps`](#method.mc_steps)
-    fn mc_step(&mut self) -> ErStepM{
+    /// * for doing multiple mc steps at once, use [`m_steps`](#method.m_steps)
+    fn m_step(&mut self) -> ErStepM{
         let index_current   = self.current_uniform .sample(&mut self.rng);
         let index_possible  = self.possible_uniform.sample(&mut self.rng);
 

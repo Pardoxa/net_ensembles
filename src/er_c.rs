@@ -80,9 +80,9 @@ impl<T, R> EnsembleRng<R> for ErEnsembleC<T, R>
     }
 }
 
-impl<T, R> Ensemble<ErStepC, ErStepC> for ErEnsembleC<T, R>
-    where   T: Node,
-            R: rand::Rng,
+impl<T, R> SimpleSample for ErEnsembleC<T, R>
+where   T: Node,
+        R: rand::Rng,
 {
     /// # Randomizes the edges according to Er probabilities
     /// * this is used by `ErEnsembleC::new` to create the initial topology
@@ -99,11 +99,17 @@ impl<T, R> Ensemble<ErStepC, ErStepC> for ErEnsembleC<T, R>
             }
         }
     }
+}
+
+impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
+    where   T: Node,
+            R: rand::Rng,
+{
 
     /// # Monte Carlo step
     /// * use this to perform a Monte Carlo step
     /// * result `ErStepC` can be used to undo the step with `self.undo_step(result)`
-    fn mc_step(&mut self) -> ErStepC {
+    fn m_step(&mut self) -> ErStepC {
         let edge = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
 
         // Try to add edge. else: remove edge

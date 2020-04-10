@@ -13,8 +13,8 @@
 //! # Citations
 //! > D. J. Watts and S. H. Strogatz, "Collective dynamics on 'small-world' networks,"
 //!   Nature **393**, 440-442 (1998), DOI:&nbsp;[10.1038/30918](https://doi.org/10.1038/30918)
-use crate::SwGraph;
 use crate::traits::*;
+use crate::SwGraph;
 use crate::GraphErrors;
 
 const ROOT_EDGES_PER_VERTEX: u32 = 2;
@@ -90,7 +90,7 @@ impl SwChangeState {
 /// * for topology functions look at [`GenericGraph`](../generic_graph/struct.GenericGraph.html)
 /// # Sampling
 /// ## Simple sampling and/or monte carlo steps?
-/// * look at [Ensemble trait](../traits/trait.Ensemble.html)
+/// * look at [MarkovChain trait](../traits/trait.MarkovChain.html)
 /// ## Access or manipulate RNG?
 /// * look at [EnsembleRng trait](../traits/trait.EnsembleRng.html)
 /// # Minimal example
@@ -312,11 +312,10 @@ where   T: Node,
     }
 }
 
-impl<T, R> Ensemble<SwChangeState, SwChangeState> for SwEnsemble<T, R>
+impl<T, R> SimpleSample for SwEnsemble<T, R>
 where   T: Node,
         R: rand::Rng
-        {
-
+{
     /// # Randomizes the edges according to small-world model
     /// * this is used by `SwEnsemble::new` to create the initial topology
     /// * you can use this for sampling the ensemble
@@ -348,6 +347,12 @@ where   T: Node,
 
         }
     }
+}
+
+impl<T, R> MarkovChain<SwChangeState, SwChangeState> for SwEnsemble<T, R>
+where   T: Node,
+        R: rand::Rng
+        {
 
     /// # Monte Carlo step
     /// * use this to perform a Monte Carlo step
@@ -355,7 +360,7 @@ where   T: Node,
     /// drawing an edge and then reseting it with `r_prob`, else the edge is rewired
     /// * result `SwChangeState` can be used to undo the step with `self.undo_step(result)`
     /// * result should never be `InvalidAdjecency` or `GError` if used on a valid graph
-    fn mc_step(&mut self) -> SwChangeState {
+    fn m_step(&mut self) -> SwChangeState {
         let edge = self.draw_edge();
         self.randomize_edge(edge.0, edge.1)
     }

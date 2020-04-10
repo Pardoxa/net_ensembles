@@ -20,7 +20,7 @@ fn step_test() {
     e_0.sort_adj();
 
     for i in 0..=200 {
-        let steps = e.mc_steps(i);
+        let steps = e.m_steps(i);
         e.undo_steps_quiet(steps);
 
         e.sort_adj();
