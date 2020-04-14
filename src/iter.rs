@@ -66,7 +66,7 @@ impl<'a> IterWrapper<'a> {
 }
 
 
-/// Iterator over indices stored in adjecency list
+/// Iterator over additional data stored at each vertex in order of indices
 pub struct ContainedIter<'a, T, A>
 where T: Node,
       A: AdjContainer<T>
@@ -81,7 +81,7 @@ where T: Node,
       A: AdjContainer<T>
 {
     /// Create new iterator over vertex slice
-    pub fn new(vertex_slice: &'a[A]) -> Self {
+    pub(crate) fn new(vertex_slice: &'a[A]) -> Self {
         Self {
             vertex_slice,
             phantom: PhantomData::<T>
@@ -128,5 +128,137 @@ where T: 'a + Node,
 {
     fn len(&self) -> usize {
         self.vertex_slice.len()
+    }
+}
+
+
+
+
+///////////////////////////
+/// Iterator over each vertex directly connected with start vertex in adjecency list of vertex index
+pub struct NContainerIter<'a, T, A>
+where T: Node,
+      A: AdjContainer<T>
+{
+    vertex_slice:   &'a[A],
+    index_iter:     IterWrapper<'a>,
+    phantom:        PhantomData<T>
+
+}
+
+impl<'a, T, A> NContainerIter<'a, T, A>
+where T: Node,
+      A: AdjContainer<T>
+{
+    /// Create new iterator over vertex slice
+    pub(crate) fn new(vertex_slice: &'a[A], index_iter: IterWrapper::<'a>) -> Self {
+        Self {
+            vertex_slice,
+            index_iter,
+            phantom: PhantomData::<T>
+        }
+    }
+}
+
+impl<'a, T, A> Iterator for NContainerIter<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+    type Item = &'a A;
+    fn next(&mut self) -> Option<Self::Item> {
+        let index = self.index_iter.next()?;
+        let index = *index as usize;
+        Some(&self.vertex_slice[index])
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+}
+
+impl<'a, T, A> DoubleEndedIterator for NContainerIter<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let index = self.index_iter.next_back()?;
+        let index = *index as usize;
+        Some(&self.vertex_slice[index])
+    }
+}
+
+impl<'a, T, A> ExactSizeIterator for NContainerIter<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+    fn len(&self) -> usize {
+        self.index_iter.len()
+    }
+}
+
+
+
+///////////////////////////
+/// Iterator over additional information stored at vertices
+/// that are directly connected to specific vertex
+pub struct NContainedIter<'a, T, A>
+where T: Node,
+      A: AdjContainer<T>
+{
+    vertex_slice:   &'a[A],
+    index_iter:     IterWrapper<'a>,
+    phantom:        PhantomData<T>
+
+}
+
+impl<'a, T, A> NContainedIter<'a, T, A>
+where T: Node,
+      A: AdjContainer<T>
+{
+    /// Create new iterator over vertex slice
+    pub(crate) fn new(vertex_slice: &'a[A], index_iter: IterWrapper::<'a>) -> Self {
+        Self {
+            vertex_slice,
+            index_iter,
+            phantom: PhantomData::<T>
+        }
+    }
+}
+
+impl<'a, T, A> Iterator for NContainedIter<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+    type Item = &'a T;
+    fn next(&mut self) -> Option<Self::Item> {
+        let index = self.index_iter.next()?;
+        let index = *index as usize;
+        Some(&self.vertex_slice[index].contained())
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+}
+
+impl<'a, T, A> DoubleEndedIterator for NContainedIter<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let index = self.index_iter.next_back()?;
+        let index = *index as usize;
+        Some(&self.vertex_slice[index].contained())
+    }
+}
+
+impl<'a, T, A> ExactSizeIterator for NContainedIter<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+    fn len(&self) -> usize {
+        self.index_iter.len()
     }
 }

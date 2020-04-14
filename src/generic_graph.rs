@@ -9,7 +9,7 @@ use std::collections::VecDeque;
 use std::collections::HashSet;
 use std::marker::PhantomData;
 use crate::GraphErrors;
-use crate::iter::ContainedIter;
+use crate::iter::{ContainedIter, NContainerIter, NContainedIter};
 /// # Generic graph implementation
 /// * contains multiple measurable quantities
 #[derive(Debug, Clone)]
@@ -135,11 +135,29 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
         self.vertices.iter()
     }
 
+    /// * iterate over `AdjContainer` of neighbors of vertex `index`
+    /// * iterator returns `AdjContainer<Node>`
+    pub fn container_iter_neighbors(&self, index: usize) -> NContainerIter<T, A> {
+        NContainerIter::new(
+            self.vertices.as_slice(),
+            self.vertices[index].neighbors()
+        )
+    }
+
     /// * get iterator over additional information stored at each vertex in order of the indices
     /// * iterator returns a `Node` (for example `EmptyNode` or whatever you used)
     /// * similar to `self.container_iter().map(|container| container.contained())`
     pub fn contained_iter(&self) -> ContainedIter<T, A> {
         ContainedIter::new(self.vertices.as_slice())
+    }
+
+    /// * iterate over additional information of neighbors of vertex `index`
+    /// * iterator returns `&T`
+    pub fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<T, A> {
+        NContainedIter::new(
+            self.vertices.as_slice(),
+            self.vertices[index].neighbors()
+        )
     }
 
     pub(crate) fn container_mut(&mut self, index: usize) -> &mut A {

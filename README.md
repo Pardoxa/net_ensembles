@@ -38,7 +38,7 @@ As such, you can easily define additional data that should be stored at each ver
 * check adjacency with other nodes
 * access additional data
 
-## Iterators
+### Iterators
 * iterate over indices stored in adjacency list
 
 # Documentation:
