@@ -43,6 +43,7 @@ As such, you can easily define additional data that should be stored at each ver
 
 # Documentation:
 
+* [changelog](CHANGELOG.md)
 * [current working branch](https://pardoxa.github.io/net_ensembles/master/doc/net_ensembles/)
 * [v0.1.0](https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/)
 
@@ -74,7 +75,7 @@ If I do, it will likely be a relatively costly operation, so keep that in mind.
 ## crates.io
 
 * I might move the `MarkovChain` and `SimpleSample` trait into a different crate in the Future.
-  If I do, the trait will be reexported at the same position as currently
+  If I do, the traits will be reexported at the same position as currently
 
 ## License
 
