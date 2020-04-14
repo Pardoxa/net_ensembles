@@ -309,3 +309,66 @@ fn transitivity() {
 
     assert_eq!(3.0 / 11.0, graph.transitivity());
 }
+
+#[test]
+fn iter_neighbors() {
+    let mut graph: Graph<EmptyNode> = Graph::new(6);
+
+    for i in 0..graph.vertex_count() as usize {
+        let mut iter = graph.contained_iter_neighbors(i);
+        assert!(iter.next().is_none());
+    }
+
+    for i in 0..graph.vertex_count() as usize {
+        let mut iter = graph.container_iter_neighbors(i);
+        assert!(iter.next().is_none());
+    }
+
+    for i in 0..6 {
+        graph.add_edge(i, (i + 1) %  6).unwrap();
+    }
+
+    for i in 0..graph.vertex_count() as usize {
+        let iter = graph.contained_iter_neighbors(i);
+        assert!(iter.len() == 2);
+    }
+
+    for i in 0..graph.vertex_count() as usize {
+        let mut iter = graph.container_iter_neighbors(i);
+        assert!(iter.len() == 2);
+        let next = iter.next();
+        let id = next.unwrap().id() as usize;
+        assert!(
+            id == (i + 5) % 6 ||
+            id == (i + 1) % 6
+        );
+
+    }
+
+    graph.sort_adj();
+
+    for i in 0..graph.vertex_count() as usize {
+        let mut iter = graph.container_iter_neighbors(i);
+        assert!(iter.len() == 2);
+        assert!(
+            iter.next().unwrap().id()
+            <
+            iter.next().unwrap().id()
+        );
+
+        let mut iter2 = graph.container_iter_neighbors(i).rev();
+        assert!(
+            iter2.next().unwrap().id()
+            >
+            iter2.next().unwrap().id()
+        )
+    }
+
+}
+
+#[test]
+#[should_panic]
+fn iter_panic() {
+    let graph: Graph<EmptyNode> = Graph::new(6);
+    graph.contained_iter_neighbors(6);
+}

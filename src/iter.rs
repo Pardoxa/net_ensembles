@@ -150,7 +150,7 @@ impl<'a, T, A> NContainerIter<'a, T, A>
 where T: Node,
       A: AdjContainer<T>
 {
-    /// Create new iterator over vertex slice
+    /// Create new iterator
     pub(crate) fn new(vertex_slice: &'a[A], index_iter: IterWrapper::<'a>) -> Self {
         Self {
             vertex_slice,
@@ -216,7 +216,7 @@ impl<'a, T, A> NContainedIter<'a, T, A>
 where T: Node,
       A: AdjContainer<T>
 {
-    /// Create new iterator over vertex slice
+    /// Create new iterator
     pub(crate) fn new(vertex_slice: &'a[A], index_iter: IterWrapper::<'a>) -> Self {
         Self {
             vertex_slice,

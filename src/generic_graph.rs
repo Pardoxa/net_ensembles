@@ -120,10 +120,7 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
     }
 
 
-    /// # get NodeContainer at index
-    /// * use this to iterate over neighbors
-    /// * use this to check, if vertices are adjacent
-    /// # Warning
+    /// # get `AdjContainer` of vertex `index`
     /// * **panics** if index out of bounds
     pub fn container(&self, index: usize) -> &A {
         &self.vertices[index]
@@ -137,6 +134,13 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
 
     /// * iterate over `AdjContainer` of neighbors of vertex `index`
     /// * iterator returns `AdjContainer<Node>`
+    /// * `sort_adj` will affect the order
+    ///
+    ///   If `let mut iter = self.contained_iter_neighbors()` is called directly after
+    ///   `self.sort_adj()`, the following will be true (as long as `iter` does not return `None` of cause):
+    ///   `iter.next().unwrap().id() < iter.next().unwrap.id() < ...` Note, that `...id()` returns the
+    ///   index of the corresponding vertex
+    /// * **panics** if index out of bounds
     pub fn container_iter_neighbors(&self, index: usize) -> NContainerIter<T, A> {
         NContainerIter::new(
             self.vertices.as_slice(),
@@ -153,6 +157,8 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
 
     /// * iterate over additional information of neighbors of vertex `index`
     /// * iterator returns `&T`
+    /// * `sort_adj` will affect the order
+    /// * **panics** if index out of bounds
     pub fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<T, A> {
         NContainedIter::new(
             self.vertices.as_slice(),
@@ -166,14 +172,12 @@ impl<T: Node, A: AdjContainer<T>> GenericGraph<T, A> {
 
     /// # For your calculations etc.
     /// * **read access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
-    /// * see first **code example** (beginning of this page)
     pub fn at(&self, index: usize) -> &T {
         self.container(index).contained()
     }
 
     /// # For your calculations etc.
     /// * **write access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
-    /// * see first **code example** (beginning of this page)
     pub fn at_mut(&mut self, index: usize) -> &mut T {
         self.container_mut(index).contained_mut()
     }
