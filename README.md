@@ -29,7 +29,7 @@ As such, you can easily define additional data that should be stored at each ver
 * depth first search from index
 * breadth first search from index
 * over additional data
-* ...
+* …
 
 ## For each vertex
 
@@ -40,6 +40,7 @@ As such, you can easily define additional data that should be stored at each ver
 
 ### Iterators
 * iterate over indices stored in adjacency list
+* …
 
 # Documentation:
 

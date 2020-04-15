@@ -3,7 +3,7 @@
 ## v0.1.0 &rarr; v0.2.0
 
 ### traits
-* ~`Ensemble`~ &#8688; `SimpleSample` + `MarkovChain`
+* ~`Ensemble`~ &#8680; `SimpleSample` + `MarkovChain`
 * `mc_step` of former `Ensemble` trait is now `m_step` in `MarkovChain` trait
 * new trait `WithGraph` for graph ensembles
 
