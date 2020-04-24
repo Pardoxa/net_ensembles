@@ -11,14 +11,12 @@ use std::marker::PhantomData;
 use crate::GraphErrors;
 use crate::iter::{ContainedIter, NContainerIter, NContainedIter};
 #[cfg(feature = "serde_support")]
-use serde::{Serialize};
+use serde::{Serialize, Deserialize};
 /// # Generic graph implementation
 /// * contains multiple measurable quantities
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde_support", derive(Serialize))]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct GenericGraph<T, A>
-where T: Node + SerdeStateConform,
-      A: AdjContainer<T> + SerdeStateConform,
 {
     next_id: u32,
     edge_count: u32,

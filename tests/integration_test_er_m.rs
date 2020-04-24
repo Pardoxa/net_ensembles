@@ -21,7 +21,6 @@ fn serde_json_test() {
     let e = ErEnsembleM::<EmptyNode, Pcg64>::new(30, 70, rng);
     let serialized = serde_json::to_string(&e).unwrap();
     println!("{}", serialized);
-    panic!("")
 }
 
 #[test]

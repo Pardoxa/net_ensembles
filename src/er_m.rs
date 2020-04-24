@@ -10,8 +10,9 @@ use crate::graph::Graph;
 use crate::Node;
 use crate::traits::*;
 use rand::seq::SliceRandom;
-use rand::distributions::{Distribution, Uniform};
-use serde::Serialize;
+
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
 
 /// Storing the information about which edges were deleted or added
 #[derive(Debug)]
@@ -35,7 +36,7 @@ impl ErStepM{
 /// # Implements Erdős-Rényi graph ensemble
 /// Constant number of edges
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde_support", derive(Serialize))]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ErEnsembleM<T: Node, R: rand::Rng>
 where T: Node + SerdeStateConform,
       R: rand::Rng
@@ -46,10 +47,6 @@ where T: Node + SerdeStateConform,
     all_edges: Vec<(u32, u32)>,
     possible_edges: Vec<(u32, u32)>,
     current_edges: Vec<(u32, u32)>,
-    #[serde(skip_serializing)]
-    current_uniform: Uniform<usize>,
-    #[serde(skip_serializing)]
-    possible_uniform: Uniform<usize>,
 }
 
 impl<T, R> EnsembleRng<R> for ErEnsembleM<T, R>
@@ -124,8 +121,8 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
     /// * use this to perform a Monte Carlo step
     /// * for doing multiple mc steps at once, use [`m_steps`](#method.m_steps)
     fn m_step(&mut self) -> ErStepM{
-        let index_current   = self.current_uniform .sample(&mut self.rng);
-        let index_possible  = self.possible_uniform.sample(&mut self.rng);
+        let index_current   = self.rng.gen_range(0, self.current_edges.len());
+        let index_possible  = self.rng.gen_range(0, self.possible_edges.len());
 
         let step = ErStepM{
             removed:  self.current_edges[index_current],
@@ -177,9 +174,6 @@ where T: Node + SerdeStateConform,
             }
         }
 
-        let current_uniform     = Uniform::from(0..m);
-        let possible_uniform    = Uniform::from(0..(p_edges as usize - m));
-
         let mut e = ErEnsembleM {
             graph,
             m,
@@ -187,8 +181,6 @@ where T: Node + SerdeStateConform,
             all_edges: vec,
             possible_edges: vec![(0, 0); p_edges as usize - m],   // randomize will mem_copy - slice needs to be big enough
             current_edges: vec![(0, 0); m], // randomize will mem_copy - slice needs to be big enough
-            current_uniform,
-            possible_uniform
         };
         e.randomize();
         e

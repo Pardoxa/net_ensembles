@@ -120,7 +120,7 @@
 //! println!("{:?}", vec);
 //! ```
 //! **Note:** simple sampling also works for [`ErEnsembleC`](er_c/struct.ErEnsembleC.html)
-#![deny(missing_docs, warnings)]
+//#![deny(missing_docs, warnings)]
 pub mod generic_graph;
 pub mod example_nodes;
 pub mod graph;

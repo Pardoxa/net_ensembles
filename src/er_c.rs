@@ -12,7 +12,8 @@ use crate::GraphErrors;
 use crate::Node;
 use crate::traits::*;
 
-use serde::Serialize;
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
 
 /// # Returned by Monte Carlo Steps
 #[derive(Debug, Clone)]
@@ -57,7 +58,7 @@ impl ErStepC {
 /// * variable number of edges
 /// * targets a connectivity
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde_support", derive(Serialize))]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ErEnsembleC<T: Node, R: rand::Rng>
 where T: Node + SerdeStateConform,
       R: rand::Rng

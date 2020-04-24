@@ -18,7 +18,7 @@ use crate::SwGraph;
 use crate::GraphErrors;
 
 #[cfg(feature = "serde_support")]
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 const ROOT_EDGES_PER_VERTEX: u32 = 2;
 
@@ -167,7 +167,7 @@ impl SwChangeState {
 /// println!("{:?}", vec);
 /// ```
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde_support", derive(Serialize))]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SwEnsemble<T: Node, R: rand::Rng>
 where T: Node + SerdeStateConform,
       R: rand::Rng
