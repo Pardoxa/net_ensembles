@@ -101,7 +101,7 @@ impl SwChangeState {
 /// use net_ensembles::{SwEnsemble, EmptyNode};
 /// use net_ensembles::traits::*; // I recommend always using this
 /// use rand_pcg::Pcg64; //or whatever you want to use as rng
-/// use rand::SeedableRng; // I use this to seed my rng, but you can use whatever
+/// use net_ensembles::rand::SeedableRng; // I use this to seed my rng, but you can use whatever
 ///
 /// let rng = Pcg64::seed_from_u64(12);
 ///
@@ -114,7 +114,7 @@ impl SwChangeState {
 /// use net_ensembles::{SwEnsemble, EmptyNode};
 /// use net_ensembles::traits::*; // I recommend always using this
 /// use rand_pcg::Pcg64; //or whatever you want to use as rng
-/// use rand::SeedableRng; // I use this to seed my rng, but you can use whatever
+/// use net_ensembles::rand::SeedableRng; // I use this to seed my rng, but you can use whatever
 /// use std::fs::File;
 /// use std::io::{BufWriter, Write};
 ///
@@ -166,6 +166,41 @@ impl SwChangeState {
 /// );
 /// println!("{:?}", vec);
 /// ```
+/// # Save and load example
+/// * only works if feature ```"serde_support"``` is enabled
+/// * Note: ```"serde_support"``` is enabled by default
+/// * I need the ```#[cfg(feature = "serde_support")]``` to ensure the example does compile if
+///  you opt out of the default feature
+/// * you can do not have to use ```serde_json```, look [here](https://docs.serde.rs/serde/) for more info
+/// ```
+/// use net_ensembles::traits::*; // I recommend always using this
+/// use serde_json;
+/// use rand_pcg::Pcg64;
+/// use net_ensembles::{SwEnsemble, EmptyNode, rand::SeedableRng};
+/// use std::fs::File;
+///
+/// let rng = Pcg64::seed_from_u64(95);
+/// // create small-world ensemble
+/// let sw_ensemble = SwEnsemble::<EmptyNode, Pcg64>::new(200, 0.3, rng);
+///
+/// #[cfg(feature = "serde_support")]
+/// {
+///     // storing the ensemble in a file:
+///
+///     let sw_file = File::create("store_SW.dat")
+///           .expect("Unable to create file");
+///
+///     // or serde_json::to_writer(sw_file, &sw_ensemble);
+///     serde_json::to_writer_pretty(sw_file, &sw_ensemble);
+///
+///     // loading ensemble from file:
+///
+///     let mut read = File::open("store_SW.dat")
+///         .expect("Unable to open file");
+///
+///     let sw: SwEnsemble::<EmptyNode, Pcg64> = serde_json::from_reader(read).unwrap();
+/// }
+///
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SwEnsemble<T: Node, R: rand::Rng>

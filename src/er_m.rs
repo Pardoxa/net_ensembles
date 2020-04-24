@@ -35,6 +35,41 @@ impl ErStepM{
 
 /// # Implements Erdős-Rényi graph ensemble
 /// Constant number of edges
+/// # Save and load example
+/// * only works if feature ```"serde_support"``` is enabled
+/// * Note: ```"serde_support"``` is enabled by default
+/// * I need the ```#[cfg(feature = "serde_support")]``` to ensure the example does compile if
+/// * you can do not have to use ```serde_json```, look [here](https://docs.serde.rs/serde/) for more info
+///  you opt out of the default feature
+/// ```
+/// use net_ensembles::traits::*; // I recommend always using this
+/// use serde_json;
+/// use rand_pcg::Pcg64;
+/// use net_ensembles::{ErEnsembleM, EmptyNode, rand::SeedableRng};
+/// use std::fs::File;
+///
+/// let rng = Pcg64::seed_from_u64(95);
+/// // create Erdős-Rényi ensemble with 200 vertices and 600 edges
+/// let er_ensemble = ErEnsembleM::<EmptyNode, Pcg64>::new(200, 600, rng);
+///
+/// #[cfg(feature = "serde_support")]
+/// {
+///     // storing the ensemble in a file:
+///
+///     let er_m_file = File::create("store_ER_m.dat")
+///           .expect("Unable to create file");
+///
+///     // or serde_json::to_writer(er_m_file, &er_ensemble);
+///     serde_json::to_writer_pretty(er_m_file, &er_ensemble);
+///
+///     // loading ensemble from file:
+///
+///     let mut read = File::open("store_ER_m.dat")
+///         .expect("Unable to open file");
+///
+///     let er: ErEnsembleM::<EmptyNode, Pcg64> = serde_json::from_reader(read).unwrap();
+/// }
+///
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ErEnsembleM<T: Node, R: rand::Rng>

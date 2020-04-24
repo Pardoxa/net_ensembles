@@ -120,6 +120,42 @@
 //! println!("{:?}", vec);
 //! ```
 //! **Note:** simple sampling also works for [`ErEnsembleC`](er_c/struct.ErEnsembleC.html)
+//!
+//! # Example 4: Save and load
+//! * only works if feature ```"serde_support"``` is enabled
+//! * Note: ```"serde_support"``` is enabled by default
+//! * I need the ```#[cfg(feature = "serde_support")]``` to ensure the example does compile if
+//!  you opt out of the default feature
+//! * you can do not have to use ```serde_json```, look [here](https://docs.serde.rs/serde/) for more info
+//! ```
+//! use net_ensembles::traits::*; // I recommend always using this
+//! use serde_json;
+//! use rand_pcg::Pcg64;
+//! use net_ensembles::{ErEnsembleC, EmptyNode, rand::SeedableRng};
+//! use std::fs::File;
+//!
+//! let rng = Pcg64::seed_from_u64(95);
+//! // create Erdős-Rényi ensemble
+//! let ensemble = ErEnsembleC::<EmptyNode, Pcg64>::new(200, 3.1, rng);
+//!
+//! #[cfg(feature = "serde_support")]
+//! {
+//!     // storing the ensemble in a file:
+//!
+//!     let er_file = File::create("erC_save.dat")
+//!           .expect("Unable to create file");
+//!
+//!     // or serde_json::to_writer(er_file, &ensemble);
+//!     serde_json::to_writer_pretty(er_file, &ensemble);
+//!
+//!     // loading ensemble from file:
+//!
+//!     let mut read = File::open("erC_save.dat")
+//!         .expect("Unable to open file");
+//!
+//!     let er: ErEnsembleC::<EmptyNode, Pcg64> = serde_json::from_reader(read).unwrap();
+//! }
+//!
 #![deny(missing_docs, warnings)]
 pub mod generic_graph;
 pub mod example_nodes;
