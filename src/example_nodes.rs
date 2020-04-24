@@ -13,15 +13,4 @@ impl Node for EmptyNode {
     fn new_from_index(_: u32) -> Self {
         EmptyNode { }
     }
-
-    fn make_string(&self) -> Option<String> {
-        Some("".to_string())
-    }
-
-
-    fn parse_str(_to_parse: &str) -> Option<(&str, Self)>
-        where Self: Sized
-    {
-        Some((_to_parse, EmptyNode{ }))
-    }
 }

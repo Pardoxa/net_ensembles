@@ -1,7 +1,6 @@
 //! # Topology for SwEnsemble
 
 use crate::traits::*;
-use std::fmt;
 use crate::GraphErrors;
 use crate::sw::SwChangeState;
 use crate::GenericGraph;
@@ -43,46 +42,6 @@ impl SwEdge {
             .map_or(false, |val| val == self.to)
     }
 
-
-    fn parse(to_parse: &str) -> Option<(&str, Self)> {
-        // skip identifier PARSE_ID
-        let mut split_index = to_parse.find("to: ")? + 4;
-        let remaining_to_parse = &to_parse[split_index..];
-
-        // find index of next PARSE_SEPERATOR and split there
-        split_index = remaining_to_parse.find(",")?;
-        let (to_str, remaining_to_parse) = remaining_to_parse.split_at(split_index);
-        let to = to_str.parse::<u32>().ok()?;
-
-        // skip identifier PARSE_ID
-        split_index = remaining_to_parse.find("o: ")? + 3;
-        let remaining_to_parse = &remaining_to_parse[split_index..];
-
-        // find index of next PARSE_SEPERATOR and split there
-        split_index = remaining_to_parse.find(".")?;
-        let (root_str, remaining_to_parse) = remaining_to_parse.split_at(split_index);
-
-        let mut char_iter = root_str.chars();
-        let originally_to = if Some('S') == char_iter.next() {
-            let orig = char_iter.as_str().parse::<u32>().ok()?;
-            Some(orig)
-        } else {
-            None
-        };
-
-        Some((&remaining_to_parse[1..], SwEdge{to, originally_to}))
-    }
-}
-
-impl fmt::Display for SwEdge {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // "id: {} adj: {:?} Node: {}"
-        let originally_to = match self.originally_to {
-            None => "N".to_string(),
-            Some(o) => format!("S{}", o),
-        };
-        write!(f, "to: {}, o: {}.", self.to, originally_to)
-    }
 }
 
 /// Iterator over indices stored in adjecency list
@@ -144,30 +103,6 @@ pub struct SwContainer<T: Node> {
     node: T,
 }
 
-
-impl<T: Node> fmt::Display for SwContainer<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut adj_str_list = Vec::with_capacity(self.adj.len());
-        for e in self.adj.iter() {
-            adj_str_list.push(e.to_string());
-        }
-        let adj_str = adj_str_list.join(" ");
-
-        let node_s = self.node.make_string()
-            .expect(&format!("make_string failed - \
-                Did you forget to Override? \
-                Look at {}::Node", env!("CARGO_PKG_NAME")));
-        write!(
-            f,
-            "id: {}, Node: {} adj: {}[{}]",
-            self.id,
-            node_s,
-            self.adj.len(),
-            adj_str
-        )
-    }
-}
-
 impl<T> AdjContainer<T> for SwContainer<T>
 where T: Node + SerdeStateConform
 {
@@ -178,56 +113,6 @@ where T: Node + SerdeStateConform
             node,
             adj: Vec::new(),
         }
-    }
-
-    /// # parse from str
-    /// * tries to parse a AdjContainer from a `str`.
-    /// * returns `None` if failed
-    ///
-    /// ## Returns `Option((a, b))`
-    /// **a)** string slice beginning directly after the part, that was used to parse
-    ///
-    /// **b)** the `AdjContainer` resulting form the parsing
-    fn parse_str(to_parse: &str) -> Option<(&str, Self)> where Self: Sized{
-        // skip identifier
-        let mut split_index = to_parse.find("id: ")? + 4;
-        let remaining_to_parse = &to_parse[split_index..];
-
-        // find index of next PARSE_SEPERATOR and split there
-        split_index = remaining_to_parse.find(",")?;
-        let (id_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
-        let id = id_str.parse::<u32>().ok()?;
-
-        // parse Node
-        split_index = remaining_to_parse.find("Node: ")? + 6;
-        remaining_to_parse = &remaining_to_parse[split_index..];
-
-        let (mut remaining_to_parse, node) = T::parse_str(remaining_to_parse)?;
-
-        // parse adj
-        split_index = remaining_to_parse.find("adj: ")? + 5;
-        remaining_to_parse = &remaining_to_parse[split_index..];
-
-        // how large is adj?
-        split_index = remaining_to_parse.find("[")?;
-        let (len_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
-
-        let len = len_str.parse::<usize>().ok()?;
-
-        let mut adj = Vec::with_capacity(len);
-        for _ in 0..len {
-            let result = SwEdge::parse(remaining_to_parse)?;
-            remaining_to_parse = result.0;
-            adj.push(result.1);
-        }
-        Some((
-                remaining_to_parse,
-                Self{
-                    id,
-                    node,
-                    adj,
-                }
-            ))
     }
 
     /// return reference to what the AdjContainer contains
@@ -539,9 +424,15 @@ where T: Node + SerdeStateConform {
 mod tests {
     use super::*;
     use crate::*;
+
+    #[cfg(feature = "serde_support")]
     use rand::Rng;
+    #[cfg(feature = "serde_support")]
     use rand_pcg::Pcg64;
+    #[cfg(feature = "serde_support")]
     use rand::SeedableRng;
+    #[cfg(feature = "serde_support")]
+    use serde_json;
 
     #[test]
     fn sw_ring_2() {
@@ -578,6 +469,7 @@ mod tests {
 
     }
 
+    #[cfg(feature = "serde_support")]
     #[test]
     fn sw_edge_parse(){
         let mut rng = Pcg64::seed_from_u64(45767879234332);
@@ -592,13 +484,14 @@ mod tests {
                 originally_to: o,
             };
 
-            let s = format!("{}", e);
-            let (_, parsed) = SwEdge::parse(&s).unwrap();
+            let s = serde_json::to_string(&e).unwrap();
+            let parsed: SwEdge = serde_json::from_str(&s).unwrap();
             assert_eq!(parsed.to, e.to);
             assert_eq!(parsed.originally_to, e.originally_to);
         }
     }
 
+    #[cfg(feature = "serde_support")]
     #[test]
     fn sw_container_test() {
         let mut c1 = SwContainer::new(0, EmptyNode{});
@@ -612,8 +505,8 @@ mod tests {
         }
         let v = vec![c1, c2, c3];
         for c in v {
-            let s = c.to_string();
-            let (_, parsed) = SwContainer::<EmptyNode>::parse_str(&s).unwrap();
+            let s = serde_json::to_string(&c).unwrap();
+            let parsed: SwContainer::<EmptyNode> = serde_json::from_str(&s).unwrap();
             assert_eq!(parsed.degree(), c.degree());
             assert_eq!(parsed.id(), c.id());
             for (i, j) in c.adj.iter().zip(parsed.adj.iter()){

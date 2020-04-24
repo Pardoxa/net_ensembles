@@ -18,4 +18,4 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     - name: Run serde_support tests
-      run: cargo test --features "serde_support"
+      run: cargo test --verbose --no-default-features

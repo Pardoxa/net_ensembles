@@ -2,7 +2,6 @@
 //! * contains multiple measurable quantities
 //! * used by `Graph<T>` and `SwGraph<T>`
 use crate::traits::*;
-use std::fmt;
 use std::cmp::max;
 use std::convert::TryFrom;
 use std::collections::VecDeque;
@@ -22,19 +21,6 @@ pub struct GenericGraph<T, A>
     edge_count: u32,
     vertices: Vec<A>,
     phantom: PhantomData<T>,
-}
-
-impl<T, A> fmt::Display for GenericGraph<T, A>
-where T: Node,
-      A: AdjContainer<T>
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut s = String::new();
-        for v in self.container_iter() {
-            s += &format!("{}\n", v);
-        }
-        write!(f, "next_id: {}\nedge_count: {}\nvertices:\n{}", self.next_id, self.edge_count, s)
-    }
 }
 
 impl<T, A> GenericGraph<T, A>
@@ -79,53 +65,6 @@ where T: Node,
         for container in self.vertices.iter_mut() {
             container.sort_adj();
         }
-    }
-
-    /// # parse from str
-    /// * tries to parse `Graph` from a `str`.
-    /// * will ignore leading whitespaces and other chars, as long as they do not match `"next_id: "`
-    /// * returns `None` if failed
-    ///
-    /// ## Return
-    /// 1) returns string slice beginning directly after the part, that was used to parse
-    /// 2) the `Graph` resulting form the parsing
-    pub fn parse_str(to_parse: &str) -> Option<(&str, Self)> {
-        // skip identifier
-        let mut split_index = to_parse.find("next_id: ")? + 9;
-        let remaining_to_parse = &to_parse[split_index..];
-
-        // find index of next PARSE_SEPERATOR and split there
-        split_index = remaining_to_parse.find("\n")?;
-        let (next_id_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
-        let next_id = next_id_str.parse::<u32>().ok()?;
-
-        // skip identifier
-        split_index = remaining_to_parse.find("edge_count: ")? + 12;
-        remaining_to_parse = &remaining_to_parse[split_index..];
-
-        // find index of next PARSE_SEPERATOR and split there
-        split_index = remaining_to_parse.find("\n")?;
-        let (edge_count_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
-        let edge_count = edge_count_str.parse::<u32>().ok()?;
-
-        // Parse the vertex vector
-        let mut vertices = Vec::<A>::with_capacity(next_id as usize);
-        for _ in 0..next_id {
-            let result = A::parse_str(&remaining_to_parse)?;
-            remaining_to_parse = result.0;
-            let node = result.1;
-
-            vertices.push(node);
-        }
-        Some((
-                remaining_to_parse,
-                Self{
-                    vertices,
-                    next_id,
-                    edge_count,
-                    phantom: PhantomData,
-                }
-            ))
     }
 
 
