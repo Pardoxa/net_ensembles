@@ -10,7 +10,9 @@ use crate::graph::Graph;
 use crate::Node;
 use crate::traits::*;
 use rand::seq::SliceRandom;
-use rand::distributions::{Distribution, Uniform};
+
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
 
 /// Storing the information about which edges were deleted or added
 #[derive(Debug)]
@@ -34,15 +36,17 @@ impl ErStepM{
 /// # Implements Erdős-Rényi graph ensemble
 /// Constant number of edges
 #[derive(Debug, Clone)]
-pub struct ErEnsembleM<T: Node, R: rand::Rng> {
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub struct ErEnsembleM<T: Node, R: rand::Rng>
+where T: Node,
+      R: rand::Rng
+{
     graph: Graph<T>,
     m: usize,
     rng: R,
     all_edges: Vec<(u32, u32)>,
     possible_edges: Vec<(u32, u32)>,
     current_edges: Vec<(u32, u32)>,
-    current_uniform: rand::distributions::uniform::Uniform<usize>,
-    possible_uniform: rand::distributions::uniform::Uniform<usize>,
 }
 
 impl<T, R> EnsembleRng<R> for ErEnsembleM<T, R>
@@ -64,7 +68,7 @@ impl<T, R> EnsembleRng<R> for ErEnsembleM<T, R>
 }
 
 impl<T, R> SimpleSample for ErEnsembleM<T, R>
-    where   T: Node,
+    where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
     /// # Randomizes self according to  model
@@ -94,7 +98,7 @@ impl<T, R> SimpleSample for ErEnsembleM<T, R>
 }
 
 impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
-    where   T: Node,
+    where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
     /// * undo a monte carlo step, return result-state
@@ -117,8 +121,8 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
     /// * use this to perform a Monte Carlo step
     /// * for doing multiple mc steps at once, use [`m_steps`](#method.m_steps)
     fn m_step(&mut self) -> ErStepM{
-        let index_current   = self.current_uniform .sample(&mut self.rng);
-        let index_possible  = self.possible_uniform.sample(&mut self.rng);
+        let index_current   = self.rng.gen_range(0, self.current_edges.len());
+        let index_possible  = self.rng.gen_range(0, self.possible_edges.len());
 
         let step = ErStepM{
             removed:  self.current_edges[index_current],
@@ -133,7 +137,10 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
     }
 }
 
-impl<T: Node, R: rand::Rng> ErEnsembleM<T, R> {
+impl<T, R> ErEnsembleM<T, R>
+where T: Node + SerdeStateConform,
+      R: rand::Rng
+{
     fn step(&mut self, step: &ErStepM){
         self.graph
             .remove_edge(step.removed.0, step.removed.1)
@@ -167,9 +174,6 @@ impl<T: Node, R: rand::Rng> ErEnsembleM<T, R> {
             }
         }
 
-        let current_uniform     = Uniform::from(0..m);
-        let possible_uniform    = Uniform::from(0..(p_edges as usize - m));
-
         let mut e = ErEnsembleM {
             graph,
             m,
@@ -177,8 +181,6 @@ impl<T: Node, R: rand::Rng> ErEnsembleM<T, R> {
             all_edges: vec,
             possible_edges: vec![(0, 0); p_edges as usize - m],   // randomize will mem_copy - slice needs to be big enough
             current_edges: vec![(0, 0); m], // randomize will mem_copy - slice needs to be big enough
-            current_uniform,
-            possible_uniform
         };
         e.randomize();
         e
@@ -211,7 +213,7 @@ impl<T: Node, R: rand::Rng> ErEnsembleM<T, R> {
 }
 
 impl<T, R> WithGraph<T, Graph<T>> for ErEnsembleM<T, R>
-where   T: Node,
+where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
     fn at(&self, index: usize) -> &T{

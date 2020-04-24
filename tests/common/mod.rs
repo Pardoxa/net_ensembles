@@ -4,7 +4,8 @@ use net_ensembles::traits::*;
 use std::fmt::Debug;
 
 pub fn equal_graphs<T, A>(g1: &GenericGraph<T, A>, g2: &GenericGraph<T, A>)
-where T: Node, A: Debug + AdjContainer<T>
+where T: Node + SerdeStateConform,
+      A: Debug + AdjContainer<T> + SerdeStateConform
 {
     assert_eq!(g1.edge_count(), g2.edge_count());
     assert_eq!(g1.vertex_count(), g2.vertex_count());

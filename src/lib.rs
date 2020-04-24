@@ -146,3 +146,8 @@ pub use graph_traits::GraphErrors;
 pub use traits::*;
 pub use iter::IterWrapper;
 pub use step_structs::*;
+
+#[cfg(feature = "serde_support")]
+pub use serde;
+
+pub use rand;

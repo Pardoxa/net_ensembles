@@ -1,18 +1,12 @@
 use crate::IterWrapper;
 use std::fmt;
 use crate::sw::SwChangeState;
+use crate::traits::SerdeStateConform;
 /// What every node should be able to do
 pub trait Node
-where Self: Clone{
+where Self: Clone + SerdeStateConform {
     /// how to construct a blank object
     fn new_from_index(index: u32) -> Self;
-
-    /// Override this, if you want to store the network
-    fn make_string(&self) -> Option<String>;
-
-    /// Override this, if you want to load the stored network
-    fn parse_str(_to_parse: &str) -> Option<(&str, Self)>
-        where Self: Sized;
 }
 
 
@@ -52,20 +46,10 @@ impl fmt::Display for GraphErrors {
 /// Defines methods all adjecency containers should have
 /// such that `GenericGraph` can use it
 pub trait AdjContainer<T: Node>
-where   Self: fmt::Display,
 {
     /// Create new instance with id
     fn new(id: u32, node: T) -> Self;
 
-    /// # parse from str
-    /// * tries to parse a AdjContainer from a `str`.
-    /// * returns `None` if failed
-    ///
-    /// ## Returns `Option((a, b))`
-    /// **a)** string slice beginning directly after the part, that was used to parse
-    ///
-    /// **b)** the `AdjContainer` resulting form the parsing
-    fn parse_str(to_parse: &str) -> Option<(&str, Self)> where Self: Sized;
 
     /// return reference to what the AdjContainer contains
     fn contained<'a>(&'a self) -> &'a T;

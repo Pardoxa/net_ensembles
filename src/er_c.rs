@@ -12,6 +12,9 @@ use crate::GraphErrors;
 use crate::Node;
 use crate::traits::*;
 
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
+
 /// # Returned by Monte Carlo Steps
 #[derive(Debug, Clone)]
 pub enum ErStepC {
@@ -55,7 +58,11 @@ impl ErStepC {
 /// * variable number of edges
 /// * targets a connectivity
 #[derive(Debug, Clone)]
-pub struct ErEnsembleC<T: Node, R: rand::Rng> {
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub struct ErEnsembleC<T: Node, R: rand::Rng>
+where T: Node,
+      R: rand::Rng
+{
     graph: Graph<T>,
     prob: f64,
     c_target: f64,
@@ -81,7 +88,7 @@ impl<T, R> EnsembleRng<R> for ErEnsembleC<T, R>
 }
 
 impl<T, R> SimpleSample for ErEnsembleC<T, R>
-where   T: Node,
+where   T: Node + SerdeStateConform,
         R: rand::Rng,
 {
     /// # Randomizes the edges according to Er probabilities
@@ -102,7 +109,7 @@ where   T: Node,
 }
 
 impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
-    where   T: Node,
+    where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
 
@@ -185,7 +192,10 @@ impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
     }
 }
 
-impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
+impl<T, R> ErEnsembleC<T, R>
+where T: Node + SerdeStateConform,
+      R: rand::Rng
+{
     /// # Initialize
     /// create new `ErEnsembleC` with:
     /// * `n` vertices
@@ -246,7 +256,7 @@ impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
 }
 
 impl<T, R> WithGraph<T, Graph<T>> for ErEnsembleC<T, R>
-where   T: Node,
+where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
     fn at(&self, index: usize) -> &T{

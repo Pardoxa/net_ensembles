@@ -17,6 +17,9 @@ use crate::traits::*;
 use crate::SwGraph;
 use crate::GraphErrors;
 
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
+
 const ROOT_EDGES_PER_VERTEX: u32 = 2;
 
 /// # Returned by Monte Carlo Steps
@@ -164,14 +167,18 @@ impl SwChangeState {
 /// println!("{:?}", vec);
 /// ```
 #[derive(Debug, Clone)]
-pub struct SwEnsemble<T: Node, R: rand::Rng> {
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub struct SwEnsemble<T: Node, R: rand::Rng>
+where T: Node,
+      R: rand::Rng
+{
     graph: SwGraph<T>,
     r_prob: f64,
     rng: R,
 }
 
 impl <T, R> SwEnsemble<T, R>
-    where   T: Node,
+    where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
     /// # Initialize
@@ -278,7 +285,7 @@ impl <T, R> SwEnsemble<T, R>
 
 
 impl<T, R> WithGraph<T, SwGraph<T>> for SwEnsemble<T, R>
-where   T: Node,
+where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
     fn at(&self, index: usize) -> &T{
@@ -295,7 +302,7 @@ where   T: Node,
 }
 
 impl<T, R> EnsembleRng<R> for SwEnsemble<T, R>
-where   T: Node,
+where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
     /// # Access RNG
@@ -313,7 +320,7 @@ where   T: Node,
 }
 
 impl<T, R> SimpleSample for SwEnsemble<T, R>
-where   T: Node,
+where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
     /// # Randomizes the edges according to small-world model
@@ -350,7 +357,7 @@ where   T: Node,
 }
 
 impl<T, R> MarkovChain<SwChangeState, SwChangeState> for SwEnsemble<T, R>
-where   T: Node,
+where   T: Node + SerdeStateConform,
         R: rand::Rng
         {
 

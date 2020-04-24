@@ -7,7 +7,15 @@ use rand::Rng;
 mod common;
 use common::equal_graphs;
 
+
+#[cfg(feature = "serde_support")]
+use serde_json;
+
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
+
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct PhaseNode {phase: f64,}
 
 impl PhaseNode {
@@ -23,28 +31,6 @@ impl PhaseNode {
 impl Node for PhaseNode {
     fn new_from_index(index: u32) -> Self {
         PhaseNode { phase: 10.0 * index as f64 }
-    }
-
-    fn make_string(&self) -> Option<String> {
-        Some(format!("phase: {},", self.phase))
-    }
-
-    /// Override this, if you want to load the stored the network
-    fn parse_str(to_parse: &str) -> Option<(&str, Self)>
-        where Self: Sized
-    {
-        let identifier = "phase: ";
-        let mut split_index = to_parse.find(identifier)?;
-        split_index += identifier.len();
-        let remaining_to_parse = &to_parse[split_index..];
-
-        split_index = remaining_to_parse.find(",")?;
-        let (phase_str, mut remaining_to_parse) = remaining_to_parse.split_at(split_index);
-        remaining_to_parse = &remaining_to_parse[1..];
-        let phase = phase_str.parse::<f64>().ok()?;
-        let node = PhaseNode{ phase };
-
-        Some((remaining_to_parse, node))
     }
 }
 
@@ -85,48 +71,14 @@ fn phase_test() {
     assert_eq!(test_data, dot);
 }
 
-
-#[test]
-fn graph_parsing() {
-    let mut graph: Graph<PhaseNode> = Graph::new(4);
-    for i in 0..4 {
-        graph.add_edge(i, (i + 1) % 4).unwrap();
-    }
-
-    println!("{}", graph);
-    let g = graph.to_string();
-    let try_parse = Graph::<PhaseNode>::parse_str(&g);
-
-    let (_, parsed_graph) = try_parse.unwrap();
-
-    println!("parsed: {}", parsed_graph);
-
-    // check, that graphs are equal
-    equal_graphs(&graph, &parsed_graph);
-
-    // bigger graph
-    let mut graph: Graph<PhaseNode> = Graph::new(40);
-    for i in 0..40 {
-        for j in i+1..40 {
-            graph.add_edge(i, j).unwrap();
-        }
-    }
-
-    let s = graph.to_string();
-    let try_parse = Graph::<PhaseNode>::parse_str(&s);
-    let (_, parsed_graph) = try_parse.unwrap();
-    // check, that graphs are equal
-    equal_graphs(&graph, &parsed_graph);
-
-    graph_parsing_compare_random(232, 30);
-}
-
+#[cfg(feature = "serde_support")]
 #[test]
 #[ignore]
 fn graph_parsing_big_random() {
     graph_parsing_compare_random(23545635745, 1000);
 }
 
+#[cfg(feature = "serde_support")]
 fn graph_parsing_compare_random(seed: u64, size: u32) {
     // now check with a random graph
     let mut rng = Pcg64::seed_from_u64(seed);
@@ -139,9 +91,8 @@ fn graph_parsing_compare_random(seed: u64, size: u32) {
         }
     }
 
-    let s = graph.to_string();
-    let try_parse = Graph::<PhaseNode>::parse_str(&s);
-    let (_, parsed_graph) = try_parse.unwrap();
+    let s = serde_json::to_string(&graph).unwrap();
+    let parsed_graph: Graph::<PhaseNode> = serde_json::from_str(&s).unwrap();
     // check, that graphs are equal
     for i in 0..size as usize {
         assert_eq!(

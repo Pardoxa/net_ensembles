@@ -8,3 +8,27 @@ pub use crate::ensemble_traits::SimpleSample;
 pub use crate::ensemble_traits::EnsembleRng;
 pub use crate::ensemble_traits::WithGraph;
 pub use crate::iter::IterWrapper;
+
+#[cfg(feature = "serde_support")]
+use serde::{Serialize};
+
+/// * intermediate trait used for trait bounds
+/// * if feature "serde_support" is used, there is a blanked implementation for all
+/// types that implement ```serde::Serialize```
+/// * else there is a blanked implementation for all types 
+#[cfg(feature = "serde_support")]
+pub trait SerdeStateConform : Serialize {}
+
+/// * intermediate trait used for trait bounds
+/// * if feature "serde_support" is used, there is a blanked implementation for all
+/// types that implement ```serde::Serialize```
+/// * else there is a blanked implementation for all types
+#[cfg(not(feature = "serde_support"))]
+pub trait SerdeStateConform {}
+
+#[cfg(feature = "serde_support")]
+impl<T> SerdeStateConform for T
+where T: Serialize {}
+
+#[cfg(not(feature = "serde_support"))]
+impl<T> SerdeStateConform for T {}

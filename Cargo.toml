@@ -24,7 +24,13 @@ exclude = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rand = "0.7"
+rand = { version = "0.7"}
+serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
-rand_pcg = "0.2.1"
+rand_pcg = { version = "0.2.1", features = ["serde1"]}
+serde_json = "1.0"
+
+[features]
+serde_support = ["serde"]
+default = ["serde_support"]
