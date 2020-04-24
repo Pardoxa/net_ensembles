@@ -34,7 +34,10 @@ impl ErStepM{
 /// # Implements Erdős-Rényi graph ensemble
 /// Constant number of edges
 #[derive(Debug, Clone)]
-pub struct ErEnsembleM<T: Node, R: rand::Rng> {
+pub struct ErEnsembleM<T: Node, R: rand::Rng>
+where T: Node + SerdeStateConform,
+      R: rand::Rng
+{
     graph: Graph<T>,
     m: usize,
     rng: R,
@@ -46,7 +49,7 @@ pub struct ErEnsembleM<T: Node, R: rand::Rng> {
 }
 
 impl<T, R> EnsembleRng<R> for ErEnsembleM<T, R>
-    where   T: Node,
+    where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
     /// # Access RNG
@@ -64,7 +67,7 @@ impl<T, R> EnsembleRng<R> for ErEnsembleM<T, R>
 }
 
 impl<T, R> SimpleSample for ErEnsembleM<T, R>
-    where   T: Node,
+    where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
     /// # Randomizes self according to  model
@@ -94,7 +97,7 @@ impl<T, R> SimpleSample for ErEnsembleM<T, R>
 }
 
 impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
-    where   T: Node,
+    where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
     /// * undo a monte carlo step, return result-state
@@ -133,7 +136,10 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
     }
 }
 
-impl<T: Node, R: rand::Rng> ErEnsembleM<T, R> {
+impl<T, R> ErEnsembleM<T, R> 
+where T: Node + SerdeStateConform,
+      R: rand::Rng
+{
     fn step(&mut self, step: &ErStepM){
         self.graph
             .remove_edge(step.removed.0, step.removed.1)
@@ -211,7 +217,7 @@ impl<T: Node, R: rand::Rng> ErEnsembleM<T, R> {
 }
 
 impl<T, R> WithGraph<T, Graph<T>> for ErEnsembleM<T, R>
-where   T: Node,
+where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
     fn at(&self, index: usize) -> &T{

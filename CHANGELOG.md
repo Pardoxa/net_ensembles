@@ -14,3 +14,8 @@
 * added member `contained_iter` (returns iterator)
 * added member `container_iter_neighbors` to iterate over `AdjContainer` of neighbors of specific vertex
 * added member `contained_iter_neighbors` to iterate over additional information of neighbors of specific vertex
+
+### serde
+* added trait ```SerdeStateConform```
+* added blanked implementation for ```SerdeStateConform```
+* derived ```Serialize``` for most types

@@ -10,6 +10,8 @@ use crate::traits::*;
 use crate::GraphErrors;
 use crate::GenericGraph;
 
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
 
 /// # Used for accessing neighbor information from graph
 /// * contains Adjacency list
@@ -17,6 +19,7 @@ use crate::GenericGraph;
 /// * also contains user specified data, i.e, `T` from `NodeContainer<T>`
 /// * see trait **`AdjContainer`**
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NodeContainer<T: Node>{
     id: u32,
     adj: Vec<u32>,
@@ -46,7 +49,7 @@ impl<T: Node> fmt::Display for NodeContainer<T> {
 
 
 
-impl<T: Node> AdjContainer<T> for NodeContainer<T> {
+impl<T: Node + SerdeStateConform> AdjContainer<T> for NodeContainer<T> {
 
     /// Create new instance with id
     fn new(id: u32, node: T) -> Self {
@@ -210,8 +213,13 @@ impl<T: Node> NodeContainer<T> {
 /// use net_ensembles::{traits::*,Graph};
 /// use std::fs::File;
 /// use std::io::prelude::*;
+///
+/// #[cfg(feature = "serde_support")]
+/// use net_ensembles::serde::{Serialize, Deserialize};
+///
 /// // define your own vertices, if you need to store extra information at each vertex
 /// #[derive(Debug, Clone)]
+/// #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 /// pub struct PhaseNode {phase: f64,}
 ///
 /// // implement whatever you need
@@ -306,8 +314,13 @@ impl<T: Node> NodeContainer<T> {
 /// use net_ensembles::{Node,Graph,traits::*};
 /// use std::fs::File;
 /// use std::io::prelude::*;
+///
+/// #[cfg(feature = "serde_support")]
+/// use net_ensembles::serde::{Serialize, Deserialize};
+///
 /// // define your own vertices, if you need to store extra information at each vertex
 /// #[derive(Debug, Clone)]
+/// #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 /// pub struct PhaseNode {phase: f64,}
 ///
 /// impl PhaseNode {

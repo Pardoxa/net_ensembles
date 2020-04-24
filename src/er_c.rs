@@ -55,7 +55,10 @@ impl ErStepC {
 /// * variable number of edges
 /// * targets a connectivity
 #[derive(Debug, Clone)]
-pub struct ErEnsembleC<T: Node, R: rand::Rng> {
+pub struct ErEnsembleC<T: Node, R: rand::Rng>
+where T: Node + SerdeStateConform,
+      R: rand::Rng
+{
     graph: Graph<T>,
     prob: f64,
     c_target: f64,
@@ -63,7 +66,7 @@ pub struct ErEnsembleC<T: Node, R: rand::Rng> {
 }
 
 impl<T, R> EnsembleRng<R> for ErEnsembleC<T, R>
-    where   T: Node,
+    where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
     /// # Access RNG
@@ -81,7 +84,7 @@ impl<T, R> EnsembleRng<R> for ErEnsembleC<T, R>
 }
 
 impl<T, R> SimpleSample for ErEnsembleC<T, R>
-where   T: Node,
+where   T: Node + SerdeStateConform,
         R: rand::Rng,
 {
     /// # Randomizes the edges according to Er probabilities
@@ -102,7 +105,7 @@ where   T: Node,
 }
 
 impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
-    where   T: Node,
+    where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
 
@@ -185,7 +188,10 @@ impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
     }
 }
 
-impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
+impl<T, R> ErEnsembleC<T, R>
+where T: Node + SerdeStateConform,
+      R: rand::Rng
+{
     /// # Initialize
     /// create new `ErEnsembleC` with:
     /// * `n` vertices
@@ -246,7 +252,7 @@ impl<T: Node, R: rand::Rng> ErEnsembleC<T, R> {
 }
 
 impl<T, R> WithGraph<T, Graph<T>> for ErEnsembleC<T, R>
-where   T: Node,
+where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
     fn at(&self, index: usize) -> &T{

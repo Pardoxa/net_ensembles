@@ -1,6 +1,7 @@
 use crate::IterWrapper;
 use std::fmt;
 use crate::sw::SwChangeState;
+use crate::traits::SerdeStateConform;
 /// What every node should be able to do
 pub trait Node
 where Self: Clone{
@@ -52,7 +53,7 @@ impl fmt::Display for GraphErrors {
 /// Defines methods all adjecency containers should have
 /// such that `GenericGraph` can use it
 pub trait AdjContainer<T: Node>
-where   Self: fmt::Display,
+where   Self: fmt::Display + SerdeStateConform,
 {
     /// Create new instance with id
     fn new(id: u32, node: T) -> Self;

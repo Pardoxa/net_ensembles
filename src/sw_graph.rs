@@ -6,7 +6,11 @@ use crate::GraphErrors;
 use crate::sw::SwChangeState;
 use crate::GenericGraph;
 
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
+
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub(crate) struct SwEdge {
     to: u32,
     originally_to: Option<u32>,
@@ -133,6 +137,7 @@ impl<'a> ExactSizeIterator for SwEdgeIterNeighbors<'a> {
 /// * also contains user specified data, i.e, `T` from `SwContainer<T>`
 /// * see trait **`AdjContainer`**
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SwContainer<T: Node> {
     id: u32,
     adj: Vec<SwEdge>,
@@ -163,7 +168,8 @@ impl<T: Node> fmt::Display for SwContainer<T> {
     }
 }
 
-impl<T: Node> AdjContainer<T> for SwContainer<T>
+impl<T> AdjContainer<T> for SwContainer<T>
+where T: Node + SerdeStateConform
 {
     /// Create new instance with id
     fn new(id: u32, node: T) -> Self {
@@ -336,7 +342,7 @@ impl<T: Node> AdjContainer<T> for SwContainer<T>
         }
 }
 
-impl<T: Node> SwContainer<T> {
+impl<T: Node + SerdeStateConform> SwContainer<T> {
 
     fn adj_position(&self, elem: u32) -> Option<usize> {
         SwEdgeIterNeighbors::new(self.adj.as_slice())
@@ -476,7 +482,8 @@ impl<T: Node> SwContainer<T> {
 /// specific `GenericGraph` used for small-world ensemble
 pub type SwGraph<T> = GenericGraph<T, SwContainer<T>>;
 
-impl<T: Node> SwGraph<T>{
+impl<T> SwGraph<T>
+where T: Node + SerdeStateConform {
     /// # Reset small-world edge to its root state
     /// * **panics** if index out of bounds
     /// * in debug: panics if `index0 == index1`
