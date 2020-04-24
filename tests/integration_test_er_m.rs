@@ -4,12 +4,24 @@ use net_ensembles::*;
 mod common;
 use common::equal_graphs;
 
+#[cfg(feature = "serde_support")]
+use serde_json;
+
 #[test]
 fn randomize() {
     let rng = Pcg64::seed_from_u64(8763545);
     let e = ErEnsembleM::<EmptyNode, Pcg64>::new(20, 70, rng);
     assert_eq!(e.graph().edge_count(), 70);
     assert_eq!(20, e.graph().vertex_count());
+}
+
+#[test]
+fn serde_json_test() {
+    let rng = Pcg64::seed_from_u64(8745);
+    let e = ErEnsembleM::<EmptyNode, Pcg64>::new(30, 70, rng);
+    let serialized = serde_json::to_string(&e).unwrap();
+    println!("{}", serialized);
+    panic!("")
 }
 
 #[test]

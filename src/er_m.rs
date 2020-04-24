@@ -11,6 +11,7 @@ use crate::Node;
 use crate::traits::*;
 use rand::seq::SliceRandom;
 use rand::distributions::{Distribution, Uniform};
+use serde::Serialize;
 
 /// Storing the information about which edges were deleted or added
 #[derive(Debug)]
@@ -34,6 +35,7 @@ impl ErStepM{
 /// # Implements Erdős-Rényi graph ensemble
 /// Constant number of edges
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize))]
 pub struct ErEnsembleM<T: Node, R: rand::Rng>
 where T: Node + SerdeStateConform,
       R: rand::Rng
@@ -44,8 +46,10 @@ where T: Node + SerdeStateConform,
     all_edges: Vec<(u32, u32)>,
     possible_edges: Vec<(u32, u32)>,
     current_edges: Vec<(u32, u32)>,
-    current_uniform: rand::distributions::uniform::Uniform<usize>,
-    possible_uniform: rand::distributions::uniform::Uniform<usize>,
+    #[serde(skip_serializing)]
+    current_uniform: Uniform<usize>,
+    #[serde(skip_serializing)]
+    possible_uniform: Uniform<usize>,
 }
 
 impl<T, R> EnsembleRng<R> for ErEnsembleM<T, R>
@@ -136,7 +140,7 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
     }
 }
 
-impl<T, R> ErEnsembleM<T, R> 
+impl<T, R> ErEnsembleM<T, R>
 where T: Node + SerdeStateConform,
       R: rand::Rng
 {
