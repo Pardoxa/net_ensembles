@@ -60,7 +60,7 @@ impl ErStepC {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ErEnsembleC<T: Node, R: rand::Rng>
-where T: Node + SerdeStateConform,
+where T: Node,
       R: rand::Rng
 {
     graph: Graph<T>,
@@ -70,7 +70,7 @@ where T: Node + SerdeStateConform,
 }
 
 impl<T, R> EnsembleRng<R> for ErEnsembleC<T, R>
-    where   T: Node + SerdeStateConform,
+    where   T: Node,
             R: rand::Rng,
 {
     /// # Access RNG

@@ -25,8 +25,8 @@ pub struct GenericGraph<T, A>
 }
 
 impl<T, A> fmt::Display for GenericGraph<T, A>
-where T: SerdeStateConform + Node,
-      A: AdjContainer<T> + SerdeStateConform
+where T: Node,
+      A: AdjContainer<T>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s = String::new();
@@ -38,8 +38,8 @@ where T: SerdeStateConform + Node,
 }
 
 impl<T, A> GenericGraph<T, A>
-where T: Node + SerdeStateConform,
-      A: AdjContainer<T> + SerdeStateConform {
+where T: Node,
+      A: AdjContainer<T> {
     /// Create new graph with `size` nodes
     /// and no edges
     pub fn new(size: u32) -> Self {
@@ -1024,8 +1024,8 @@ where T: Node + SerdeStateConform,
 /// # Breadth first search Iterator with **index** and **depth** of corresponding nodes
 /// * iterator returns tuple: `(index, node, depth)`
 pub struct Bfs<'a, T, A>
-where   T: 'a + Node + SerdeStateConform,
-        A: AdjContainer<T> + SerdeStateConform
+where   T: 'a + Node,
+        A: AdjContainer<T>
 {
         graph: &'a GenericGraph<T, A>,
         handled: Vec<bool>,
@@ -1035,8 +1035,8 @@ where   T: 'a + Node + SerdeStateConform,
 }
 
 impl<'a, T, A> Bfs<'a, T, A>
-where   T: 'a + Node + SerdeStateConform,
-        A: AdjContainer<T> + SerdeStateConform
+where   T: 'a + Node,
+        A: AdjContainer<T>
 {
         fn new(graph: &'a GenericGraph<T, A>, index: u32) -> Self {
             let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
@@ -1061,8 +1061,8 @@ where   T: 'a + Node + SerdeStateConform,
 /// # Iterator
 /// - returns tuple: `(index, node, depth)`
 impl<'a, T, A> Iterator for Bfs<'a, T, A>
-where   T: 'a + Node + SerdeStateConform,
-        A: AdjContainer<T> + SerdeStateConform
+where   T: 'a + Node,
+        A: AdjContainer<T>
 {
         type Item = (u32, &'a T, u32);
         fn next(&mut self) -> Option<Self::Item> {
@@ -1088,8 +1088,8 @@ where   T: 'a + Node + SerdeStateConform,
 
 /// Depth first search Iterator with **index** of corresponding nodes
 pub struct DfsWithIndex<'a, T, A>
-where   T: 'a + Node + SerdeStateConform,
-        A: AdjContainer<T> + SerdeStateConform
+where   T: 'a + Node,
+        A: AdjContainer<T>
 {
         graph: &'a GenericGraph<T, A>,
         handled: Vec<bool>,
@@ -1097,8 +1097,8 @@ where   T: 'a + Node + SerdeStateConform,
 }
 
 impl<'a, T, A> DfsWithIndex<'a, T, A>
-    where   T: 'a + Node + SerdeStateConform,
-            A: AdjContainer<T> + SerdeStateConform
+    where   T: 'a + Node,
+            A: AdjContainer<T>
 {
         fn new(graph: &'a GenericGraph<T, A>, index: u32) -> Self {
             let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
@@ -1118,8 +1118,8 @@ impl<'a, T, A> DfsWithIndex<'a, T, A>
 }
 
 impl<'a, T, A> Iterator for DfsWithIndex<'a, T, A>
-where   T: 'a + Node + SerdeStateConform,
-        A: AdjContainer<T> + SerdeStateConform
+where   T: 'a + Node,
+        A: AdjContainer<T>
 {
         type Item = (u32, &'a T);
 
@@ -1141,8 +1141,8 @@ where   T: 'a + Node + SerdeStateConform,
 
 /// Depth first search Iterator
 pub struct Dfs<'a, T, A>
-where   T: 'a + Node + SerdeStateConform,
-        A: AdjContainer<T> + SerdeStateConform
+where   T: 'a + Node,
+        A: AdjContainer<T>
 {
         graph: &'a GenericGraph<T, A>,
         handled: Vec<bool>,
@@ -1151,8 +1151,8 @@ where   T: 'a + Node + SerdeStateConform,
 
 
 impl<'a, T, A> Dfs<'a, T, A>
-where   T: 'a + Node + SerdeStateConform,
-        A: AdjContainer<T> + SerdeStateConform
+where   T: 'a + Node,
+        A: AdjContainer<T>
 {
     /// panics if `index` >= graph.vertex_count()
     fn new(graph: &'a GenericGraph<T, A>, index: u32) -> Self {
@@ -1172,8 +1172,8 @@ where   T: 'a + Node + SerdeStateConform,
 }
 
 impl<'a, T, A> Iterator for Dfs<'a, T, A>
-where   T: 'a + Node + SerdeStateConform,
-        A: AdjContainer<T> + SerdeStateConform
+where   T: 'a + Node,
+        A: AdjContainer<T>
 {
         type Item = &'a T;
 

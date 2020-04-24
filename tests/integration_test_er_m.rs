@@ -15,12 +15,21 @@ fn randomize() {
     assert_eq!(20, e.graph().vertex_count());
 }
 
+#[cfg(feature = "serde_support")]
 #[test]
 fn serde_json_test() {
     let rng = Pcg64::seed_from_u64(8745);
-    let e = ErEnsembleM::<EmptyNode, Pcg64>::new(30, 70, rng);
+    let mut e = ErEnsembleM::<EmptyNode, Pcg64>::new(30, 70, rng);
     let serialized = serde_json::to_string(&e).unwrap();
     println!("{}", serialized);
+
+    let mut e2: ErEnsembleM::<EmptyNode, Pcg64> = serde_json::from_str(&serialized).unwrap();
+
+    equal_graphs(e.graph(), e2.graph());
+
+    e.m_steps(300);
+    e2.m_steps(300);
+    equal_graphs(e.graph(), e2.graph());
 }
 
 #[test]

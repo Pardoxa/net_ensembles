@@ -169,7 +169,7 @@ impl SwChangeState {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SwEnsemble<T: Node, R: rand::Rng>
-where T: Node + SerdeStateConform,
+where T: Node,
       R: rand::Rng
 {
     graph: SwGraph<T>,
