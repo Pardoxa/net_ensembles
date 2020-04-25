@@ -1,5 +1,5 @@
 /// # Access random number generator of Ensemble
-pub trait EnsembleRng<Rng>
+pub trait HasRng<Rng>
 where Rng: rand::Rng
 {
     /// # Access RNG

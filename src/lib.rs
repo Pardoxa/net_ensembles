@@ -63,6 +63,9 @@
 //! [`SwEnsemble`](sw/struct.SwEnsemble.html)
 //! # Example 3
 //! ## Simple sample for small-world ensemble
+//! * **Note:** simple sampling also works for [`ErEnsembleC`](er_c/struct.ErEnsembleC.html)
+//! and [`ErEnsembleM`](er_m/struct.ErEnsembleM.html)
+//! * see trait [```SimpleSample```](./traits/trait.SimpleSample.html)
 //! ```
 //! use net_ensembles::{SwEnsemble, EmptyNode};
 //! use net_ensembles::traits::*; // I recommend always using this
@@ -119,7 +122,6 @@
 //! );
 //! println!("{:?}", vec);
 //! ```
-//! **Note:** simple sampling also works for [`ErEnsembleC`](er_c/struct.ErEnsembleC.html)
 //!
 //! # Example 4: Save and load
 //! * only works if feature ```"serde_support"``` is enabled
@@ -155,7 +157,37 @@
 //!
 //!     let er: ErEnsembleC::<EmptyNode, Pcg64> = serde_json::from_reader(read).unwrap();
 //! }
+//! ```
+//! # Example 5: Marcov Chain
+//! * example for a Marcov chain of connected graphs
+//! * you can also create a Marcov chain with unconnected graphs if you want
+//! * see trait [```MarcovChain```](./traits/trait.MarkovChain.html)
+//! ```
+//! use net_ensembles::{EmptyNode, ErEnsembleM, traits::*};
+//! use rand_pcg::Pcg64;
+//! use net_ensembles::rand::SeedableRng; // rand is reexported
 //!
+//! // first create the ensemble
+//! let rng = Pcg64::seed_from_u64(8745);
+//! let mut e = ErEnsembleM::<EmptyNode, Pcg64>::new(30, 70, rng);
+//!
+//! // ensure initial graph is connected
+//! while !e.graph()
+//!     .is_connected().unwrap() {
+//!     e.randomize();
+//! }
+//!
+//! // Create marcov chain, e.g., of connected graphs
+//! for _ in 0..100 {
+//!     let steps = e.m_steps(10);
+//!
+//!     // reject, if the resulting graph is not connected
+//!     if !e.graph().is_connected().unwrap() {
+//!         e.undo_steps_quiet(steps);
+//!     }
+//!     // mesure whatever you want
+//! }
+//! ```
 #![deny(missing_docs, warnings)]
 pub mod generic_graph;
 pub mod example_nodes;

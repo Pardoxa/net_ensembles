@@ -95,7 +95,7 @@ impl SwChangeState {
 /// ## Simple sampling and/or monte carlo steps?
 /// * look at [MarkovChain trait](../traits/trait.MarkovChain.html)
 /// ## Access or manipulate RNG?
-/// * look at [EnsembleRng trait](../traits/trait.EnsembleRng.html)
+/// * look at [HasRng trait](../traits/trait.HasRng.html)
 /// # Minimal example
 /// ```
 /// use net_ensembles::{SwEnsemble, EmptyNode};
@@ -336,7 +336,7 @@ where   T: Node + SerdeStateConform,
     }
 }
 
-impl<T, R> EnsembleRng<R> for SwEnsemble<T, R>
+impl<T, R> HasRng<R> for SwEnsemble<T, R>
 where   T: Node + SerdeStateConform,
         R: rand::Rng
 {

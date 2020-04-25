@@ -48,3 +48,10 @@ fn step_test() {
     }
 
 }
+
+#[test]
+#[should_panic]
+fn to_many_edges() {
+    let rng = Pcg64::seed_from_u64(7567526);
+    ErEnsembleM::<EmptyNode, Pcg64>::new(5, 3000, rng);
+}

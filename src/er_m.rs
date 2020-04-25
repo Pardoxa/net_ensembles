@@ -6,6 +6,7 @@
 //! # Citations
 //! > P. Erdős and A. Rényi, "On the evolution of random graphs,"
 //!   Publ. Math. Inst. Hungar. Acad. Sci. **5**, 17-61 (1960)
+//!
 use crate::graph::Graph;
 use crate::Node;
 use crate::traits::*;
@@ -35,6 +36,9 @@ impl ErStepM{
 
 /// # Implements Erdős-Rényi graph ensemble
 /// Constant number of edges
+/// * **Note** simple sampling of this ensemble is somewhat inefficient right now -
+///   I might change it in the future, though that will change the results of the simple sampling
+///   (Not on average of cause)
 /// # Save and load example
 /// * only works if feature ```"serde_support"``` is enabled
 /// * Note: ```"serde_support"``` is enabled by default
@@ -84,7 +88,7 @@ where T: Node,
     current_edges: Vec<(u32, u32)>,
 }
 
-impl<T, R> EnsembleRng<R> for ErEnsembleM<T, R>
+impl<T, R> HasRng<R> for ErEnsembleM<T, R>
     where   T: Node,
             R: rand::Rng,
 {
@@ -201,8 +205,23 @@ where T: Node + SerdeStateConform,
     pub fn new(n: u32, m: usize, rng: R) -> Self {
         let graph: Graph<T> = Graph::new(n);
 
-        let p_edges = (n * (n - 1)) / 2;
-        let mut vec = Vec::with_capacity(p_edges as usize);
+        let n_usize = n as usize;
+        let p_edges = (n_usize * (n_usize - 1)) / 2;
+
+        // panic, if you try to create a graph with to many edges
+        assert!(
+            m <= p_edges,
+            format!(
+                "A complete graph with {} vertices has {} edges. \
+                 You requested {} edges, i.e., to many. Panic at function `new` of struct {}",
+                n,
+                p_edges,
+                m,
+                std::any::type_name::<Self>(),
+            )
+        );
+
+        let mut vec = Vec::with_capacity(p_edges);
         for i in 0..n {
             for j in i+1..n {
                 vec.push((i, j));
@@ -214,7 +233,7 @@ where T: Node + SerdeStateConform,
             m,
             rng,
             all_edges: vec,
-            possible_edges: vec![(0, 0); p_edges as usize - m],   // randomize will mem_copy - slice needs to be big enough
+            possible_edges: vec![(0, 0); p_edges - m],   // randomize will mem_copy - slice needs to be big enough
             current_edges: vec![(0, 0); m], // randomize will mem_copy - slice needs to be big enough
         };
         e.randomize();

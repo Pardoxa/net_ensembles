@@ -5,7 +5,7 @@ pub use crate::graph_traits::Node;
 pub use crate::graph_traits::AdjContainer;
 pub use crate::ensemble_traits::MarkovChain;
 pub use crate::ensemble_traits::SimpleSample;
-pub use crate::ensemble_traits::EnsembleRng;
+pub use crate::ensemble_traits::HasRng;
 pub use crate::ensemble_traits::WithGraph;
 pub use crate::iter::IterWrapper;
 
@@ -15,7 +15,7 @@ use serde::{Serialize};
 /// * intermediate trait used for trait bounds
 /// * if feature "serde_support" is used, there is a blanked implementation for all
 /// types that implement ```serde::Serialize```
-/// * else there is a blanked implementation for all types 
+/// * else there is a blanked implementation for all types
 #[cfg(feature = "serde_support")]
 pub trait SerdeStateConform : Serialize {}
 

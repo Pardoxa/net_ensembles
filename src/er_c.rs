@@ -69,7 +69,7 @@ where T: Node,
     rng: R,
 }
 
-impl<T, R> EnsembleRng<R> for ErEnsembleC<T, R>
+impl<T, R> HasRng<R> for ErEnsembleC<T, R>
     where   T: Node,
             R: rand::Rng,
 {
