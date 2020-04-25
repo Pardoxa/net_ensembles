@@ -1,4 +1,4 @@
-/// # Access random number generator of Ensemble
+/// # Access internal random number generator
 pub trait HasRng<Rng>
 where Rng: rand::Rng
 {

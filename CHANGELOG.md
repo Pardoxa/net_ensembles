@@ -6,6 +6,7 @@
 * ~`Ensemble`~ &#8680; `SimpleSample` + `MarkovChain`
 * `mc_step` of former `Ensemble` trait is now `m_step` in `MarkovChain` trait
 * new trait `WithGraph` for graph ensembles
+* ```EnsembleRng``` &#8680; ```HasRng```
 
 ### bug fix
 * fix for `SwEnsemble` (`Ensemble` trait was `pub(crate)` and not `pub` due to returned type)
