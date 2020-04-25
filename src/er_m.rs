@@ -39,6 +39,13 @@ impl ErStepM{
 /// * **Note** simple sampling of this ensemble is somewhat inefficient right now -
 ///   I might change it in the future, though that will change the results of the simple sampling
 ///   (Not on average of cause)
+/// * for *simple sampling* look at [```SimpleSample``` trait](./traits/trait.SimpleSample.html)
+/// * for *markov steps* look at [```MarkovChain``` trait](../traits/trait.MarkovChain.html)
+/// ## Other
+/// * for topology functions look at [`GenericGraph`](../generic_graph/struct.GenericGraph.html)
+/// * to access underlying topology or manipulate additional data look at [```WithGraph``` trait](../traits/trait.WithGraph.html)
+/// * to use or swap the random number generator, look at [```HasRng``` trait](../traits/trait.HasRng.html)
+///
 /// # Save and load example
 /// * only works if feature ```"serde_support"``` is enabled
 /// * Note: ```"serde_support"``` is enabled by default
@@ -140,7 +147,7 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
     where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
-    /// * undo a monte carlo step, return result-state
+    /// * undo a markov step, return result-state
     /// * if you want to undo more than one step
     /// see [`undo_steps`](#method.undo_steps)
     fn undo_step(&mut self, mut step: ErStepM) -> ErStepM {
@@ -149,15 +156,15 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
         step
     }
 
-    /// * undo a monte carlo step, **panic** on invalid result state
+    /// * undo a markov step, **panic** on invalid result state
     /// * for undoing multiple steps see [`undo_steps_quiet`](#method.undo_steps_quiet)
     fn undo_step_quiet(&mut self, mut step: ErStepM) -> (){
         step.invert();
         self.step(&step);
     }
 
-    /// # Monte Carlo step
-    /// * use this to perform a Monte Carlo step
+    /// # Markov step
+    /// * use this to perform a markov step
     /// * for doing multiple mc steps at once, use [`m_steps`](#method.m_steps)
     fn m_step(&mut self) -> ErStepM{
         let index_current   = self.rng.gen_range(0, self.current_edges.len());

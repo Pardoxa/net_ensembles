@@ -22,7 +22,7 @@ use serde::{Serialize, Deserialize};
 
 const ROOT_EDGES_PER_VERTEX: u32 = 2;
 
-/// # Returned by Monte Carlo Steps
+/// # Returned by markov steps
 /// * information about the performed step and possible errors
 #[derive(Debug)]
 pub enum SwChangeState {
@@ -90,12 +90,13 @@ impl SwChangeState {
 
 /// # Implements small-world graph ensemble
 /// * for more details look at [documentation](index.html) of module `sw`
+/// ## Sampling
+/// * for markov steps look at [```MarkovChain``` trait](../traits/trait.MarkovChain.html)
+/// * for simple sampling look at [```SimpleSample``` trait](./traits/trait.SimpleSample.html)
+/// ## Other
 /// * for topology functions look at [`GenericGraph`](../generic_graph/struct.GenericGraph.html)
-/// # Sampling
-/// ## Simple sampling and/or monte carlo steps?
-/// * look at [MarkovChain trait](../traits/trait.MarkovChain.html)
-/// ## Access or manipulate RNG?
-/// * look at [HasRng trait](../traits/trait.HasRng.html)
+/// * to access underlying topology or manipulate additional data look at [```WithGraph``` trait](../traits/trait.WithGraph.html)
+/// * to use or swap the random number generator, look at [```HasRng``` trait](../traits/trait.HasRng.html)
 /// # Minimal example
 /// ```
 /// use net_ensembles::{SwEnsemble, EmptyNode};
@@ -396,8 +397,8 @@ where   T: Node + SerdeStateConform,
         R: rand::Rng
         {
 
-    /// # Monte Carlo step
-    /// * use this to perform a Monte Carlo step
+    /// # Markov step
+    /// * use this to perform a markov step
     /// * keep in mind, that it is not unlikely for a step to do `Nothing` as it works by
     /// drawing an edge and then reseting it with `r_prob`, else the edge is rewired
     /// * result `SwChangeState` can be used to undo the step with `self.undo_step(result)`
@@ -407,7 +408,7 @@ where   T: Node + SerdeStateConform,
         self.randomize_edge(edge.0, edge.1)
     }
 
-    /// # Undo a Monte Carlo step
+    /// # Undo a markov step
     /// * *rewires* edge to old state
     /// * Note: cannot undo `InvalidAdjecency` or `GError`,
     /// will just return `InvalidAdjecency` or `GError` respectively

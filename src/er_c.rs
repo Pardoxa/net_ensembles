@@ -15,7 +15,7 @@ use crate::traits::*;
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
-/// # Returned by Monte Carlo Steps
+/// # Returned by markov steps
 #[derive(Debug, Clone)]
 pub enum ErStepC {
     /// nothing was changed
@@ -57,6 +57,13 @@ impl ErStepC {
 /// # Implements Erdős-Rényi graph ensemble
 /// * variable number of edges
 /// * targets a connectivity
+/// ## Sampling
+/// * for *simple sampling* look at [```SimpleSample``` trait](./traits/trait.SimpleSample.html)
+/// * for *markov steps* look at [```MarkovChain``` trait](../traits/trait.MarkovChain.html)
+/// ## Other
+/// * for topology functions look at [`GenericGraph`](../generic_graph/struct.GenericGraph.html)
+/// * to access underlying topology or manipulate additional data look at [```WithGraph``` trait](../traits/trait.WithGraph.html)
+/// * to use or swap the random number generator, look at [```HasRng``` trait](../traits/trait.HasRng.html)
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ErEnsembleC<T: Node, R: rand::Rng>
@@ -113,8 +120,8 @@ impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
             R: rand::Rng,
 {
 
-    /// # Monte Carlo step
-    /// * use this to perform a Monte Carlo step
+    /// # Markov step
+    /// * use this to perform a markov step, e.g., to create a markov chain
     /// * result `ErStepC` can be used to undo the step with `self.undo_step(result)`
     fn m_step(&mut self) -> ErStepC {
         let edge = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
@@ -138,7 +145,7 @@ impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
         }
     }
 
-    /// # Undo a Monte Carlo step
+    /// # Undo a markcov step
     /// * adds removed edge, or removes added edge, or does nothing
     /// * if it returns an Err value, you probably used the function wrong
     /// ## Important:
@@ -165,7 +172,7 @@ impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
         }
     }
 
-    /// # Undo a Monte Carlo step
+    /// # Undo a markov step
     /// * adds removed edge, or removes added edge, or does nothing
     /// * if it returns an Err value, you probably used the function wrong
     /// ## Important:

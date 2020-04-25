@@ -75,7 +75,7 @@ If I do, it will likely be a relatively costly operation, so keep that in mind.
 
 ## crates.io
 
-* I might move the `MarkovChain` and `SimpleSample` trait into a different crate in the Future.
+* I might move the `MarkovChain` and `SimpleSample` trait into a different crate in the future.
   If I do, the traits will be reexported at the same position as currently
 
 ## License

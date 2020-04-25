@@ -7,6 +7,7 @@
 * `mc_step` of former `Ensemble` trait is now `m_step` in `MarkovChain` trait
 * new trait `WithGraph` for graph ensembles
 * ```EnsembleRng``` &#8680; ```HasRng```
+* ```Node``` removed ```parse_str``` and ```make_string```, since serde takes care of that now
 
 ### bug fix
 * fix for `SwEnsemble` (`Ensemble` trait was `pub(crate)` and not `pub` due to returned type)
@@ -19,4 +20,10 @@
 ### serde
 * added trait ```SerdeStateConform```
 * added blanked implementation for ```SerdeStateConform```
-* derived ```Serialize``` for most types
+* derived ```Serialize``` and ```Deserialize``` for most types
+
+### features
+* added feature "serde_support" (enabled by default)
+
+### other
+* removed ```Display``` trait. Use serde instead.
