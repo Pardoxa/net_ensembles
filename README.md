@@ -47,7 +47,7 @@ As such, you can easily define additional data that should be stored at each ver
 * [changelog](CHANGELOG.md)
 * [current working branch](https://pardoxa.github.io/net_ensembles/master/doc/net_ensembles/)
 * [v0.1.0](https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/)
-* [v0.2.0](https://pardoxa.github.io/net_ensembles/v0.2.0/doc/net_ensembles/)
+* [v0.2.1](https://pardoxa.github.io/net_ensembles/v0.2.1/doc/net_ensembles/)
 
 # Notes
 

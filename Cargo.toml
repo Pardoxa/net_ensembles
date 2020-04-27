@@ -14,7 +14,7 @@ keywords = [
   "graph"
 ]
 categories = ["science", "mathematics"]
-documentation = "https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/"
+documentation = "https://pardoxa.github.io/net_ensembles/v0.2.1/doc/net_ensembles/"
 license = "MIT OR Apache-2.0"
 homepage = "https://www.yfeld.de/Library.html"
 exclude = [

@@ -47,10 +47,10 @@ jobs:
 
     - name: Documentation v0.2.0
       run: |
-       mkdir -p ./versions/v0.2.0
+       mkdir -p ./versions/v0.2.1
        git checkout c0b940003521daaf15aa29416352d4f2fdac9563
        cargo doc --all --no-deps
-       mv ./target/doc ./versions/v0.2.0
+       mv ./target/doc ./versions/v0.2.1
 
     - name: Deploy Docs
       uses: peaceiris/actions-gh-pages@25ae83ba65b483195e2a1b7b9a5198c271d0d84c #v3.6.0
