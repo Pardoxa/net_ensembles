@@ -10,6 +10,8 @@
 //! Create an Erdős-Rényi graph
 //! ```
 //! use net_ensembles::*;
+//! // Note: you might have to enable serde for rand_pcg
+//! // to do that, write the following in your Cargo.toml: rand_pcg = { version = "*", features = ["serde1"]}
 //! use rand_pcg::Pcg64;
 //! use rand::SeedableRng;
 //! use std::fs::File;
@@ -128,7 +130,7 @@
 //! * Note: ```"serde_support"``` is enabled by default
 //! * I need the ```#[cfg(feature = "serde_support")]``` to ensure the example does compile if
 //!  you opt out of the default feature
-//! * you can do not have to use ```serde_json```, look [here](https://docs.serde.rs/serde/) for more info
+//! * you do not have to use ```serde_json```, look [here](https://docs.serde.rs/serde/) for more info
 //! ```
 //! use net_ensembles::traits::*; // I recommend always using this
 //! use serde_json;
@@ -187,6 +189,65 @@
 //!     }
 //!     // mesure whatever you want
 //! }
+//! ```
+//!
+//! # Example 6: Define your own Data
+//! * Note: You will not need the cfg parts, though you have to
+//!  use ```#[derive(Serialize, Deserialize)]``` if you use the
+//!  default features of ```net_ensembles```
+//! ```
+//! use net_ensembles::{traits::*, rand::SeedableRng, SwEnsemble};
+//! use rand_pcg::Pcg64;
+//!
+//! #[cfg(feature = "serde_support")]
+//! use serde::{Serialize, Deserialize};
+//!
+//! #[derive(Clone, PartialEq)]
+//! #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+//! pub enum SirState{
+//!     Susceptible,
+//!     Infective,
+//!     Removed,
+//! }
+//!
+//! impl SirState {
+//!     fn setState(&mut self, state: Self) {
+//!         *self = state;
+//!     }
+//! }
+//!
+//! impl Node for SirState {
+//!     fn new_from_index(index: u32) -> Self {
+//!         SirState::Susceptible
+//!     }
+//! }
+//!
+//! // create the rng:
+//! let rng = Pcg64::seed_from_u64(45);
+//!
+//! let mut ensemble = SwEnsemble::<SirState, Pcg64>::new(10, 0.1, rng);
+//!
+//! // you can access or change your additional information, e.g., at vertex 0
+//! ensemble
+//!     .at_mut(0)
+//!     .setState(SirState::Infective);
+//!
+//! // you can also iterate over your additional information:
+//! let count = ensemble
+//!     .graph()
+//!     .contained_iter()
+//!     .filter(|&state| *state == SirState::Susceptible)
+//!     .count();
+//! assert!(count == 9);
+//!
+//! // or count how many Susceptible nodes are connected to a specific node, i.e., to node 0
+//! let s_count = ensemble
+//!     .graph()
+//!     .contained_iter_neighbors(0)
+//!     .filter(|&state| *state == SirState::Susceptible)
+//!     .count();
+//!
+//! println!("{}", s_count);
 //! ```
 #![deny(missing_docs, warnings)]
 pub mod generic_graph;
