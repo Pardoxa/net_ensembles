@@ -140,7 +140,7 @@ impl<T: Node> NodeContainer<T> {
 /// #[cfg(feature = "serde_support")]
 /// use serde_json;
 /// #[cfg(feature = "serde_support")]
-/// use net_ensembles::serde::{Serialize, Deserialize};
+/// use serde::{Serialize, Deserialize};
 ///
 /// // define your own vertices, if you need to store extra information at each vertex
 /// // if you do not use the feature "serde_support", you do not need to derive Serialize and Deserialize

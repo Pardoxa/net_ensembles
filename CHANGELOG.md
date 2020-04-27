@@ -27,3 +27,4 @@
 
 ### other
 * removed ```Display``` trait. Use serde instead.
+* reexported ```rand```
