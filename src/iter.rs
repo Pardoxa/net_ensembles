@@ -21,6 +21,8 @@ impl<'a> FusedIterator for IterWrapper<'a> { }
 
 impl<'a> Iterator for IterWrapper<'a> {
     type Item = &'a u32;
+
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::GenericIter(iter) => iter.next(),
@@ -28,6 +30,7 @@ impl<'a> Iterator for IterWrapper<'a> {
         }
     }
 
+    #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         match self {
             Self::GenericIter(iter) => iter.nth(n),
@@ -35,6 +38,7 @@ impl<'a> Iterator for IterWrapper<'a> {
         }
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         let size = self.len();
         (size, Some(size))
@@ -43,6 +47,7 @@ impl<'a> Iterator for IterWrapper<'a> {
 
 /// # Number of neighbors is known
 impl<'a> ExactSizeIterator for IterWrapper<'a> {
+    #[inline]
     fn len(&self) -> usize {
         match self {
             Self::GenericIter(iter) => iter.len(),
@@ -52,7 +57,7 @@ impl<'a> ExactSizeIterator for IterWrapper<'a> {
 }
 
 impl<'a> DoubleEndedIterator for IterWrapper<'a> {
-
+    #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         match self {
             Self::GenericIter(iter) => iter.next_back(),
@@ -65,11 +70,13 @@ impl<'a> DoubleEndedIterator for IterWrapper<'a> {
 
 impl<'a> IterWrapper<'a> {
     /// Create new `IterWrapper` from generic slice iterator
+    #[inline]
     pub fn new_generic(iter: std::slice::Iter::<'a,u32>) -> Self {
         Self::GenericIter(iter)
     }
 
     /// Create new `IterWrapper` from `SwEdgeIterNeighbors`
+    #[inline]
     pub fn new_sw(iter: SwEdgeIterNeighbors<'a>) -> Self {
         Self::SwIter(iter)
     }
