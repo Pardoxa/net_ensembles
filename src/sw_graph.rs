@@ -4,6 +4,7 @@ use crate::traits::*;
 use crate::GraphErrors;
 use crate::sw::SwChangeState;
 use crate::GenericGraph;
+use core::iter::FusedIterator;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -56,6 +57,8 @@ impl<'a> SwEdgeIterNeighbors<'a> {
         }
     }
 }
+
+impl<'a> FusedIterator for SwEdgeIterNeighbors<'a> {}
 
 impl<'a> Iterator for SwEdgeIterNeighbors<'a> {
     type Item = &'a u32;

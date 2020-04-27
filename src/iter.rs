@@ -5,6 +5,7 @@
 use crate::sw_graph::SwEdgeIterNeighbors;
 use crate::{Node, AdjContainer};
 use std::marker::PhantomData;
+use core::iter::FusedIterator;
 
 /// # Wrapper for iterators
 /// * intended to use for iterating over neighbors of `AdjContainer`
@@ -15,6 +16,8 @@ pub enum IterWrapper<'a>{
     /// contains iter from sw implementation
     SwIter(SwEdgeIterNeighbors::<'a>),
 }
+
+impl<'a> FusedIterator for IterWrapper<'a> { }
 
 impl<'a> Iterator for IterWrapper<'a> {
     type Item = &'a u32;
@@ -95,6 +98,11 @@ where T: Node,
         }
     }
 }
+
+impl<'a, T, A> FusedIterator for ContainedIter<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{     }
 
 impl<'a, T, A> Iterator for ContainedIter<'a, T, A>
 where T: 'a + Node,
@@ -181,6 +189,11 @@ where T: Node,
     }
 }
 
+impl<'a, T, A> FusedIterator for NContainerIter<'a, T, A>
+where T: Node + 'a,
+      A: AdjContainer<T>
+{     }
+
 impl<'a, T, A> Iterator for NContainerIter<'a, T, A>
 where T: 'a + Node,
       A: AdjContainer<T>
@@ -238,6 +251,11 @@ where T: Node,
     phantom:        PhantomData<T>
 
 }
+
+impl<'a, T, A> FusedIterator for NContainedIter<'a, T, A>
+where T: Node + 'a,
+      A: AdjContainer<T>
+{     }
 
 impl<'a, T, A> NContainedIter<'a, T, A>
 where T: Node,
