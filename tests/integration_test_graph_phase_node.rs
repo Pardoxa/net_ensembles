@@ -5,35 +5,11 @@ use rand_pcg::Pcg64;
 use rand::SeedableRng;
 use rand::Rng;
 mod common;
-use common::equal_graphs;
+use common::{PhaseNode, equal_graphs};
 
 
 #[cfg(feature = "serde_support")]
 use serde_json;
-
-#[cfg(feature = "serde_support")]
-use serde::{Serialize, Deserialize};
-
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct PhaseNode {phase: f64,}
-
-impl PhaseNode {
-    pub fn set_phase(&mut self, phase: f64) {
-        self.phase = phase;
-    }
-
-    pub fn get_phase(&self) -> f64 {
-        self.phase
-    }
-}
-
-impl Node for PhaseNode {
-    fn new_from_index(index: u32) -> Self {
-        PhaseNode { phase: 10.0 * index as f64 }
-    }
-}
-
 
 #[test]
 fn phase_test() {

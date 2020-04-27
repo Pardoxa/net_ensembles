@@ -3,7 +3,7 @@ use rand_pcg::Pcg64;
 use rand::SeedableRng;
 use net_ensembles::*;
 mod common;
-use common::equal_graphs;
+use common::{equal_graphs, PhaseNode};
 
 #[test]
 fn step_test() {
@@ -38,4 +38,23 @@ fn test_complete_graph() {
     assert_eq!(20, e.graph().vertex_count());
     assert_eq!(190, e.graph().edge_count());
     assert!(e.graph().is_connected().expect("test_complete_graph error"));
+}
+
+#[test]
+fn iter_optimization_nth() {
+    let size = 50;
+    let rng = Pcg64::seed_from_u64(489);
+    let e = ErEnsembleC::<PhaseNode, Pcg64>::new(size, 6.0, rng);
+
+    let mut iter = e.graph().contained_iter_neighbors(0);
+    let len = iter.len();
+    for i in 0..len+1 {
+        let mut iter2 = e.graph().contained_iter_neighbors(0);
+        let nex = iter.next();
+        assert_eq!(
+            nex,
+            iter2.nth(i)
+        );
+        println!("{:?}", nex);
+    }
 }

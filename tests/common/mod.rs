@@ -3,6 +3,9 @@ use net_ensembles::GenericGraph;
 use net_ensembles::traits::*;
 use std::fmt::Debug;
 
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
+
 pub fn equal_graphs<T, A>(g1: &GenericGraph<T, A>, g2: &GenericGraph<T, A>)
 where T: Node + SerdeStateConform,
       A: Debug + AdjContainer<T> + SerdeStateConform
@@ -16,5 +19,27 @@ where T: Node + SerdeStateConform,
         for (i, j) in n1.neighbors().zip(n0.neighbors()) {
             assert_eq!(i, j);
         }
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub struct PhaseNode {phase: f64,}
+
+#[allow(dead_code)]
+impl PhaseNode {
+    pub fn set_phase(&mut self, phase: f64) {
+        self.phase = phase;
+    }
+
+    pub fn get_phase(&self) -> f64 {
+        self.phase
+    }
+}
+
+impl Node for PhaseNode {
+    fn new_from_index(index: u32) -> Self {
+        PhaseNode { phase: 10.0 * index as f64 }
     }
 }

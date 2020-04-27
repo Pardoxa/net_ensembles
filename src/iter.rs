@@ -25,6 +25,13 @@ impl<'a> Iterator for IterWrapper<'a> {
         }
     }
 
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        match self {
+            Self::GenericIter(iter) => iter.nth(n),
+            Self::SwIter(iter)      => iter.nth(n),
+        }
+    }
+
     fn size_hint(&self) -> (usize, Option<usize>) {
         let size = self.len();
         (size, Some(size))
@@ -103,6 +110,20 @@ where T: 'a + Node,
         Some(container.contained())
     }
 
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        if n >= self.vertex_slice.len() {
+            self.vertex_slice = &[];
+            None
+        } else{
+            let (elements, next_slice) = self
+                .vertex_slice
+                .split_at(n + 1);
+            self.vertex_slice = next_slice;
+
+            Some(elements[n].contained())
+        }
+    }
+
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len(), Some(self.len()))
     }
@@ -171,6 +192,12 @@ where T: 'a + Node,
         Some(&self.vertex_slice[index])
     }
 
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let index = self.index_iter.nth(n)?;
+        let index = *index as usize;
+        Some(&self.vertex_slice[index])
+    }
+
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len(), Some(self.len()))
     }
@@ -233,6 +260,12 @@ where T: 'a + Node,
     type Item = &'a T;
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next()?;
+        let index = *index as usize;
+        Some(&self.vertex_slice[index].contained())
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let index = self.index_iter.nth(n)?;
         let index = *index as usize;
         Some(&self.vertex_slice[index].contained())
     }

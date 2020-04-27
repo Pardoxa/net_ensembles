@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.1 &rarr; master
+
+* iterator optimizaton (`nth`)
+
 ## v0.1.0 &rarr; v0.2.1
 
 ### traits

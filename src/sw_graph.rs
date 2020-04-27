@@ -68,6 +68,20 @@ impl<'a> Iterator for SwEdgeIterNeighbors<'a> {
         Some(edge.to())
     }
 
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        if n >= self.sw_edge_slice.len() {
+            self.sw_edge_slice = &[];
+            None
+        } else{
+            let (elements, next_slice) = self
+                .sw_edge_slice
+                .split_at(n + 1);
+            self.sw_edge_slice = next_slice;
+
+            Some(elements[n].to())
+        }
+    }
+
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len(), Some(self.len()))
     }
