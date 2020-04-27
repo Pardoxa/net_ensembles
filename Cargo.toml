@@ -4,7 +4,7 @@ version = "0.2.0"
 authors = ["Yannick Feld"]
 edition = "2018"
 readme = "README.md"
-description = "Erdős-Rényi and small world ensembles. For simple sampling or Monte Carlo simulations"
+description = "Erdős-Rényi and small world ensembles. For simple sampling, Markov chains etc."
 repository = "https://github.com/Pardoxa/net_ensembles"
 keywords = [
   "small-world",
@@ -13,7 +13,7 @@ keywords = [
   "ensemble",
   "graph"
 ]
-categories = ["science"]
+categories = ["science", "mathematics"]
 documentation = "https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/"
 license = "MIT OR Apache-2.0"
 homepage = "https://www.yfeld.de/Library.html"

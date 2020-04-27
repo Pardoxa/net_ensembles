@@ -11,7 +11,8 @@
 //! ```
 //! use net_ensembles::*;
 //! // Note: you might have to enable serde for rand_pcg
-//! // to do that, write the following in your Cargo.toml: rand_pcg = { version = "*", features = ["serde1"]}
+//! // to do that, write the following in your Cargo.toml:
+//! // rand_pcg = { version = "*", features = ["serde1"]}
 //! use rand_pcg::Pcg64;
 //! use rand::SeedableRng;
 //! use std::fs::File;

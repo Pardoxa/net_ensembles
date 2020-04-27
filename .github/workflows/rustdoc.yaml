@@ -33,10 +33,9 @@ jobs:
     - name: Move Files Checkout
       run: |
        mkdir -p ./versions/master
-       cp -r ./target/doc ./versions/master
+       mv ./target/doc ./versions/master
        git fetch --prune --unshallow
        git checkout v0.1.0
-       rm -r ./target/doc
 
     - name: Build Documentation v0.1.0
       run: cargo doc --all --no-deps
@@ -44,7 +43,14 @@ jobs:
     - name: Move Files
       run: |
        mkdir -p ./versions/v0.1.0
-       cp -r ./target/doc ./versions/v0.1.0
+       mv ./target/doc ./versions/v0.1.0
+
+    - name: Documentation v0.2.0
+      run: |
+       mkdir -p ./versions/v0.2.0
+       git checkout c0b940003521daaf15aa29416352d4f2fdac9563
+       cargo doc --all --no-deps
+       mv ./target/doc ./versions/v0.2.0
 
     - name: Deploy Docs
       uses: peaceiris/actions-gh-pages@25ae83ba65b483195e2a1b7b9a5198c271d0d84c #v3.6.0
