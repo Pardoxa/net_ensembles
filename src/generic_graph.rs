@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 use std::collections::HashSet;
 use std::marker::PhantomData;
 use crate::GraphErrors;
-use crate::iter::{ContainedIter, NContainerIter, NContainedIter};
+use crate::iter::{ContainedIter, NContainerIter, NContainedIter, NContainedIterMut};
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 /// # Generic graph implementation
@@ -111,6 +111,26 @@ where T: Node,
         NContainedIter::new(
             self.vertices.as_slice(),
             self.vertices[index].neighbors()
+        )
+    }
+
+    /// * iterate over mutable additional information of neighbors of vertex `index`
+    /// * iterator returns `&mut T`
+    /// * `sort_adj` will affect the order
+    /// * **panics** if index out of bounds
+    pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, A> {
+        assert!(
+            index < self.vertices.len(),
+            "contained_iter_neighbors_mut - index out of bounds"
+        );
+
+        let ptr = self.vertices.as_mut_ptr();
+        let iter_helper: &mut A = unsafe { &mut *ptr.offset(index as isize) };
+        let iter = iter_helper.neighbors();
+
+        NContainedIterMut::new(
+            self.vertices.as_mut_slice(),
+            iter
         )
     }
 

@@ -11,6 +11,8 @@ use crate::graph::Graph;
 use crate::GraphErrors;
 use crate::Node;
 use crate::traits::*;
+use crate::iter::NContainedIterMut;
+use crate::graph::NodeContainer;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -260,6 +262,13 @@ where T: Node + SerdeStateConform,
         self.graph_mut().sort_adj();
     }
 
+    /// * returns `GenericGraph::contained_iter_neighbors_mut`
+    /// * otherwise you would not have access to this function, since no mut access to
+    ///   the graph is allowed
+    pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, NodeContainer<T>>
+    {
+            self.graph.contained_iter_neighbors_mut(index)
+    }
 }
 
 impl<T, R> WithGraph<T, Graph<T>> for ErEnsembleC<T, R>

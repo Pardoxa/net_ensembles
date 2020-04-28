@@ -11,6 +11,8 @@ use crate::graph::Graph;
 use crate::Node;
 use crate::traits::*;
 use rand::seq::SliceRandom;
+use crate::iter::NContainedIterMut;
+use crate::graph::NodeContainer;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -270,6 +272,14 @@ where T: Node + SerdeStateConform,
     /// * is called for each adjecency list, i.e., `self.vertex_count()` times
     pub fn sort_adj(&mut self) {
         self.graph_mut().sort_adj();
+    }
+
+    /// * returns `GenericGraph::contained_iter_neighbors_mut`
+    /// * otherwise you would not have access to this function, since no mut access to
+    ///   the graph is allowed
+    pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, NodeContainer<T>>
+    {
+            self.graph.contained_iter_neighbors_mut(index)
     }
 }
 

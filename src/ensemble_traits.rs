@@ -101,7 +101,7 @@ pub trait SimpleSample{
 }
 
 /// unify graph ensembles in a trait
-pub trait WithGraph<T, G>{
+pub trait WithGraph<T, G> {
     /// * access additional information at index
     fn at(&self, index: usize) -> &T;
 

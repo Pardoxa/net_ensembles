@@ -82,7 +82,7 @@ fn step_quiet_test() {
 fn iter_optimization_nth() {
     let size = 50;
     let rng = Pcg64::seed_from_u64(4893);
-    let e = SwEnsemble::<PhaseNode, Pcg64>::new(size, 0.3, rng);
+    let mut e = SwEnsemble::<PhaseNode, Pcg64>::new(size, 0.3, rng);
 
     let mut iter = e.graph().contained_iter_neighbors(0);
     let len = iter.len();
@@ -108,4 +108,16 @@ fn iter_optimization_nth() {
         );
         println!("{:?}", nex);
     }
+
+
+    let iter = e.contained_iter_neighbors_mut(0);
+    let phase = iter.fold(10.0, |acc, data|
+            {
+                let p = (*data).get_phase();
+                (*data).set_phase(12.0);
+                acc + p
+            }
+        );
+    e.at_mut(0).set_phase(  phase  );
+
 }

@@ -3,6 +3,7 @@
 ## v0.2.1 &rarr; master
 
 * iterator optimizatons (`nth` + `FusedIterator` + …)
+* add iterator: `contained_iter_neighbors_mut`
 
 ## v0.1.0 &rarr; v0.2.1
 

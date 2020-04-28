@@ -16,6 +16,8 @@
 use crate::traits::*;
 use crate::SwGraph;
 use crate::GraphErrors;
+use crate::iter::NContainedIterMut;
+use crate::sw_graph::SwContainer;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -316,6 +318,14 @@ impl <T, R> SwEnsemble<T, R>
     pub fn set_r_prob(&mut self, r_prob: f64) {
         self.r_prob = r_prob;
     }
+
+    /// * retuns `GenericGraph::contained_iter_neighbors_mut`
+    /// * otherwise you would not have access to this function, since no mut access to
+    ///   the graph is allowed
+    pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, SwContainer<T>>
+    {
+            self.graph.contained_iter_neighbors_mut(index)
+    }
 }
 
 
@@ -324,7 +334,7 @@ impl<T, R> WithGraph<T, SwGraph<T>> for SwEnsemble<T, R>
 where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
-    fn at(&self, index: usize) -> &T{
+    fn at(&self, index: usize) -> &T {
         self.graph.at(index)
     }
 
