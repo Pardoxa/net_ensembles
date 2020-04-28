@@ -45,10 +45,10 @@ jobs:
        mkdir -p ./versions/v0.1.0
        mv ./target/doc ./versions/v0.1.0
 
-    - name: Documentation v0.2.0
+    - name: Documentation v0.2.1
       run: |
        mkdir -p ./versions/v0.2.1
-       git checkout c0b940003521daaf15aa29416352d4f2fdac9563
+       git checkout v0.2.1
        cargo doc --all --no-deps
        mv ./target/doc ./versions/v0.2.1
 

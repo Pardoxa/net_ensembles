@@ -39,6 +39,17 @@ impl<'a> Iterator for IterWrapper<'a> {
     }
 
     #[inline]
+    fn fold<B, F>(self, init: B, f: F) -> B
+    where
+        F: FnMut(B, Self::Item) -> B,
+    {
+        match self {
+            Self::GenericIter(iter) => iter.fold(init, f),
+            Self::SwIter(iter)      => iter.fold(init, f),
+        }
+    }
+
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         let size = self.len();
         (size, Some(size))
@@ -116,6 +127,8 @@ where T: 'a + Node,
       A: AdjContainer<T>
 {
     type Item = &'a T;
+
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
 
         let (container, next_slice) = self
@@ -125,6 +138,7 @@ where T: 'a + Node,
         Some(container.contained())
     }
 
+    #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         if n >= self.vertex_slice.len() {
             self.vertex_slice = &[];
@@ -139,6 +153,7 @@ where T: 'a + Node,
         }
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len(), Some(self.len()))
     }
@@ -148,7 +163,7 @@ impl<'a, T, A> DoubleEndedIterator for ContainedIter<'a, T, A>
 where T: 'a + Node,
       A: AdjContainer<T>
 {
-
+    #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         let (container, next_slice) = self
             .vertex_slice
@@ -162,6 +177,7 @@ impl<'a, T, A> ExactSizeIterator for ContainedIter<'a, T, A>
 where T: 'a + Node,
       A: AdjContainer<T>
 {
+    #[inline]
     fn len(&self) -> usize {
         self.vertex_slice.len()
     }
@@ -206,18 +222,22 @@ where T: 'a + Node,
       A: AdjContainer<T>
 {
     type Item = &'a A;
+
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next()?;
         let index = *index as usize;
         Some(&self.vertex_slice[index])
     }
 
+    #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         let index = self.index_iter.nth(n)?;
         let index = *index as usize;
         Some(&self.vertex_slice[index])
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len(), Some(self.len()))
     }
@@ -227,7 +247,7 @@ impl<'a, T, A> DoubleEndedIterator for NContainerIter<'a, T, A>
 where T: 'a + Node,
       A: AdjContainer<T>
 {
-
+    #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next_back()?;
         let index = *index as usize;
@@ -239,6 +259,7 @@ impl<'a, T, A> ExactSizeIterator for NContainerIter<'a, T, A>
 where T: 'a + Node,
       A: AdjContainer<T>
 {
+    #[inline]
     fn len(&self) -> usize {
         self.index_iter.len()
     }
@@ -283,18 +304,22 @@ where T: 'a + Node,
       A: AdjContainer<T>
 {
     type Item = &'a T;
+
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next()?;
         let index = *index as usize;
         Some(&self.vertex_slice[index].contained())
     }
 
+    #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         let index = self.index_iter.nth(n)?;
         let index = *index as usize;
         Some(&self.vertex_slice[index].contained())
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len(), Some(self.len()))
     }
@@ -304,7 +329,7 @@ impl<'a, T, A> DoubleEndedIterator for NContainedIter<'a, T, A>
 where T: 'a + Node,
       A: AdjContainer<T>
 {
-
+    #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next_back()?;
         let index = *index as usize;
@@ -316,6 +341,8 @@ impl<'a, T, A> ExactSizeIterator for NContainedIter<'a, T, A>
 where T: 'a + Node,
       A: AdjContainer<T>
 {
+
+    #[inline]
     fn len(&self) -> usize {
         self.index_iter.len()
     }

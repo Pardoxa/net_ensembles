@@ -62,6 +62,8 @@ impl<'a> FusedIterator for SwEdgeIterNeighbors<'a> {}
 
 impl<'a> Iterator for SwEdgeIterNeighbors<'a> {
     type Item = &'a u32;
+
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
 
         let (edge, next_slice) = self
@@ -71,6 +73,7 @@ impl<'a> Iterator for SwEdgeIterNeighbors<'a> {
         Some(edge.to())
     }
 
+    #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         if n >= self.sw_edge_slice.len() {
             self.sw_edge_slice = &[];
@@ -85,6 +88,7 @@ impl<'a> Iterator for SwEdgeIterNeighbors<'a> {
         }
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len(), Some(self.len()))
     }
@@ -92,6 +96,7 @@ impl<'a> Iterator for SwEdgeIterNeighbors<'a> {
 
 impl<'a> DoubleEndedIterator for SwEdgeIterNeighbors<'a> {
 
+    #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         let (edge, next_slice) = self
             .sw_edge_slice
@@ -102,6 +107,7 @@ impl<'a> DoubleEndedIterator for SwEdgeIterNeighbors<'a> {
 }
 
 impl<'a> ExactSizeIterator for SwEdgeIterNeighbors<'a> {
+    #[inline]
     fn len(&self) -> usize {
         self.sw_edge_slice.len()
     }
