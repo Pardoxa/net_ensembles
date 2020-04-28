@@ -1,4 +1,5 @@
 # Rust library for random graph ensembles
+[![Crate](https://img.shields.io/crates/v/net_ensembles.svg)](https://crates.io/crates/net_ensembles)
 
 Implements simple sampling and monte carlo (or rather markov-) steps,
 that can be used to create a markov chain.
@@ -6,6 +7,14 @@ that can be used to create a markov chain.
 This is intended to be used for various different use cases.
 As such, you can easily define additional data that should be stored at each vertex.
 
+## Usage
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+net_ensembles = "0.2"
+```
 
 ## For the whole graph:
 
@@ -48,6 +57,7 @@ As such, you can easily define additional data that should be stored at each ver
 * [current working branch](https://pardoxa.github.io/net_ensembles/master/doc/net_ensembles/)
 * [v0.1.0](https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/)
 * [v0.2.1](https://pardoxa.github.io/net_ensembles/v0.2.1/doc/net_ensembles/)
+* [v0.2.2](https://pardoxa.github.io/net_ensembles/v0.2.2/doc/net_ensembles/)
 
 # Notes
 

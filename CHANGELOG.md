@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.1 &rarr; master
+## v0.2.1 &rarr; v0.2.2
 
 ### iterators
 * iterator optimizations (`nth` + `FusedIterator` + …)

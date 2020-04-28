@@ -55,7 +55,7 @@ jobs:
     - name: Documentation v0.2.2
       run: |
        mkdir -p ./versions/v0.2.2
-       git checkout master
+       git checkout 7a3208c76fc2b6d774043764e54620e501997cd6
        cargo doc --all --no-deps
        mv ./target/doc ./versions/v0.2.2
 
