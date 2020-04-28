@@ -36,6 +36,4 @@ serde_support = ["serde"]
 default = ["serde_support"]
 
 [badges]
-travis-ci = { repository = "Pardoxa/net_ensembles" }
-appveyor = { repository = "Pardoxa/net_ensembles" }
 maintenance = { status = "actively-developed" }
