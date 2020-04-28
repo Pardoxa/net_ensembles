@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 use std::collections::HashSet;
 use std::marker::PhantomData;
 use crate::GraphErrors;
-use crate::iter::{ContainedIter, NContainerIter, NContainedIter, NContainedIterMut};
+use crate::iter::*;
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 /// # Generic graph implementation
@@ -101,6 +101,14 @@ where T: Node,
     /// * similar to `self.container_iter().map(|container| container.contained())`
     pub fn contained_iter(&self) -> ContainedIter<T, A> {
         ContainedIter::new(self.vertices.as_slice())
+    }
+
+    /// * same as `contained_iter`, but mutable
+    pub fn contained_iter_mut(&mut self) -> ContainedIterMut<T, A> {
+        ContainedIterMut::new (
+            self.vertices.iter_mut()
+        )
+
     }
 
     /// * iterate over additional information of neighbors of vertex `index`

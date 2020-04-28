@@ -11,7 +11,7 @@ use crate::graph::Graph;
 use crate::Node;
 use crate::traits::*;
 use rand::seq::SliceRandom;
-use crate::iter::NContainedIterMut;
+use crate::iter::{NContainedIterMut, ContainedIterMut};
 use crate::graph::NodeContainer;
 
 #[cfg(feature = "serde_support")]
@@ -283,6 +283,10 @@ where   T: Node + SerdeStateConform,
         NContainedIterMut<'a, T, NodeContainer<T>>
     {
         self.graph.contained_iter_neighbors_mut(index)
+    }
+
+    fn contained_iter_mut(&'a mut self) ->  ContainedIterMut<'a, T, NodeContainer<T>> {
+        self.graph.contained_iter_mut()
     }
 }
 

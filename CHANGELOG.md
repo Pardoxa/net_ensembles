@@ -4,7 +4,8 @@
 
 ### iterators
 * iterator optimizations (`nth` + `FusedIterator` + …)
-* add iterator: `contained_iter_neighbors_mut`
+* added iterator: `contained_iter_mut`
+* added iterator: `contained_iter_neighbors_mut`
 
 ### traits
 * added `GraphIterators` and generically implemented it for the Ensembles

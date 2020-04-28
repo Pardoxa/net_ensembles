@@ -447,3 +447,94 @@ where T: 'a + Node,
         self.index_iter.len()
     }
 }
+
+
+///////////////////////////
+/// * same as ContainedIter but mutable
+/// * Iterator over mutable additional information stored at vertices
+pub struct ContainedIterMut<'a, T, A>
+where T: Node,
+      A: AdjContainer<T>
+{
+    vertex_iter:   core::slice::IterMut::<'a, A>,
+    phantom:        PhantomData<T>
+
+}
+
+impl<'a, T, A> ContainedIterMut<'a, T, A>
+where
+    T: Node,
+    A: AdjContainer<T>,
+{
+    pub(crate) fn new(vertex_iter: core::slice::IterMut::<'a, A>) -> Self {
+        Self{
+            vertex_iter,
+            phantom: PhantomData::<T>,
+        }
+    }
+}
+
+impl<'a, T, A> FusedIterator for ContainedIterMut<'a, T, A>
+where
+T: 'a + Node,
+A: AdjContainer<T>
+{       }
+
+impl<'a, T, A> Iterator for ContainedIterMut<'a, T, A>
+where
+    T: 'a + Node,
+    A: AdjContainer<T>,
+{
+    type Item = &'a mut T;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.vertex_iter.next()?;
+
+        Some(next.contained_mut())
+    }
+
+    #[inline]
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let nth = self.vertex_iter.nth(n)?;
+
+        Some(nth.contained_mut())
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+}
+
+
+impl<'a, T, A> DoubleEndedIterator for ContainedIterMut<'a, T, A>
+where
+    T: 'a + Node,
+    A: AdjContainer<T>,
+{
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let last = self.vertex_iter.next_back()?;
+
+        Some(last.contained_mut())
+    }
+
+    #[inline]
+    fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+        let nth_back = self.vertex_iter.nth_back(n)?;
+
+        Some(nth_back.contained_mut())
+    }
+}
+
+impl<'a, T, A> ExactSizeIterator for ContainedIterMut<'a, T, A>
+where
+    T: 'a + Node,
+    A: AdjContainer<T>,
+{
+    #[inline]
+    fn len(&self) -> usize {
+        self.vertex_iter.len()
+    }
+}

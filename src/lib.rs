@@ -252,6 +252,14 @@
 //!     .count();
 //!
 //! println!("{}", s_count);
+//!
+//! // or advance the states:
+//! for state in ensemble.contained_iter_mut() {
+//!     match *state {
+//!         SirState::Infective     => { *state = SirState::Removed },
+//!         _                       => { },
+//!     };
+//! }
 //! ```
 #![deny(missing_docs, warnings)]
 pub mod generic_graph;

@@ -127,6 +127,10 @@ where
     /// * `sort_adj` will affect the order
     /// * **panics** if index out of bounds
     fn contained_iter_neighbors_mut(&'a mut self, index: usize) -> NContainedIterMut<'a, T, A>;
+
+    /// * get iterator over mutable additional information stored at each vertex in order of the indices
+    /// * iterator returns a `Node` (for example `EmptyNode` or whatever you used)
+    fn contained_iter_mut(&'a mut self) -> ContainedIterMut<'a, T, A>;
 }
 
 /// Collection of Graph iterators

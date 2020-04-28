@@ -16,7 +16,7 @@
 use crate::traits::*;
 use crate::SwGraph;
 use crate::GraphErrors;
-use crate::iter::NContainedIterMut;
+use crate::iter::{NContainedIterMut, ContainedIterMut};
 use crate::sw_graph::SwContainer;
 
 #[cfg(feature = "serde_support")]
@@ -336,6 +336,10 @@ where   T: Node + SerdeStateConform,
         NContainedIterMut<'a, T, SwContainer<T>>
     {
         self.graph.contained_iter_neighbors_mut(index)
+    }
+
+    fn contained_iter_mut(&'a mut self) ->  ContainedIterMut<'a, T, SwContainer<T>> {
+        self.graph.contained_iter_mut()
     }
 }
 
