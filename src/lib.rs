@@ -6,6 +6,10 @@
 //! * if you want to work with small-world ensemble, look at module [`sw`](sw/index.html)
 //! * an example for implementing your own Node can be found [here](graph/type.Graph.html#example-2).
 //!   Note that the defined Node can be used in the Graph ensembles
+//! * Note: The ensembles implement the trait [`GraphIterators`](./traits/trait.GraphIterators.html),
+//! therefore calling, e.g., `ensemble.graph().dfs(0)` is equivalent
+//! to `ensemble.dfs(0)` as long as you used
+//! `use::net_ensembles::traits::*`
 //! # Example 1
 //! Create an Erdős-Rényi graph
 //! ```
@@ -235,7 +239,6 @@
 //!
 //! // you can also iterate over your additional information:
 //! let count = ensemble
-//!     .graph()
 //!     .contained_iter()
 //!     .filter(|&state| *state == SirState::Susceptible)
 //!     .count();
@@ -243,7 +246,6 @@
 //!
 //! // or count how many Susceptible nodes are connected to a specific node, i.e., to node 0
 //! let s_count = ensemble
-//!     .graph()
 //!     .contained_iter_neighbors(0)
 //!     .filter(|&state| *state == SirState::Susceptible)
 //!     .count();

@@ -7,6 +7,7 @@ pub use crate::ensemble_traits::MarkovChain;
 pub use crate::ensemble_traits::SimpleSample;
 pub use crate::ensemble_traits::HasRng;
 pub use crate::ensemble_traits::WithGraph;
+pub use crate::ensemble_traits::GraphIterators;
 pub use crate::iter::IterWrapper;
 
 #[cfg(feature = "serde_support")]

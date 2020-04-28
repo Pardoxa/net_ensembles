@@ -329,7 +329,6 @@ impl <T, R> SwEnsemble<T, R>
 }
 
 
-
 impl<T, R> WithGraph<T, SwGraph<T>> for SwEnsemble<T, R>
 where   T: Node + SerdeStateConform,
         R: rand::Rng

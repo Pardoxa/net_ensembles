@@ -120,4 +120,5 @@ fn iter_optimization_nth() {
         );
     e.at_mut(0).set_phase(  phase  );
 
+    let _ = e.contained_iter();
 }

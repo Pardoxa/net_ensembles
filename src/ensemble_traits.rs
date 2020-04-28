@@ -1,3 +1,5 @@
+use crate::{AdjContainer, traits::*, iter::*, GenericGraph};
+use crate::generic_graph::{Dfs, DfsWithIndex, Bfs};
 /// # Access internal random number generator
 pub trait HasRng<Rng>
 where Rng: rand::Rng
@@ -111,4 +113,141 @@ pub trait WithGraph<T, G> {
     /// * returns reference to the underlying topology aka, the `GenericGraph`
     /// * use this to call functions regarding the topology
     fn graph(&self) -> &G;
+}
+
+/// Collection of Graph iterators
+pub trait GraphIterators<'a, T, G, A>
+    where
+        Self: WithGraph<T, G>,
+        T: Node,
+        A: AdjContainer<T>
+
+{
+    /// * get iterator over additional information stored at each vertex in order of the indices
+    /// * iterator returns a `Node` (for example `EmptyNode` or whatever you used)
+    /// * similar to `self.container_iter().map(|container| container.contained())`
+    fn contained_iter(&'a self) -> ContainedIter<'a, T, A>
+        where T: 'a;
+
+    /// * iterate over additional information of neighbors of vertex `index`
+    /// * iterator returns `&T`
+    /// * `sort_adj` will affect the order
+    /// * **panics** if index out of bounds
+    fn contained_iter_neighbors(&'a self, index: usize) -> NContainedIter<'a, T, A>
+    where T: 'a;
+
+    /// * get iterator over AdjContainer in order of the indices
+    /// * iterator returns `AdjContainer<Node>`, i.e., `A`
+    fn container_iter(&'a self) -> core::slice::Iter<'a, A>
+    where T: 'a;
+
+    /// * iterate over additional information of neighbors of vertex `index`
+    /// * iterator returns `&T`
+    /// * `sort_adj` will affect the order
+    /// * **panics** if index out of bounds
+    fn container_iter_neighbors(&'a self, index: usize) -> NContainerIter<'a, T, A>
+    where T: 'a;
+
+    /// # returns `Iterator`
+    ///
+    /// * the iterator will iterate over the vertices in depth first search order,
+    /// beginning with vertex `index`.
+    /// * iterator returns `node`
+    ///
+    /// Order
+    ///------------------------
+    /// Order is guaranteed to be in DFS order, however
+    /// if this order is not unambigouse
+    /// adding edges and especially removing edges will shuffle the order.
+    ///
+    /// Note:
+    /// ----------------------
+    /// Will only iterate over vertices within the connected component that contains vertex `index`
+    fn dfs(&'a self, index: u32) -> Dfs<'a, T, A>
+    where T: 'a;
+
+    /// # returns `Iterator`
+    ///
+    /// * the iterator will iterate over the vertices in depth first search order,
+    /// beginning with vertex `index`.
+    /// * Iterator returns tuple `(index, node)`
+    ///
+    /// Order
+    ///------------------------
+    /// Order is guaranteed to be in DFS order, however
+    /// if this order is not unambigouse
+    /// adding edges and especially removing edges will shuffle the order.
+    ///
+    /// Note:
+    /// ----------------------
+    /// Will only iterate over vertices within the connected component that contains vertex `index`
+    fn dfs_with_index(&'a self, index: u32) -> DfsWithIndex<'a, T, A>
+    where T: 'a;
+
+    /// # returns `Iterator`
+    ///
+    /// * the iterator will iterate over the vertices in breadth first search order,
+    /// beginning with vertex `index`.
+    /// * Iterator returns tuple `(index, node, depth)`
+    ///
+    /// ### depth
+    /// * starts at 0 (i.e. the first element in the iterator will have `depth = 0`)
+    /// * `depth` equals number of edges in the *shortest path* from the *current* vertex to the
+    /// *first* vertex (i.e. to the vertex with index `index`)
+    ///
+    /// Order
+    ///------------------------
+    /// Order is guaranteed to be in BFS order, however
+    /// if this order is not unambigouse
+    /// adding edges and especially removing edges will shuffle the order.
+    ///
+    /// Note:
+    /// ----------------------
+    /// Will only iterate over vertices within the connected component that contains vertex `index`
+    fn bfs_index_depth(&'a self, index: u32) -> Bfs<'a, T, A>
+    where T: 'a;
+}
+
+
+impl<'a, T, A, E> GraphIterators<'a, T, GenericGraph<T, A>, A> for E
+where
+    T: Node,
+    A: AdjContainer<T>,
+    E: WithGraph<T, GenericGraph<T, A>>,
+{
+    fn contained_iter(&'a self) -> ContainedIter<'a, T, A>
+    where T: 'a {
+        self.graph().contained_iter()
+    }
+
+    fn contained_iter_neighbors(&'a self, index: usize) -> NContainedIter<'a, T, A>
+    where T: 'a
+    {
+        self.graph().contained_iter_neighbors(index)
+    }
+
+    fn container_iter(&'a self) -> core::slice::Iter<'a, A>
+    where T: 'a {
+        self.graph().container_iter()
+    }
+
+    fn container_iter_neighbors(&'a self, index: usize) -> NContainerIter<'a, T, A>
+    where T: 'a {
+        self.graph().container_iter_neighbors(index)
+    }
+
+    fn dfs(&'a self, index: u32) -> Dfs<'a, T, A>
+    where T: 'a {
+        self.graph().dfs(index)
+    }
+
+    fn dfs_with_index(&'a self, index: u32) -> DfsWithIndex<'a, T, A>
+    where T: 'a {
+        self.graph().dfs_with_index(index)
+    }
+
+    fn bfs_index_depth(&'a self, index: u32) -> Bfs<'a, T, A>
+    where T: 'a {
+        self.graph().bfs_index_depth(index)
+    }
 }
