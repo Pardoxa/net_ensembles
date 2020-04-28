@@ -118,6 +118,7 @@ where T: Node,
     /// * iterator returns `&mut T`
     /// * `sort_adj` will affect the order
     /// * **panics** if index out of bounds
+    /// * See also: [`GraphIteratorsMut`](../traits/trait.GraphIteratorsMut.html)
     pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, A> {
         assert!(
             index < self.vertices.len(),

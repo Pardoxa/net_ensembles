@@ -10,6 +10,7 @@
 //! therefore calling, e.g., `ensemble.graph().dfs(0)` is equivalent
 //! to `ensemble.dfs(0)` as long as you used
 //! `use::net_ensembles::traits::*`
+//! * See also: [`GraphIteratorsMut`](./traits/trait.GraphIteratorsMut.html)
 //! # Example 1
 //! Create an Erdős-Rényi graph
 //! ```

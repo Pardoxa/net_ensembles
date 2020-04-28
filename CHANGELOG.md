@@ -2,12 +2,13 @@
 
 ## v0.2.1 &rarr; master
 
-## iterators
+### iterators
 * iterator optimizations (`nth` + `FusedIterator` + …)
 * add iterator: `contained_iter_neighbors_mut`
 
-## traits
+### traits
 * added `GraphIterators` and generically implemented it for the Ensembles
+* added `GraphIteratorsMut`
 
 ## v0.1.0 &rarr; v0.2.1
 

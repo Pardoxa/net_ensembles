@@ -261,15 +261,19 @@ where T: Node + SerdeStateConform,
     pub fn sort_adj(&mut self) {
         self.graph_mut().sort_adj();
     }
+}
 
-    /// * returns `GenericGraph::contained_iter_neighbors_mut`
-    /// * otherwise you would not have access to this function, since no mut access to
-    ///   the graph is allowed
-    pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, NodeContainer<T>>
+impl<'a, T, R> GraphIteratorsMut<'a, T, Graph<T>, NodeContainer<T>> for ErEnsembleC<T, R>
+where   T: Node + SerdeStateConform,
+        R: rand::Rng
+{
+    fn contained_iter_neighbors_mut(&'a mut self, index: usize) ->
+        NContainedIterMut<'a, T, NodeContainer<T>>
     {
-            self.graph.contained_iter_neighbors_mut(index)
+        self.graph.contained_iter_neighbors_mut(index)
     }
 }
+
 
 impl<T, R> WithGraph<T, Graph<T>> for ErEnsembleC<T, R>
 where   T: Node + SerdeStateConform,

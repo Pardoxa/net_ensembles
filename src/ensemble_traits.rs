@@ -115,6 +115,20 @@ pub trait WithGraph<T, G> {
     fn graph(&self) -> &G;
 }
 
+///  Collection mut Graph iterators
+pub trait GraphIteratorsMut<'a, T, G, A>
+where
+    Self: WithGraph<T, G>,
+    T: Node,
+    A: AdjContainer<T>
+{
+    /// * iterate over mutable additional information of neighbors of vertex `index`
+    /// * iterator returns `&mut T`
+    /// * `sort_adj` will affect the order
+    /// * **panics** if index out of bounds
+    fn contained_iter_neighbors_mut(&'a mut self, index: usize) -> NContainedIterMut<'a, T, A>;
+}
+
 /// Collection of Graph iterators
 pub trait GraphIterators<'a, T, G, A>
     where
