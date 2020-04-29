@@ -1,6 +1,6 @@
 # Rust library for random graph ensembles
 [![Crate](https://img.shields.io/crates/v/net_ensembles.svg)](https://crates.io/crates/net_ensembles)
-![Rust unit tests - master](https://github.com/Pardoxa/net_ensembles/workflows/Rust%20unit%20tests%20-%20master/badge.svg?branch=master)
+[![Rust unit tests - master](https://github.com/Pardoxa/net_ensembles/workflows/Rust%20unit%20tests%20-%20master/badge.svg?branch=master)](https://github.com/Pardoxa/net_ensembles)
 
 Implements simple sampling and monte carlo (or rather markov-) steps,
 that can be used to create a markov chain.
@@ -15,9 +15,16 @@ Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
 net_ensembles = "0.2"
+# for feature "serde_support" (enabled by default) also use
+serde = { version = "1.0", features = ["derive"] }
 ```
 
-## For the whole graph:
+## currently implemented graph ensembles
+
+* Erdős-Rényi (x2)
+* small-world
+
+## Graph
 
 * you can always visualize the current graph by creating a `.dot` file from it.
   There are different options for that, choose which one fits you best.
@@ -56,9 +63,7 @@ net_ensembles = "0.2"
 
 * [changelog](CHANGELOG.md)
 * [current working branch](https://pardoxa.github.io/net_ensembles/master/doc/net_ensembles/)
-* [v0.1.0](https://pardoxa.github.io/net_ensembles/v0.1.0/doc/net_ensembles/)
-* [v0.2.1](https://pardoxa.github.io/net_ensembles/v0.2.1/doc/net_ensembles/)
-* [v0.2.2](https://pardoxa.github.io/net_ensembles/v0.2.2/doc/net_ensembles/)
+* [releases](https://docs.rs/net_ensembles/)
 
 # Notes
 
@@ -68,13 +73,8 @@ I do my best to avoid errors.
 
 You can learn more about me and my research on my [homepage](https://www.yfeld.de).
 
-If you like my library but feel like there is an iterator missing or something
-like that: feel free to create an issue on the repository, I might add it.
-
-## currently implemented network ensembles
-
-* Erdős-Rényi (x2)
-* small-world
+If you notice any bugs, or want to request new features: do not hesitate to
+open a new [issue](https://github.com/Pardoxa/net_ensembles/issues) on the repository.
 
 ## vertices
 
@@ -84,6 +84,7 @@ like that: feel free to create an issue on the repository, I might add it.
 Due to implementation details, where I prioritize fast access of vertices,
 it is unlikely, that I will implement the option to remove vertices.
 If I do, it will likely be a relatively costly operation, so keep that in mind.
+
 
 ## crates.io
 
