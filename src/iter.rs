@@ -457,7 +457,7 @@ where T: Node,
       A: AdjContainer<T>
 {
     vertex_iter:   core::slice::IterMut::<'a, A>,
-    phantom:        PhantomData<T>
+    phantom:       PhantomData<T>
 
 }
 
