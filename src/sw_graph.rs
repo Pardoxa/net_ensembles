@@ -5,6 +5,7 @@ use crate::GraphErrors;
 use crate::sw::SwChangeState;
 use crate::GenericGraph;
 use core::iter::FusedIterator;
+use smallvec::{SmallVec};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -122,7 +123,7 @@ impl<'a> ExactSizeIterator for SwEdgeIterNeighbors<'a> {
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SwContainer<T: Node> {
     id: u32,
-    adj: Vec<SwEdge>,
+    adj: SmallVec<[SwEdge; 8]>,
     node: T,
 }
 
@@ -134,7 +135,7 @@ where T: Node + SerdeStateConform
         SwContainer{
             id,
             node,
-            adj: Vec::new(),
+            adj: SmallVec::new(),
         }
     }
 

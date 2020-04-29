@@ -25,6 +25,7 @@ exclude = [
 
 [dependencies]
 rand = { version = "0.7"}
+smallvec = { version = "1.4.0", features = ["serde"] }
 serde = { version = "1.0", optional = true, features = ["derive"] }
 
 [dev-dependencies]

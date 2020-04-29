@@ -261,7 +261,7 @@
 //!     };
 //! }
 //! ```
-#![deny(missing_docs, warnings)]
+//#![deny(missing_docs, warnings)]
 pub mod generic_graph;
 pub mod example_nodes;
 pub mod graph;
