@@ -160,7 +160,7 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
 
     /// * undo a markov step, **panic** on invalid result state
     /// * for undoing multiple steps see [`undo_steps_quiet`](#method.undo_steps_quiet)
-    fn undo_step_quiet(&mut self, mut step: ErStepM) -> (){
+    fn undo_step_quiet(&mut self, mut step: ErStepM) {
         step.invert();
         self.step(&step);
     }
@@ -258,7 +258,7 @@ where T: Node + SerdeStateConform,
         self.m
     }
 
-    fn shuffle_all_edges(&mut self) -> () {
+    fn shuffle_all_edges(&mut self) {
         self.all_edges
             .shuffle(&mut self.rng);
     }

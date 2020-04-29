@@ -134,7 +134,7 @@ where T: Node,
         );
 
         let ptr = self.vertices.as_mut_ptr();
-        let iter_helper: &mut A = unsafe { &mut *ptr.offset(index as isize) };
+        let iter_helper: &mut A = unsafe { &mut *ptr.add(index) };
         let iter = iter_helper.neighbors();
 
         NContainedIterMut::new(
@@ -505,13 +505,13 @@ where T: Node,
 
         }
         // cast current_id as usize
-        let num_components = usize::try_from(current_id).ok()
+        let num_components = usize::try_from(current_id)
             .expect("connected_components ERROR 0");
 
         let mut result = vec![0; num_components];
 
         for i in component_id {
-            let as_usize = usize::try_from(i).ok()
+            let as_usize = usize::try_from(i)
                 .expect("connected_components ERROR 1");
             result[as_usize] += 1;
         }
@@ -583,17 +583,17 @@ where T: Node,
     /// In this example, `example.dot` now contains:
     /// ```dot
     /// graph G{
-    ///	    bgcolor="transparent";
-    ///	    fontsize=50;
-    ///	    node [shape=ellipse, penwidth=1, fontname="Courier", pin=true ];
-    ///	    splines=true;
-    ///	    0 1 2 ;
-    ///	    "0" [label="Hey 0!"];
-    ///	    "1" [label="Hey 1!"];
-    ///	    "2" [label="Hey 2!"];
-    ///	    0 -- 1
-    ///	    0 -- 2
-    ///	    1 -- 2
+    ///     bgcolor="transparent";
+    ///     fontsize=50;
+    ///     node [shape=ellipse, penwidth=1, fontname="Courier", pin=true ];
+    ///     splines=true;
+    ///     0 1 2 ;
+    ///     "0" [label="Hey 0!"];
+    ///     "1" [label="Hey 1!"];
+    ///     "2" [label="Hey 2!"];
+    ///     0 -- 1
+    ///     0 -- 2
+    ///     1 -- 2
     /// }
     /// ```
     ///
@@ -649,19 +649,19 @@ where T: Node,
     /// In this example, `example_2.dot` now contains:
     /// ```dot
     /// graph G{
-    /// 	splines=true;
-    /// 	overlap=false;
-    /// 	0 1 2 3 4 ;
-    /// 	"0" [label="index 0, degree: 3"];
-    /// 	"1" [label="index 1, degree: 2"];
-    /// 	"2" [label="index 2, degree: 2"];
-    /// 	"3" [label="index 3, degree: 2"];
-    /// 	"4" [label="index 4, degree: 1"];
-    /// 	0 -- 1
-    /// 	0 -- 2
-    /// 	0 -- 3
-    /// 	1 -- 2
-    /// 	3 -- 4
+    ///     splines=true;
+    ///     overlap=false;
+    ///     0 1 2 3 4 ;
+    ///     "0" [label="index 0, degree: 3"];
+    ///     "1" [label="index 1, degree: 2"];
+    ///     "2" [label="index 2, degree: 2"];
+    ///     "3" [label="index 3, degree: 2"];
+    ///     "4" [label="index 4, degree: 1"];
+    ///     0 -- 1
+    ///     0 -- 2
+    ///     0 -- 3
+    ///     1 -- 2
+    ///     3 -- 4
     /// }
     /// ```
     ///
@@ -975,7 +975,7 @@ where T: Node,
                 {
                     if self
                         .container(*neighbor_2 as usize)
-                        .is_adjacent(&source_index)
+                        .is_adjacent(source_index)
                     {
                         closed_path_count += 1;
                     }
@@ -1015,14 +1015,14 @@ where   T: 'a + Node,
                 queue0.push_back(index);
                 handled[index as usize] = true;
             }
-            let result = Bfs {
+
+            Bfs {
                 graph,
                 handled,
                 queue0,
                 queue1,
                 depth,
-            };
-            result
+            }
         }
 }
 

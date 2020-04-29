@@ -139,7 +139,7 @@ where T: Node + SerdeStateConform
     }
 
     /// return reference to what the AdjContainer contains
-    fn contained<'a>(&'a self) -> &'a T{
+    fn contained(&self) -> & T{
         &self.node
     }
 
@@ -177,9 +177,9 @@ where T: Node + SerdeStateConform
     /// check if vertex with `other_id` is adjacent to self
     /// ## Note:
     /// (in `GenericGraph<T>`: `id` equals the index corresponding to `self`)
-    fn is_adjacent(&self, other_id: &u32) -> bool{
+    fn is_adjacent(&self, other_id: u32) -> bool{
         SwEdgeIterNeighbors::new(self.adj.as_slice())
-            .any(|x| x == other_id)
+            .any(|&x| x == other_id)
     }
 
     /// # Sorting adjecency lists
@@ -210,7 +210,7 @@ where T: Node + SerdeStateConform
     #[doc(hidden)]
     unsafe fn push(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>{
-            if self.is_adjacent(&other.id()) {
+            if self.is_adjacent(other.id()) {
                 return Err(GraphErrors::EdgeExists);
             }
 
@@ -240,7 +240,7 @@ where T: Node + SerdeStateConform
     #[doc(hidden)]
     unsafe fn remove(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>{
-            if !self.is_adjacent(&other.id()){
+            if !self.is_adjacent(other.id()){
                 return Err(GraphErrors::EdgeDoesNotExist);
             }
             self.swap_remove_element(other.id());
@@ -257,7 +257,7 @@ impl<T: Node + SerdeStateConform> SwContainer<T> {
             .position(|&x| x == elem)
     }
 
-    fn swap_remove_element(&mut self, elem: u32) -> () {
+    fn swap_remove_element(&mut self, elem: u32) {
         let index = self.adj_position(elem)
             .expect("swap_remove_element ERROR 0");
 
@@ -285,7 +285,7 @@ impl<T: Node + SerdeStateConform> SwContainer<T> {
     /// * No guarantees whatsoever, if you use it for something else
     unsafe fn push_single(&mut self, other_id: u32) {
         debug_assert!(
-            !self.is_adjacent(&other_id),
+            !self.is_adjacent(other_id),
             "SwContainer::push single - ERROR: pushed existing edge!"
         );
         self.adj
@@ -302,7 +302,7 @@ impl<T: Node + SerdeStateConform> SwContainer<T> {
         {
             return SwChangeState::InvalidAdjecency;
         }
-        else if self.is_adjacent(&to_rewire.id())
+        else if self.is_adjacent(to_rewire.id())
         {
             return SwChangeState::BlockedByExistingEdge;
         }
@@ -345,7 +345,7 @@ impl<T: Node + SerdeStateConform> SwContainer<T> {
         let self_index = self.adj_position(other.id());
 
         if self_index.is_none() {
-            return Err(GraphErrors::EdgeDoesNotExist.to_sw_state());
+            return Err(GraphErrors::EdgeDoesNotExist.convert_to_sw_state());
         }
 
         let other_index = other.adj_position(self.id());
@@ -372,7 +372,7 @@ impl<T: Node + SerdeStateConform> SwContainer<T> {
         }
         // check if edge exists
         else if self.is_adjacent(
-            &self_edge
+            self_edge
                 .originally_to()
                 .unwrap()
             ){

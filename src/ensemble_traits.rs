@@ -22,7 +22,7 @@ pub trait MarkovChain<S, Res> {
 
     /// * undo a markov, **panic** on invalid result state
     /// * for undoing multiple steps see [`undo_steps_quiet`](#method.undo_steps_quiet)
-    fn undo_step_quiet(&mut self, step: S) -> ();
+    fn undo_step_quiet(&mut self, step: S);
 
     /// # Markov step
     /// * use this to perform a markov step step
@@ -57,7 +57,7 @@ pub trait MarkovChain<S, Res> {
     /// * Note: uses `undo_step_quiet` in correct order
     /// ## Important:
     /// * look at specific implementation of `undo_step_quiet`, every thing mentioned there applies to each step
-    fn undo_steps_quiet(&mut self, steps: Vec<S>) -> () {
+    fn undo_steps_quiet(&mut self, steps: Vec<S>) {
         let iter = steps.into_iter()
             .rev();
         for step in iter {

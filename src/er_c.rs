@@ -41,17 +41,15 @@ impl ErStepC {
 
     /// `panic!` if `self` is `GError` variant
     pub fn valid_or_panic(&self) {
-        match self {
-            Self::GError(error) => panic!("ErStepC - invalid - {}", error),
-            _                   => (),
+        if let Self::GError(error) = self {
+            panic!("ErStepC - invalid - {}", error)
         }
     }
 
     /// `panic!(msg)` if `self` is `GError` variant
     pub fn valid_or_panic_msg(&self, msg: &str) {
-        match self {
-            Self::GError(error) => panic!("ErStepC - invalid {}- {}", msg, error),
-            _                   => (),
+        if let Self::GError(error) = self {
+            panic!("ErStepC - invalid {}- {}", msg, error)
         }
     }
 }
@@ -180,21 +178,19 @@ impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
-    fn undo_step_quiet(&mut self, step: ErStepC) -> () {
+    fn undo_step_quiet(&mut self, step: ErStepC) {
         match step {
             ErStepC::AddedEdge(edge)     => {
                 let res = self.graph.remove_edge(edge.0, edge.1);
                 if res.is_err() {
                     panic!("ErEnsembleC - undo_step - panic {:?}", res.unwrap_err());
                 }
-                ()
             },
             ErStepC::RemovedEdge(edge)   => {
                 let res = self.graph.add_edge(edge.0, edge.1);
                 if res.is_err() {
                     panic!("ErEnsembleC - undo_step - panic {:?}", res.unwrap_err());
                 }
-                ()
             },
             _       => step.valid_or_panic_msg("ErEnsembleC - quiet")
         }
@@ -300,7 +296,8 @@ where   T: Node + SerdeStateConform,
 fn draw_two_from_range<T: rand::Rng>(rng: &mut T, high: u32) -> (u32, u32){
     let first = rng.gen_range(0, high);
     let second = rng.gen_range(0, high - 1);
-    return if second < first {
+
+    if second < first {
         (first, second)
     } else {
         (first, second + 1)

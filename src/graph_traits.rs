@@ -31,7 +31,7 @@ impl GraphErrors {
        }
    }
 
-   pub(crate) fn to_sw_state(self) -> SwChangeState {
+   pub(crate) fn convert_to_sw_state(self) -> SwChangeState {
        SwChangeState::GError(self)
    }
 }
@@ -52,13 +52,13 @@ pub trait AdjContainer<T: Node>
 
 
     /// return reference to what the AdjContainer contains
-    fn contained<'a>(&'a self) -> &'a T;
+    fn contained(&self) -> & T;
 
     /// return mut reference to what the AdjContainer contains
     fn contained_mut(&mut self) -> &mut T;
 
     /// returns iterator over indices of neighbors
-    fn neighbors<'b>(&self) -> IterWrapper;
+    fn neighbors(&self) -> IterWrapper;
 
     /// count number of neighbors, i.e. number of edges incident to `self`
     fn degree(&self) -> usize;
@@ -72,7 +72,7 @@ pub trait AdjContainer<T: Node>
     /// check if vertex with `other_id` is adjacent to self
     /// ## Note:
     /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
-    fn is_adjacent(&self, other_id: &u32) -> bool;
+    fn is_adjacent(&self, other_id: u32) -> bool;
 
     /// Sorting adjecency lists
     fn sort_adj(&mut self);

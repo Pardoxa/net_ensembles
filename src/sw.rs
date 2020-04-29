@@ -458,15 +458,13 @@ where   T: Node + SerdeStateConform,
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
-    fn undo_step_quiet(&mut self, step: SwChangeState) -> () {
+    fn undo_step_quiet(&mut self, step: SwChangeState) {
         match step {
             SwChangeState::Rewire(root, old_to, new_to) |
             SwChangeState::Reset (root, old_to, new_to)  => {
                 // swap old to and new to in rewire to undo step
                 let state = self.graph.rewire_edge(root, new_to, old_to);
-                if state.is_valid() {
-                    ()
-                } else {
+                if !state.is_valid() {
                     panic!("undo step - rewire error: {:?}", state);
                 }
             },

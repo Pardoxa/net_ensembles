@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.2 &rarr; master
+
+* `fn is_adjacent(&self, other_id: &u32) -> bool;` &rarr; `fn is_adjacent(&self, other_id: u32) -> bool;`
+
 ## v0.2.1 &rarr; v0.2.2
 
 ### iterators

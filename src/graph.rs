@@ -67,8 +67,8 @@ impl<T: Node + SerdeStateConform> AdjContainer<T> for NodeContainer<T> {
     /// check if vertex with `other_id` is adjacent to self
     /// ## Note:
     /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
-    fn is_adjacent(&self, other_id: &u32) -> bool {
-        self.adj.contains(other_id)
+    fn is_adjacent(&self, other_id: u32) -> bool {
+        self.adj.contains(&other_id)
     }
 
     /// # Sorting adjecency lists
@@ -86,7 +86,7 @@ impl<T: Node + SerdeStateConform> AdjContainer<T> for NodeContainer<T> {
     unsafe fn push(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>
     {
-        if self.is_adjacent(&other.id()) {
+        if self.is_adjacent(other.id()) {
             return Err(GraphErrors::EdgeExists);
         }
         self.adj.push(other.id());
@@ -99,7 +99,7 @@ impl<T: Node + SerdeStateConform> AdjContainer<T> for NodeContainer<T> {
     unsafe fn remove(&mut self, other: &mut Self)
         -> Result<(), GraphErrors>
     {
-        if !self.is_adjacent(&other.id()){
+        if !self.is_adjacent(other.id()){
             return Err(GraphErrors::EdgeDoesNotExist);
         }
 
@@ -116,7 +116,7 @@ impl<T: Node + SerdeStateConform> AdjContainer<T> for NodeContainer<T> {
 
 impl<T: Node> NodeContainer<T> {
 
-    fn swap_remove_element(&mut self, elem: u32) -> () {
+    fn swap_remove_element(&mut self, elem: u32) {
         let index = self.adj
             .iter()
             .position(|&x| x == elem)
@@ -273,15 +273,15 @@ impl<T: Node> NodeContainer<T> {
 /// ```dot
 /// graph G{
 ///
-/// 	0 1 2 3 ;
-/// 	"0" [label="Phase: 0 at index 0"];
-/// 	"1" [label="Phase: 0.5 at index 1"];
-/// 	"2" [label="Phase: 1 at index 2"];
-/// 	"3" [label="Phase: 1.5 at index 3"];
-/// 	0 -- 1
-/// 	0 -- 3
-/// 	1 -- 2
-/// 	2 -- 3
+///     0 1 2 3 ;
+///     "0" [label="Phase: 0 at index 0"];
+///     "1" [label="Phase: 0.5 at index 1"];
+///     "2" [label="Phase: 1 at index 2"];
+///     "3" [label="Phase: 1.5 at index 3"];
+///     0 -- 1
+///     0 -- 3
+///     1 -- 2
+///     2 -- 3
 /// }
 /// ```
 /// Now you can use `circo` or similar programs to create a pdf from that.
