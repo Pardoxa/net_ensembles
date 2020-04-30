@@ -123,7 +123,8 @@ impl<'a> ExactSizeIterator for SwEdgeIterNeighbors<'a> {
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SwContainer<T: Node> {
     id: u32,
-    adj: SmallVec<[SwEdge; 8]>,
+    adj: Vec<SwEdge>,
+    //adj: SmallVec<[SwEdge; 8]>,
     node: T,
 }
 
@@ -135,7 +136,8 @@ where T: Node + SerdeStateConform
         SwContainer{
             id,
             node,
-            adj: SmallVec::new(),
+            adj: Vec::with_capacity(8)
+            //adj: SmallVec::with_capacity(8),
         }
     }
 
