@@ -30,6 +30,7 @@ serde = { version = "1.0", optional = true, features = ["derive"] }
 [dev-dependencies]
 rand_pcg = { version = "0.2.1", features = ["serde1"]}
 serde_json = "1.0"
+criterion = "0.3"
 
 [features]
 serde_support = ["serde"]
@@ -37,3 +38,15 @@ default = ["serde_support"]
 
 [badges]
 maintenance = { status = "actively-developed" }
+
+[[bench]]
+name = "sw_bench"
+harness = false
+
+[[bench]]
+name = "er_m_bench"
+harness = false
+
+[[bench]]
+name = "er_c_bench"
+harness = false
