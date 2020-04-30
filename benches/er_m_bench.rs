@@ -8,6 +8,7 @@ use common::*;
 const SIZE: u32 = 50;
 const M: usize = 100;
 const SEED: u64 = 123_239_010;
+const M_STEPSIZE: usize = 100;
 
 fn init() -> ErEnsembleM<EmptyNode, Pcg64> {
     let rng = Pcg64::seed_from_u64(SEED);
@@ -15,11 +16,11 @@ fn init() -> ErEnsembleM<EmptyNode, Pcg64> {
 }
 
 pub fn er_steps_bench(c: &mut Criterion) {
-    generic_steps_bench(c, "er_m", init);
+    generic_steps_bench(c, "er_m", M_STEPSIZE, init);
 }
 
 pub fn bench_m(c: &mut Criterion) {
-    generic_measure_bench(c, "er_m", init);
+    generic_measure_bench(c, "er_m", M_STEPSIZE, init);
 }
 
 pub fn bench_iterator(c: &mut Criterion) {

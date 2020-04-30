@@ -7,6 +7,7 @@ use common::*;
 
 const SIZE: u32 = 50;
 const SEED: u64 = 123_239_010;
+const M_STEPSIZE: usize = 100;
 
 fn init() -> SwEnsemble<EmptyNode, Pcg64> {
     let rng = Pcg64::seed_from_u64(SEED);
@@ -14,7 +15,7 @@ fn init() -> SwEnsemble<EmptyNode, Pcg64> {
 }
 
 pub fn sw_steps_bench(c: &mut Criterion) {
-    generic_steps_bench(c, "sw", init);
+    generic_steps_bench(c, "sw", M_STEPSIZE, init);
 }
 
 pub fn bench_iterator(c: &mut Criterion) {
@@ -22,7 +23,7 @@ pub fn bench_iterator(c: &mut Criterion) {
 }
 
 pub fn bench_m(c: &mut Criterion) {
-    generic_measure_bench(c, "sw", init);
+    generic_measure_bench(c, "sw", M_STEPSIZE, init);
 }
 
 
