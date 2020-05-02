@@ -895,13 +895,20 @@ where T: Node,
         let mut queue1 = VecDeque::with_capacity(self.vertex_count() as usize);
         let mut ordering: Vec<u32> = Vec::with_capacity(self.vertex_count() as usize);
         let mut b = vec![0.0; self.vertex_count() as usize];
+        let mut predecessor: Vec<Vec<u32>> = vec![Vec::new(); self.vertex_count() as usize];
+
         // init
         for i in 0..self.vertex_count() {
-            let mut predecessor: Vec<Vec<u32>> = vec![Vec::new(); self.vertex_count() as usize];
+            // clean predecessors, way more efficient then new allocation
+            predecessor.iter_mut()
+                .for_each(|list| list.clear());
+
             let mut distance: Vec<Option<u32>> = vec![None; self.vertex_count() as usize];
+
             let mut depth = 0;
             queue0.push_back(i);
             distance[i as usize] = Some(depth);
+
             let mut b_k = vec![1f64; self.vertex_count() as usize];
 
             // build up predecessor and ordering information

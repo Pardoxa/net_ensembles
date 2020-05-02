@@ -50,3 +50,7 @@ harness = false
 [[bench]]
 name = "er_c_bench"
 harness = false
+
+[[bench]]
+name = "bench_vertex_load"
+harness = false

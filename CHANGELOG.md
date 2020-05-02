@@ -3,6 +3,7 @@
 ## v0.2.2 &rarr; master
 
 * `fn is_adjacent(&self, other_id: &u32) -> bool;` &rarr; `fn is_adjacent(&self, other_id: u32) -> bool;`
+* major optimization for `vertex_load`
 
 ## v0.2.1 &rarr; v0.2.2
 
