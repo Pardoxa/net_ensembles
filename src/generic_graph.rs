@@ -728,7 +728,6 @@ where T: Node,
         Some(depth)
     }
 
-
     /// # calculate sizes of all binode connected components
     /// * returns (reverse) **ordered vector of sizes**
     /// i.e. the biggest component is of size `result[0]` and the smallest is of size `result[result.len() - 1]`

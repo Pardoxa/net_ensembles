@@ -13,6 +13,7 @@ use crate::traits::*;
 use rand::seq::SliceRandom;
 use crate::iter::{NContainedIterMut, ContainedIterMut};
 use crate::graph::NodeContainer;
+use std::borrow::Borrow;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -95,6 +96,17 @@ where T: Node,
     all_edges: Vec<(u32, u32)>,
     possible_edges: Vec<(u32, u32)>,
     current_edges: Vec<(u32, u32)>,
+}
+
+
+impl<T, R> Borrow<Graph<T>> for ErEnsembleM<T, R>
+where T: Node,
+      R: rand::Rng
+{
+    #[inline]
+    fn borrow(&self) -> &Graph<T> {
+        &self.graph
+    }
 }
 
 impl<T, R> HasRng<R> for ErEnsembleM<T, R>
@@ -303,6 +315,6 @@ where   T: Node + SerdeStateConform,
     }
 
     fn graph(&self) -> &Graph<T> {
-        &self.graph
+        self.borrow()
     }
 }

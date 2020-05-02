@@ -11,6 +11,10 @@
 //! to `ensemble.dfs(0)` as long as you used
 //! `use::net_ensembles::traits::*`
 //! * See also: [`GraphIteratorsMut`](./traits/trait.GraphIteratorsMut.html)
+//! * Note: the ensembles implement the trait
+//! [`MeasurableGraphQuantities`](./traits/trait.MeasurableGraphQuantities.html),
+//! therefore, e.g., `ensemble.graph().transitivity()` and `ensemble.transitivity()`
+//! are equivalent
 //! # Example 1
 //! Create an Erdős-Rényi graph
 //! ```
@@ -53,7 +57,7 @@
 //! [`GenericGraph`](generic_graph/struct.GenericGraph.html) for more.
 //!
 //! ```
-//! use net_ensembles::*;
+//! use net_ensembles::{traits::*, EmptyNode, ErEnsembleC};
 //! use rand_pcg::Pcg64;
 //! use rand::SeedableRng;
 //!
@@ -61,11 +65,11 @@
 //! // create graph with 50 vertices and target connectivity of 2.7
 //! // using Pcg64 as random number generator
 //! let er = ErEnsembleC::<EmptyNode, Pcg64>::new(50, 2.7, rng);
-//! println!("Number of vertices: {}",      er.graph().vertex_count());
-//! println!("Number of edges: {}",         er.graph().edge_count());
-//! println!("Average degree: {}",          er.graph().average_degree());
-//! println!("connected components: {:?}",  er.graph().connected_components());
-//! println!("transitivity: {}",            er.graph().transitivity());
+//! println!("Number of vertices: {}",      er.vertex_count());
+//! println!("Number of edges: {}",         er.edge_count());
+//! println!("Average degree: {}",          er.average_degree());
+//! println!("connected components: {:?}",  er.connected_components());
+//! println!("transitivity: {}",            er.transitivity());
 //! ```
 //! **Note:** Also works for small-world ensemble, i.e. for
 //! [`SwEnsemble`](sw/struct.SwEnsemble.html)
@@ -99,12 +103,11 @@
 //! sw_ensemble.simple_sample(10,
 //!     |ensemble|
 //!     {
-//!         let diameter = ensemble.graph()
+//!         let diameter = ensemble
 //!             .diameter()
 //!             .unwrap();
 //!
-//!         let bi_connect_max = ensemble.graph()
-//!             .clone()
+//!         let bi_connect_max = ensemble.graph().clone()
 //!             .vertex_biconnected_components(false)[0];
 //!
 //!         let average_degree = ensemble.graph()

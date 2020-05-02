@@ -7,7 +7,10 @@
 * optimization for `q_core`
 * now `dot_options` from `to_dot_with_labels*` do not have to be a string,
   they only have to implement `AsRef<str>`, and the closure `f` only has to
-  return something, that implements `AsRef<str>`, not necessarily a `String` 
+  return something, that implements `AsRef<str>`, not necessarily a `String`
+* implemented `Borrow<GenericGraph>` for the ensembles
+* new trait `MeasurableGraphQuantities`
+* implemented trait `MeasurableGraphQuantities` for ensembles
 
 ## v0.2.1 &rarr; v0.2.2
 

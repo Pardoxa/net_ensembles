@@ -18,6 +18,7 @@ use crate::SwGraph;
 use crate::GraphErrors;
 use crate::iter::{NContainedIterMut, ContainedIterMut};
 use crate::sw_graph::SwContainer;
+use std::borrow::Borrow;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -357,6 +358,16 @@ where   T: Node + SerdeStateConform,
     }
 
     fn graph(&self) -> &SwGraph<T> {
+        self.borrow()
+    }
+}
+
+impl<T, R> Borrow<SwGraph<T>> for SwEnsemble<T, R>
+where T: Node,
+      R: rand::Rng
+{
+    #[inline]
+    fn borrow(&self) -> &SwGraph<T> {
         &self.graph
     }
 }

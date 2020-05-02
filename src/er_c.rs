@@ -13,6 +13,7 @@ use crate::Node;
 use crate::traits::*;
 use crate::iter::{NContainedIterMut, ContainedIterMut};
 use crate::graph::NodeContainer;
+use std::borrow::Borrow;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -66,7 +67,7 @@ impl ErStepC {
 /// * to use or swap the random number generator, look at [```HasRng``` trait](../traits/trait.HasRng.html)
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct ErEnsembleC<T: Node, R: rand::Rng>
+pub struct ErEnsembleC<T, R>
 where T: Node,
       R: rand::Rng
 {
@@ -75,6 +76,17 @@ where T: Node,
     c_target: f64,
     rng: R,
 }
+
+impl<T, R> Borrow<Graph<T>> for ErEnsembleC<T, R>
+where T: Node,
+      R: rand::Rng
+{
+    #[inline]
+    fn borrow(&self) -> &Graph<T> {
+        &self.graph
+    }
+}
+
 
 impl<T, R> HasRng<R> for ErEnsembleC<T, R>
     where   T: Node,
@@ -288,7 +300,7 @@ where   T: Node + SerdeStateConform,
     }
 
     fn graph(&self) -> &Graph<T> {
-        &self.graph
+        self.borrow()
     }
 }
 

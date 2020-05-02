@@ -3,6 +3,7 @@
 //! * contains traits you should use for accessing complete functionallity
 pub use crate::graph_traits::Node;
 pub use crate::graph_traits::AdjContainer;
+pub use crate::graph_traits::MeasurableGraphQuantities;
 pub use crate::ensemble_traits::MarkovChain;
 pub use crate::ensemble_traits::SimpleSample;
 pub use crate::ensemble_traits::HasRng;
