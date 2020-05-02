@@ -54,3 +54,7 @@ harness = false
 [[bench]]
 name = "bench_vertex_load"
 harness = false
+
+[[bench]]
+name = "bench_q_core"
+harness = false

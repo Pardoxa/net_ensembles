@@ -4,6 +4,7 @@
 
 * `fn is_adjacent(&self, other_id: &u32) -> bool;` &rarr; `fn is_adjacent(&self, other_id: u32) -> bool;`
 * major optimization for `vertex_load`
+* optimization for `q_core`
 
 ## v0.2.1 &rarr; v0.2.2
 

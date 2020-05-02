@@ -402,46 +402,41 @@ where T: Node,
     /// for i in 2..20 {
     ///     assert_eq!(graph3.q_core(i), Some(20));
     /// }
-
+    ///
     /// assert_eq!(graph3.q_core(20), Some(0));
     /// ```
     pub fn q_core(&self, q: u32) -> Option<u32> {
         if q < 2 || self.vertex_count() == 0 {
             return None;
         }
-        let mut handled: Vec<bool> = vec![false; self.vertex_count() as usize];
-        let mut subtract: Vec<usize> = vec![0; self.vertex_count() as usize];
 
-        let q_usize = q as usize;
         let v_count = self.vertex_count() as usize;
+
+        let mut degree: Vec<_> = self.container_iter()
+            .map(|vertex| vertex.degree())
+            .collect();
 
         // virtually: recursively remove all vertices with less then q neighbors
         let mut something_changed = true;
+
         while something_changed {
             something_changed = false;
             for i in 0..v_count {
-                if handled[i] {
+                if degree[i] == 0 {
                     continue;
                 }
-
-                // handle possible overflow
-                let n_count = self
-                    .container(i)
-                    .degree();
-                let remaining_neighbors = if subtract[i] >= n_count {
-                    0
-                } else {
-                    n_count - subtract[i]
-                };
-
-                if remaining_neighbors < q_usize {
+                if degree[i] < q as usize {
+                    self.vertices[i]
+                        .neighbors()
+                        .for_each(|n|
+                            {
+                                if degree[*n as usize] > 0 {
+                                    degree[*n as usize] -= 1;
+                                }
+                            }
+                        );
+                    degree[i] = 0;
                     something_changed = true;
-
-                    // virtually remove vertex
-                    handled[i] = true;
-                    for j in self.container(i).neighbors() {
-                        subtract[*j as usize] += 1;
-                    }
                 }
             }
         }
@@ -450,28 +445,32 @@ where T: Node,
         let mut result = 0;
         // initiate stack
         let mut stack: Vec<usize> = Vec::with_capacity(v_count);
+
         for i in 0..v_count {
             // skip all nodes that are removed or in a known component
-            if handled[i] {
+            if degree[i] == 0 {
                 continue;
             }
             let mut counter = 0;
             stack.push(i);
-            handled[i] = true;
+
+            // i is in known component
+            degree[i] = 0;
+
             while let Some(index) = stack.pop() {
                 counter += 1;
+
                 for j in self
                     .container(index)
                     .neighbors()    // iterate over neighbors
-                    .map(|k| *k as usize) // but as usize
                 {
                     // skip if already handled
-                    if handled[j] {
+                    if degree[*j as usize] == 0 {
                         continue;
                     }
 
-                    handled[j] = true;
-                    stack.push(j);
+                    degree[*j as usize] = 0;
+                    stack.push(*j as usize);
                 }
             }
             result = max(result, counter);
