@@ -602,8 +602,11 @@ where T: Node,
     /// ```
     /// to create a **pdf** representation from it.
     /// Search for **graphviz** to learn more.
-    pub fn to_dot_with_labels_from_contained<F>(&self, dot_options: &str, f: F ) -> String
-        where F: Fn(&T, usize) -> String
+    pub fn to_dot_with_labels_from_contained<F, S1, S2>(&self, dot_options: S1, f: F ) -> String
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        F: Fn(&T, usize) -> S2
     {
         self.to_dot_with_labels_from_container(
             dot_options,
@@ -670,12 +673,15 @@ where T: Node,
     /// ```
     /// to create a **pdf** representation from it.
     /// Search for **graphviz** to learn more.
-    pub fn to_dot_with_labels_from_container<F>(&self, dot_options: &str, f: F ) -> String
-        where F: Fn(&A, usize) -> String
+    pub fn to_dot_with_labels_from_container<F, S1, S2>(&self, dot_options: S1, f: F ) -> String
+        where
+            S1: AsRef<str>,
+            S2: AsRef<str>,
+            F: Fn(&A, usize) -> S2,
     {
         let mut s = "graph G{\n\t"
                     .to_string();
-        s += dot_options;
+        s += dot_options.as_ref();
         s+= "\n\t";
 
         for i in 0..self.vertex_count() {
@@ -683,7 +689,7 @@ where T: Node,
         }
         s += ";\n";
         for (index, vertex) in self.vertices.iter().enumerate() {
-            s += &format!("\t\"{}\" [label=\"{}\"];\n", index, f(vertex, index));
+            s += &format!("\t\"{}\" [label=\"{}\"];\n", index, f(vertex, index).as_ref());
         }
 
         for i in 0..self.vertex_count() as usize {

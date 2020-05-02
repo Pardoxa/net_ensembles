@@ -5,6 +5,9 @@
 * `fn is_adjacent(&self, other_id: &u32) -> bool;` &rarr; `fn is_adjacent(&self, other_id: u32) -> bool;`
 * major optimization for `vertex_load`
 * optimization for `q_core`
+* now `dot_options` from `to_dot_with_labels*` do not have to be a string,
+  they only have to implement `AsRef<str>`, and the closure `f` only has to
+  return something, that implements `AsRef<str>`, not necessarily a `String` 
 
 ## v0.2.1 &rarr; v0.2.2
 
