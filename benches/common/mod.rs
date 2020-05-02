@@ -16,6 +16,16 @@ where
     e = init();
     let m_step_name = format!("m_steps_{}_{}", step_size, name);
     c.bench_function(&m_step_name, |b| b.iter(|| e.m_steps(step_size) ));
+
+    e = init();
+    let m_step_undo_name = format!("m_step_and_undo_{}_{}", step_size, name);
+    c.bench_function(&m_step_undo_name, |b| {
+        b.iter(||
+            {
+                let steps = e.m_steps(step_size);
+                e.undo_steps_quiet(steps);
+            });
+    });
 }
 
 pub fn generic_measure_bench<'a, T, A, E, F, M1, M2> (c: &mut Criterion, name: &str, step_size: usize, mut init: F)
@@ -45,7 +55,7 @@ where
             b.iter(||
                 {
                     e.m_steps(step_size);
-                    e.graph().diameter();
+                    black_box(e.graph().diameter());
                 });
 
         }

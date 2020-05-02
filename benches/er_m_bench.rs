@@ -23,6 +23,10 @@ pub fn bench_m(c: &mut Criterion) {
     generic_measure_bench(c, "er_m", M_STEPSIZE, init);
 }
 
+pub fn bench_s_m(c: &mut Criterion) {
+    generic_simple_measure_bench(c, "er_m", init);
+}
+
 pub fn bench_iterator(c: &mut Criterion) {
     generic_iter_bench(c, "er_m", init);
 }
@@ -35,7 +39,7 @@ criterion_group!{
         .sample_size(200)
         .warm_up_time( Duration::new(1, 1))
         .measurement_time(Duration::new(30, 0));
-    targets = bench_m
+    targets = bench_m, bench_s_m
 }
 
 
