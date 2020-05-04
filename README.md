@@ -11,12 +11,16 @@ As such, you can easily define additional data that should be stored at each ver
 ## Usage
 
 Add this to your `Cargo.toml`:
-
 ```toml
 [dependencies]
 net_ensembles = "0.2"
 # for feature "serde_support" (enabled by default) also use
 serde = { version = "1.0", features = ["derive"] }
+```
+If you do not need `serde` support, add this instead:
+```toml
+[dependencies]
+net_ensembles = { version = "0.2", default-features = false  }
 ```
 
 ## currently implemented graph ensembles
