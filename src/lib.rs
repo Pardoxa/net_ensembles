@@ -274,6 +274,7 @@ pub mod er_m;
 mod graph_traits;
 mod ensemble_traits;
 pub mod traits;
+#[macro_use]
 pub mod dot_constants;
 pub mod sw_graph;
 pub mod iter;

@@ -11,6 +11,7 @@
 * implemented `Borrow<GenericGraph>` for the ensembles
 * new trait `MeasurableGraphQuantities`
 * implemented trait `MeasurableGraphQuantities` for ensembles
+* add `dot_options!` macro for ease of use
 
 ## v0.2.1 &rarr; v0.2.2
 
