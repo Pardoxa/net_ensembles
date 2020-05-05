@@ -1,18 +1,6 @@
 //! # constants for dot options
 //!
-//! You can chain/combine options with the `dot_options!` macro:
-//! ```
-//! use net_ensembles::dot_constants::*;
-//! use net_ensembles::dot_options;
-//!
-//! dot_options!(SPLINES, TRANSPARENT_BG, NO_OVERLAP);
-//!
-//! // Note, the macro is equivalent to
-//! let chain = [SPLINES, TRANSPARENT_BG].join("\n\t");
-//!
-//! assert!(chain == dot_options!(SPLINES, TRANSPARENT_BG) );
-//! ```
-//! # Example
+//! ## Example
 //! ```
 //! use net_ensembles::{*, rand::SeedableRng, dot_constants::*};
 //! use rand_pcg::Pcg64;
@@ -22,7 +10,7 @@
 //!
 //! // create dot
 //! let dot = ensemble.graph().to_dot_with_labels_from_contained(
-//!     &dot_options!(TRANSPARENT_BG, NO_OVERLAP, SIZE_A4, RATIO_FILL),
+//!     dot_options!(TRANSPARENT_BG, NO_OVERLAP, SIZE_A4, RATIO_FILL),
 //!     |_, index|
 //!     {
 //!         format!("Hey, I am at index: {}", index)
@@ -33,7 +21,18 @@
 //! ```
 
 
-/// Use this to chain different dot options for generating a *.dot file
+/// You can chain/combine options with the `dot_options!` macro:
+/// ```
+/// use net_ensembles::dot_constants::*;
+/// use net_ensembles::dot_options;
+///
+/// dot_options!(SPLINES, TRANSPARENT_BG, NO_OVERLAP, "fontsize=50;");
+///
+/// // Note, the macro is equivalent to
+/// let chain = [SPLINES, TRANSPARENT_BG].join("\n\t");
+///
+/// assert!(chain == dot_options!(SPLINES, TRANSPARENT_BG) );
+/// ```
 #[macro_export]
 macro_rules! dot_options {
     ( $( $x:expr ),* ) => {
