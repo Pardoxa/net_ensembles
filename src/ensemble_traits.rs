@@ -116,7 +116,7 @@ pub trait WithGraph<T, G> {
 }
 
 ///  Collection mut Graph iterators
-pub trait GraphIteratorsMut<'a, T, G, A>
+pub trait GraphIteratorsMut<T, G, A>
 where
     Self: WithGraph<T, G>,
     T: Node,
@@ -126,11 +126,11 @@ where
     /// * iterator returns `&mut T`
     /// * `sort_adj` will affect the order
     /// * **panics** if index out of bounds
-    fn contained_iter_neighbors_mut(&'a mut self, index: usize) -> NContainedIterMut<'a, T, A>;
+    fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<'_, T, A>;
 
     /// * get iterator over mutable additional information stored at each vertex in order of the indices
     /// * iterator returns a `Node` (for example `EmptyNode` or whatever you used)
-    fn contained_iter_mut(&'a mut self) -> ContainedIterMut<'a, T, A>;
+    fn contained_iter_mut(&mut self) -> ContainedIterMut<'_, T, A>;
 }
 
 /// Collection of Graph iterators

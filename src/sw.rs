@@ -329,17 +329,17 @@ impl <T, R> SwEnsemble<T, R>
     }
 }
 
-impl<'a, T, R> GraphIteratorsMut<'a, T, SwGraph<T>, SwContainer<T>> for SwEnsemble<T, R>
+impl<T, R> GraphIteratorsMut<T, SwGraph<T>, SwContainer<T>> for SwEnsemble<T, R>
 where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
-    fn contained_iter_neighbors_mut(&'a mut self, index: usize) ->
-        NContainedIterMut<'a, T, SwContainer<T>>
+    fn contained_iter_neighbors_mut(&mut self, index: usize) ->
+        NContainedIterMut<T, SwContainer<T>>
     {
         self.graph.contained_iter_neighbors_mut(index)
     }
 
-    fn contained_iter_mut(&'a mut self) ->  ContainedIterMut<'a, T, SwContainer<T>> {
+    fn contained_iter_mut(&mut self) ->  ContainedIterMut<T, SwContainer<T>> {
         self.graph.contained_iter_mut()
     }
 }

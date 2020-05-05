@@ -13,6 +13,9 @@
 * implemented trait `MeasurableGraphQuantities` for ensembles
 * add `dot_options!` macro for ease of use
 
+## fixes
+* trait `GraphIteratorsMut<'a, T, G, A>` &rarr; `GraphIteratorsMut<'a, T, G, A>`
+
 ## v0.2.1 &rarr; v0.2.2
 
 ### iterators

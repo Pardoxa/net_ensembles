@@ -287,17 +287,17 @@ where T: Node + SerdeStateConform,
     }
 }
 
-impl<'a, T, R> GraphIteratorsMut<'a, T, Graph<T>, NodeContainer<T>> for ErEnsembleM<T, R>
+impl<T, R> GraphIteratorsMut<T, Graph<T>, NodeContainer<T>> for ErEnsembleM<T, R>
 where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
-    fn contained_iter_neighbors_mut(&'a mut self, index: usize) ->
-        NContainedIterMut<'a, T, NodeContainer<T>>
+    fn contained_iter_neighbors_mut(&mut self, index: usize) ->
+        NContainedIterMut<T, NodeContainer<T>>
     {
         self.graph.contained_iter_neighbors_mut(index)
     }
 
-    fn contained_iter_mut(&'a mut self) ->  ContainedIterMut<'a, T, NodeContainer<T>> {
+    fn contained_iter_mut(&mut self) ->  ContainedIterMut<T, NodeContainer<T>> {
         self.graph.contained_iter_mut()
     }
 }
