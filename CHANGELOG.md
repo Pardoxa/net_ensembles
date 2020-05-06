@@ -2,19 +2,33 @@
 
 ## v0.2.2 &rarr; master
 
-* `fn is_adjacent(&self, other_id: &u32) -> bool;` &rarr; `fn is_adjacent(&self, other_id: u32) -> bool;`
-* major optimization for `vertex_load`
+## optimizations
 * optimization for `q_core`
-* now `dot_options` from `to_dot_with_labels*` do not have to be a string,
-  they only have to implement `AsRef<str>`, and the closure `f` only has to
-  return something, that implements `AsRef<str>`, not necessarily a `String`
+* major optimization for `vertex_load`
+
+## macro
+* add `dot_options!` macro for ease of use
+
+## traits
 * implemented `Borrow<GenericGraph>` for the ensembles
 * new trait `MeasurableGraphQuantities`
 * implemented trait `MeasurableGraphQuantities` for ensembles
-* add `dot_options!` macro for ease of use
+
+
+## new iterator
+*  `INContainedIterMut` to mutably iterate over neighbors
+  of specified vertex and also get the indices of the neighbors
+* added member in `GraphIteratorsMut<T, G, A>` and `GenericGraph`
+  to return `INContainedIterMut`
 
 ## fixes
-* trait `GraphIteratorsMut<'a, T, G, A>` &rarr; `GraphIteratorsMut<'a, T, G, A>`
+* trait `GraphIteratorsMut<'a, T, G, A>` &rarr; `GraphIteratorsMut<T, G, A>`
+
+## other
+* `fn is_adjacent(&self, other_id: &u32) -> bool;` &rarr; `fn is_adjacent(&self, other_id: u32) -> bool;`
+* now `dot_options` from `to_dot_with_labels*` do not have to be a string,
+they only have to implement `AsRef<str>`, and the closure `f` only has to
+return something, that implements `AsRef<str>`, not necessarily a `String`
 
 ## v0.2.1 &rarr; v0.2.2
 

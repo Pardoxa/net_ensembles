@@ -143,6 +143,27 @@ where T: Node,
         )
     }
 
+    /// * iterate over mutable additional information of neighbors of vertex `index`
+    /// * iterator returns `(index_neighbor: usize, neighbor: &mut T)`
+    /// * `sort_adj` will affect the order
+    /// * **panics** if index out of bounds
+    /// * See also: [`GraphIteratorsMut`](../traits/trait.GraphIteratorsMut.html)
+    pub fn contained_iter_neighbors_mut_with_index(&mut self, index: usize) -> INContainedIterMut<T, A> {
+        assert!(
+            index < self.vertices.len(),
+            "contained_iter_neighbors_mut_with_index - index out of bounds"
+        );
+
+        let ptr = self.vertices.as_mut_ptr();
+        let iter_helper: &mut A = unsafe { &mut *ptr.add(index) };
+        let iter = iter_helper.neighbors();
+
+        INContainedIterMut::new(
+            self.vertices.as_mut_slice(),
+            iter
+        )
+    }
+
     pub(crate) fn container_mut(&mut self, index: usize) -> &mut A {
         &mut self.vertices[index]
     }

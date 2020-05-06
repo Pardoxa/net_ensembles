@@ -450,6 +450,104 @@ where T: 'a + Node,
 
 
 ///////////////////////////
+/// * same as NContainedIter but mutable
+/// * Iterator over mutable additional information stored at vertices
+/// that are directly connected to specific vertex
+pub struct INContainedIterMut<'a, T, A>
+where T: Node,
+      A: AdjContainer<T>
+{
+    vertex_slice:   &'a mut [A],
+    index_iter:     IterWrapper<'a>,
+    phantom:        PhantomData<T>
+
+}
+
+impl<'a, T, A> INContainedIterMut<'a, T, A>
+where T: Node,
+      A: AdjContainer<T>
+{
+    /// Create new iterator
+    pub(crate) fn new(vertex_slice: &'a mut[A], index_iter: IterWrapper::<'a>) -> Self {
+        Self {
+            vertex_slice,
+            index_iter,
+            phantom: PhantomData::<T>
+        }
+    }
+}
+
+
+impl<'a, T, A> Iterator for INContainedIterMut<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+    type Item = (usize, &'a mut T);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let index = self.index_iter.next()?;
+        let index = *index as usize;
+
+        assert!(index < self.vertex_slice.len());
+
+        let ptr = self.vertex_slice.as_mut_ptr();
+        let r1: &mut A = unsafe { &mut *ptr.add(index) };
+
+        Some((index, r1.contained_mut()))
+    }
+
+    #[inline]
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let index = self.index_iter.nth(n)?;
+        let index = *index as usize;
+
+        assert!(index < self.vertex_slice.len());
+
+        let ptr = self.vertex_slice.as_mut_ptr();
+        let r1: &mut A = unsafe { &mut *ptr.add(index) };
+
+        Some((index, r1.contained_mut()))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+
+}
+
+impl<'a, T, A> DoubleEndedIterator for INContainedIterMut<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let index = self.index_iter.next_back()?;
+
+        let index = *index as usize;
+
+        assert!(index < self.vertex_slice.len());
+
+        let ptr = self.vertex_slice.as_mut_ptr();
+        let r1: &mut A = unsafe { &mut *ptr.add(index) };
+
+        Some((index, r1.contained_mut()))
+    }
+}
+
+impl<'a, T, A> ExactSizeIterator for INContainedIterMut<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.index_iter.len()
+    }
+}
+
+///////////////////////////
 /// * same as ContainedIter but mutable
 /// * Iterator over mutable additional information stored at vertices
 pub struct ContainedIterMut<'a, T, A>

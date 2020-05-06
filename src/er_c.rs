@@ -11,7 +11,7 @@ use crate::graph::Graph;
 use crate::GraphErrors;
 use crate::Node;
 use crate::traits::*;
-use crate::iter::{NContainedIterMut, ContainedIterMut};
+use crate::iter::{INContainedIterMut, NContainedIterMut, ContainedIterMut};
 use crate::graph::NodeContainer;
 use std::borrow::Borrow;
 
@@ -279,6 +279,12 @@ where   T: Node + SerdeStateConform,
         NContainedIterMut<T, NodeContainer<T>>
     {
         self.graph.contained_iter_neighbors_mut(index)
+    }
+
+    fn contained_iter_neighbors_mut_with_index(&mut self, index: usize)
+        -> INContainedIterMut<'_, T, NodeContainer<T>>
+    {
+        self.graph.contained_iter_neighbors_mut_with_index(index)
     }
 
     fn contained_iter_mut(&mut self) ->  ContainedIterMut<T, NodeContainer<T>> {

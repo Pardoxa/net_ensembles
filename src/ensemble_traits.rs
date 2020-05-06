@@ -128,6 +128,12 @@ where
     /// * **panics** if index out of bounds
     fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<'_, T, A>;
 
+    /// * iterate over mutable additional information of neighbors of vertex `index`
+    /// * iterator returns `(index_neighbor: usize, neighbor: &mut T)`
+    /// * `sort_adj` will affect the order
+    /// * **panics** if index out of bounds
+    fn contained_iter_neighbors_mut_with_index(&mut self, index: usize) -> INContainedIterMut<'_, T, A>;
+
     /// * get iterator over mutable additional information stored at each vertex in order of the indices
     /// * iterator returns a `Node` (for example `EmptyNode` or whatever you used)
     fn contained_iter_mut(&mut self) -> ContainedIterMut<'_, T, A>;
