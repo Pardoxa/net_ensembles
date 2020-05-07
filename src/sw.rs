@@ -368,6 +368,17 @@ where   T: Node + SerdeStateConform,
     }
 }
 
+
+impl<T, R> AsRef<SwGraph<T>> for SwEnsemble<T, R>
+where T: Node,
+      R: rand::Rng
+{
+    #[inline]
+    fn as_ref(&self) -> &SwGraph<T>{
+        &self.graph
+    }
+}
+
 impl<T, R> Borrow<SwGraph<T>> for SwEnsemble<T, R>
 where T: Node,
       R: rand::Rng

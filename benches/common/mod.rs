@@ -1,7 +1,6 @@
 use net_ensembles::*;
 use criterion::{Criterion, black_box};
 
-
 pub fn generic_steps_bench<'a, T, A, E, F, M1, M2> (c: &mut Criterion, name: &str, step_size: usize, mut init: F)
 where
     T: Node,
@@ -31,8 +30,8 @@ where
 pub fn generic_measure_bench<'a, T, A, E, F, M1, M2> (c: &mut Criterion, name: &str, step_size: usize, mut init: F)
 where
     T: Node,
-    A: AdjContainer<T>,
-    E: WithGraph<T, GenericGraph<T, A>> + MarkovChain<M1, M2>,
+    A: AdjContainer<T> + Clone,
+    E: WithGraph<T, GenericGraph<T, A>> + MarkovChain<M1, M2> + MeasurableGraphQuantities<GenericGraph<T, A>>,
     GenericGraph<T, A>: Clone,
     F: FnMut() -> E
 {
@@ -42,7 +41,7 @@ where
             b.iter(||
                 {
                     e.m_steps(step_size);
-                    e.graph().q_core(4);
+                    e.q_core(4);
                 });
 
         }
@@ -55,7 +54,7 @@ where
             b.iter(||
                 {
                     e.m_steps(step_size);
-                    black_box(e.graph().diameter());
+                    black_box(e.diameter());
                 });
 
         }
@@ -68,7 +67,7 @@ where
             b.iter(||
                 {
                     e.m_steps(step_size);
-                    e.graph().transitivity();
+                    e.transitivity();
                 });
 
         }
@@ -81,7 +80,7 @@ where
             b.iter(||
                 {
                     e.m_steps(step_size);
-                    e.graph().vertex_load(true);
+                    e.vertex_load(true);
                 });
 
         }
@@ -95,7 +94,7 @@ where
             b.iter(||
                 {
                     e.m_steps(step_size);
-                    e.graph().clone().vertex_biconnected_components(true);
+                    e.vertex_biconnected_components(true);
                 });
 
         }
@@ -108,7 +107,8 @@ pub fn generic_simple_measure_bench<'a, T, A, E, F> (c: &mut Criterion, name: &s
 where
     T: Node,
     A: AdjContainer<T>,
-    E: WithGraph<T, GenericGraph<T, A>> + SimpleSample,
+    E: WithGraph<T, GenericGraph<T, A>> + SimpleSample
+        + MeasurableGraphQuantities<GenericGraph<T, A>>,
     GenericGraph<T, A>: Clone,
     F: FnMut() -> E
 {
@@ -118,7 +118,7 @@ where
         e.randomize();
             b.iter(||
                 {
-                    e.graph().q_core(4);
+                    e.q_core(4);
                 });
 
         }
@@ -131,7 +131,7 @@ where
         e.randomize();
             b.iter(||
                 {
-                    e.graph().diameter();
+                    e.diameter();
                 });
 
         }
@@ -144,7 +144,7 @@ where
             e.randomize();
             b.iter(||
                 {
-                    e.graph().transitivity();
+                    e.transitivity();
                 });
 
         }
@@ -157,7 +157,7 @@ where
             e.randomize();
             b.iter(||
                 {
-                    e.graph().vertex_load(true);
+                    e.vertex_load(true);
                 });
 
         }
@@ -171,7 +171,7 @@ where
             e.randomize();
             b.iter(||
                 {
-                    e.graph().clone().vertex_biconnected_components(true);
+                    e.vertex_biconnected_components(true);
                 });
 
         }
@@ -183,7 +183,7 @@ pub fn generic_iter_bench<'a, T, A, E, F> (c: &mut Criterion, name: &str, mut in
 where
     T: Node,
     A: AdjContainer<T>,
-    E: WithGraph<T, GenericGraph<T, A>> + SimpleSample,
+    E: WithGraph<T, GenericGraph<T, A>> + GraphIterators<T, GenericGraph<T, A>, A> + SimpleSample,
     GenericGraph<T, A>: Clone,
     F: FnMut() -> E
 {

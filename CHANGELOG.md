@@ -11,7 +11,8 @@
 
 ## traits
 * implemented `Borrow<GenericGraph>` for the ensembles
-* new trait `MeasurableGraphQuantities`
+* implemented `AsRef<GenericGraph>` for the ensembles
+* new trait `MeasurableGraphQuantities<G>`
 * implemented trait `MeasurableGraphQuantities` for ensembles
 
 

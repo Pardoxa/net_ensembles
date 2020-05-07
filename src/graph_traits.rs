@@ -1,5 +1,4 @@
 use std::fmt;
-use std::borrow::Borrow;
 use crate::IterWrapper;
 use crate::sw::SwChangeState;
 use crate::traits::SerdeStateConform;
@@ -111,10 +110,7 @@ pub trait AdjContainer<T: Node>
 
 
 /// Trait for measuring topological properties of a Graph
-pub trait MeasurableGraphQuantities<T, A>
-where
-    T: Node,
-    A: AdjContainer<T>
+pub trait MeasurableGraphQuantities<G>
 {
     /// calculates the average degree of the graph
     /// * `(2 * edge_count) / vertex_count`
@@ -170,6 +166,34 @@ where
     /// > M. E. J. Newman, "Networks: an Introduction" *Oxfort University Press*, 2010, ISBN: 978-0-19-920665-0.
     fn transitivity(&self) -> f64;
 
+    /// # calculate sizes of all binode connected components
+    /// * returns (reverse) **ordered vector of sizes**
+    /// i.e. the biggest component is of size `result[0]` and the smallest is of size `result[result.len() - 1]`
+    /// * destroys the underlying topology and therefore moves `self`
+    /// * if you still need your graph,
+    /// use `self.clone().vertex_biconnected_components(false/true)` for your calculations
+    /// # Definition: `vertex_biconnected_components(false)`
+    /// Here, the (vertex) biconnected component of a graph is defined as maximal subset of nodes,
+    /// where any one node could be removed and the remaining nodes would still be a connected component.
+    /// ## Note
+    /// Two vertices connected by an edge are considered to be biconnected, since after the
+    /// removal of one vertex (and the corresponding edge), only one vertex remains.
+    /// This vertex is in a connected component with itself.
+    /// # Alternative Definition: `vertex_biconnected_components(true)`
+    /// If you want to use the alternative definition:
+    /// > The biconnected component is defined as maximal subset of vertices, where each vertex can be
+    /// > reached by at least two node independent paths
+    ///
+    /// The alternative definition just removes all 2s from the result vector.
+    /// # Citations
+    /// I used the algorithm described in this paper:
+    /// >  J. Hobcroft and R. Tarjan, "Algorithm 447: Efficient Algorithms for Graph Manipulation"
+    /// > *Commun. ACM*, **16**:372-378, 1973, DOI: [10.1145/362248.362272](https://doi.org/10.1145/362248.362272)
+    ///
+    /// You can also take a look at:
+    /// > M. E. J. Newman, "Networks: an Introduction" *Oxfort University Press*, 2010, ISBN: 978-0-19-920665-0.
+    fn vertex_biconnected_components(&self, alternative_definition: bool) -> Vec<usize>;
+
     /// returns number of vertices present in graph
     fn vertex_count(&self) -> u32;
 
@@ -196,57 +220,63 @@ where
 }
 
 
-impl<T, A, E> MeasurableGraphQuantities<T, A> for E
+impl<T, A, E> MeasurableGraphQuantities<GenericGraph<T, A>> for E
 where
-    E: Borrow<GenericGraph<T, A>>,
     T: Node,
-    A: AdjContainer<T>
+    A: AdjContainer<T>,
+    GenericGraph<T, A>: Clone,
+    E: AsRef<GenericGraph<T, A>>,
 {
     fn average_degree(&self) -> f32 {
-        self.borrow().average_degree()
+        self.as_ref().average_degree()
     }
 
     fn degree(&self, index: usize) -> Option<usize> {
-        self.borrow().degree(index)
+        self.as_ref().degree(index)
     }
 
     fn connected_components(&self) -> Vec<u32> {
-        self.borrow().connected_components()
+        self.as_ref().connected_components()
     }
 
     fn diameter(&self) -> Option<u32> {
-        self.borrow().diameter()
+        self.as_ref().diameter()
     }
 
     fn edge_count(&self) -> u32 {
-        self.borrow().edge_count()
+        self.as_ref().edge_count()
     }
 
     fn is_connected(&self) -> Option<bool> {
-        self.borrow().is_connected()
+        self.as_ref().is_connected()
     }
 
     fn leaf_count(&self) -> usize {
-        self.borrow().leaf_count()
+        self.as_ref().leaf_count()
     }
 
     fn longest_shortest_path_from_index(&self, index: u32) -> Option<u32> {
-        self.borrow().longest_shortest_path_from_index(index)
+        self.as_ref().longest_shortest_path_from_index(index)
     }
 
     fn q_core(&self, q: u32) -> Option<u32>{
-        self.borrow().q_core(q)
+        self.as_ref().q_core(q)
     }
 
     fn transitivity(&self) -> f64 {
-        self.borrow().transitivity()
+        self.as_ref().transitivity()
+    }
+
+    fn vertex_biconnected_components(&self, alternative_definition: bool) -> Vec<usize> {
+        let clone = (*self.as_ref()).clone();
+        clone.vertex_biconnected_components(alternative_definition)
     }
 
     fn vertex_count(&self) -> u32 {
-        self.borrow().vertex_count()
+        self.as_ref().vertex_count()
     }
 
     fn vertex_load(&self, include_endpoints: bool) -> Vec<f64> {
-        self.borrow().vertex_load(include_endpoints)
+        self.as_ref().vertex_load(include_endpoints)
     }
 }

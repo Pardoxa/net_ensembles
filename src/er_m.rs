@@ -14,6 +14,7 @@ use rand::seq::SliceRandom;
 use crate::iter::{INContainedIterMut, NContainedIterMut, ContainedIterMut};
 use crate::graph::NodeContainer;
 use std::borrow::Borrow;
+use std::convert::AsRef;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -98,6 +99,16 @@ where T: Node,
     current_edges: Vec<(u32, u32)>,
 }
 
+
+impl<T, R> AsRef<Graph<T>> for ErEnsembleM<T, R>
+where T: Node,
+      R: rand::Rng
+{
+    #[inline]
+    fn as_ref(&self) -> &Graph<T>{
+        &self.graph
+    }
+}
 
 impl<T, R> Borrow<Graph<T>> for ErEnsembleM<T, R>
 where T: Node,
