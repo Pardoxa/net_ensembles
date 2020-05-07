@@ -1,5 +1,6 @@
 use crate::{AdjContainer, traits::*, iter::*, GenericGraph};
 use crate::generic_graph::{Dfs, DfsWithIndex, Bfs};
+use crate::{sw_graph::SwContainer, graph::NodeContainer};
 /// # Access internal random number generator
 pub trait HasRng<Rng>
 where Rng: rand::Rng
@@ -118,7 +119,6 @@ pub trait WithGraph<T, G> {
 ///  Collection mut Graph iterators
 pub trait GraphIteratorsMut<T, G, A>
 where
-    Self: WithGraph<T, G>,
     T: Node,
     A: AdjContainer<T>
 {
@@ -140,37 +140,31 @@ where
 }
 
 /// Collection of Graph iterators
-pub trait GraphIterators<'a, T, G, A>
+pub trait GraphIterators<T, G, A>
     where
-        Self: WithGraph<T, G>,
         T: Node,
         A: AdjContainer<T>
-
 {
     /// * get iterator over additional information stored at each vertex in order of the indices
     /// * iterator returns a `Node` (for example `EmptyNode` or whatever you used)
     /// * similar to `self.container_iter().map(|container| container.contained())`
-    fn contained_iter(&'a self) -> ContainedIter<'a, T, A>
-        where T: 'a;
+    fn contained_iter(&self) -> ContainedIter<'_, T, A>;
 
     /// * iterate over additional information of neighbors of vertex `index`
     /// * iterator returns `&T`
     /// * `sort_adj` will affect the order
     /// * **panics** if index out of bounds
-    fn contained_iter_neighbors(&'a self, index: usize) -> NContainedIter<'a, T, A>
-    where T: 'a;
+    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, A>;
 
     /// * get iterator over AdjContainer in order of the indices
     /// * iterator returns `AdjContainer<Node>`, i.e., `A`
-    fn container_iter(&'a self) -> core::slice::Iter<'a, A>
-    where T: 'a;
+    fn container_iter(&self) -> core::slice::Iter<'_, A>;
 
     /// * iterate over additional information of neighbors of vertex `index`
     /// * iterator returns `&T`
     /// * `sort_adj` will affect the order
     /// * **panics** if index out of bounds
-    fn container_iter_neighbors(&'a self, index: usize) -> NContainerIter<'a, T, A>
-    where T: 'a;
+    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, A>;
 
     /// # returns `Iterator`
     ///
@@ -187,8 +181,7 @@ pub trait GraphIterators<'a, T, G, A>
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    fn dfs(&'a self, index: u32) -> Dfs<'a, T, A>
-    where T: 'a;
+    fn dfs(&self, index: u32) -> Dfs<'_, T, A>;
 
     /// # returns `Iterator`
     ///
@@ -205,8 +198,7 @@ pub trait GraphIterators<'a, T, G, A>
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    fn dfs_with_index(&'a self, index: u32) -> DfsWithIndex<'a, T, A>
-    where T: 'a;
+    fn dfs_with_index(&self, index: u32) -> DfsWithIndex<'_, T, A>;
 
     /// # returns `Iterator`
     ///
@@ -228,50 +220,88 @@ pub trait GraphIterators<'a, T, G, A>
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    fn bfs_index_depth(&'a self, index: u32) -> Bfs<'a, T, A>
-    where T: 'a;
+    fn bfs_index_depth(&self, index: u32) -> Bfs<'_, T, A>;
 }
 
 
-impl<'a, T, A, E> GraphIterators<'a, T, GenericGraph<T, A>, A> for E
+impl<T, E> GraphIterators<T, GenericGraph<T, NodeContainer<T>>, NodeContainer<T>> for E
 where
     T: Node,
-    A: AdjContainer<T>,
-    E: WithGraph<T, GenericGraph<T, A>>,
+    E: WithGraph<T, GenericGraph<T, NodeContainer<T>>>,
 {
-    fn contained_iter(&'a self) -> ContainedIter<'a, T, A>
-    where T: 'a {
+    fn contained_iter(&self) -> ContainedIter<'_, T, NodeContainer<T>>
+    {
         self.graph().contained_iter()
     }
 
-    fn contained_iter_neighbors(&'a self, index: usize) -> NContainedIter<'a, T, A>
-    where T: 'a
+    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, NodeContainer<T>>
     {
         self.graph().contained_iter_neighbors(index)
     }
 
-    fn container_iter(&'a self) -> core::slice::Iter<'a, A>
-    where T: 'a {
+    fn container_iter(&self) -> core::slice::Iter<'_, NodeContainer<T>>
+    {
         self.graph().container_iter()
     }
 
-    fn container_iter_neighbors(&'a self, index: usize) -> NContainerIter<'a, T, A>
-    where T: 'a {
+    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, NodeContainer<T>>
+    {
         self.graph().container_iter_neighbors(index)
     }
 
-    fn dfs(&'a self, index: u32) -> Dfs<'a, T, A>
-    where T: 'a {
+    fn dfs(&self, index: u32) -> Dfs<'_, T, NodeContainer<T>>
+    {
         self.graph().dfs(index)
     }
 
-    fn dfs_with_index(&'a self, index: u32) -> DfsWithIndex<'a, T, A>
-    where T: 'a {
+    fn dfs_with_index(&self, index: u32) -> DfsWithIndex<'_, T, NodeContainer<T>>
+    {
         self.graph().dfs_with_index(index)
     }
 
-    fn bfs_index_depth(&'a self, index: u32) -> Bfs<'a, T, A>
-    where T: 'a {
+    fn bfs_index_depth(&self, index: u32) -> Bfs<'_, T, NodeContainer<T>>
+    {
+        self.graph().bfs_index_depth(index)
+    }
+}
+
+impl<T, E> GraphIterators<T, GenericGraph<T, SwContainer<T>>, SwContainer<T>> for E
+where
+    T: Node,
+    E: WithGraph<T, GenericGraph<T, SwContainer<T>>>,
+{
+    fn contained_iter(&self) -> ContainedIter<'_, T, SwContainer<T>>
+    {
+        self.graph().contained_iter()
+    }
+
+    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, SwContainer<T>>
+    {
+        self.graph().contained_iter_neighbors(index)
+    }
+
+    fn container_iter(&self) -> core::slice::Iter<'_, SwContainer<T>>
+    {
+        self.graph().container_iter()
+    }
+
+    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, SwContainer<T>>
+    {
+        self.graph().container_iter_neighbors(index)
+    }
+
+    fn dfs(&self, index: u32) -> Dfs<'_, T, SwContainer<T>>
+    {
+        self.graph().dfs(index)
+    }
+
+    fn dfs_with_index(&self, index: u32) -> DfsWithIndex<'_, T, SwContainer<T>>
+    {
+        self.graph().dfs_with_index(index)
+    }
+
+    fn bfs_index_depth(&self, index: u32) -> Bfs<'_, T, SwContainer<T>>
+    {
         self.graph().bfs_index_depth(index)
     }
 }

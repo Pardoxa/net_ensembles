@@ -23,6 +23,7 @@
 
 ## fixes
 * trait `GraphIteratorsMut<'a, T, G, A>` &rarr; `GraphIteratorsMut<T, G, A>`
+* trait `GraphIterators<'a, T, G, A>` &rarr; `GraphIterators<T, G, A>`
 
 ## other
 * `fn is_adjacent(&self, other_id: &u32) -> bool;` &rarr; `fn is_adjacent(&self, other_id: u32) -> bool;`
