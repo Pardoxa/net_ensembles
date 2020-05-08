@@ -14,6 +14,8 @@
 * implemented `AsRef<GenericGraph>` for the ensembles
 * new trait `MeasurableGraphQuantities<G>`
 * implemented trait `MeasurableGraphQuantities` for ensembles
+* new trait `Dot`
+* implemented `Dot` for `GenericGraph`
 
 
 ## new iterator

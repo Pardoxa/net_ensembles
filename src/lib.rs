@@ -18,33 +18,44 @@
 //! # Example 1
 //! Create an Erdős-Rényi graph
 //! ```
-//! use net_ensembles::*;
+//! use net_ensembles::{ErEnsembleC, EmptyNode, rand::SeedableRng};
+//! use net_ensembles::traits::{WithGraph, SimpleSample, Dot};
+//! use net_ensembles::{dot_options, dot_constants::*};
 //! // Note: you might have to enable serde for rand_pcg
 //! // to do that, write the following in your Cargo.toml:
 //! // rand_pcg = { version = "*", features = ["serde1"]}
 //! use rand_pcg::Pcg64;
-//! use rand::SeedableRng;
 //! use std::fs::File;
 //! use std::io::prelude::*;
 //!
 //! let rng = Pcg64::seed_from_u64(75676526);
 //! // create graph with 50 vertices and target connectivity of 2.7
 //! // using Pcg64 as random number generator
-//! let mut er_graph = ErEnsembleC::<EmptyNode, Pcg64>::new(50, 2.7, rng);
+//! let mut er = ErEnsembleC::<EmptyNode, Pcg64>::new(50, 2.7, rng);
 //! // create dot file to visualize the graph
-//! let dot = er_graph.graph().to_dot();
+//! let dot = er.graph().to_dot();
 //! let mut f = File::create("50.dot")
 //!                    .expect("Unable to create file");
-//! f.write_all(dot.as_bytes())
-//!     .expect("Unable to write data");
+//! // look at Dot trait
+//! er.graph().dot(
+//!      "", // you do not have to use dot_options
+//!      &mut f
+//!  );
 //!
-//! er_graph.randomize();
-//! let dot = er_graph.graph().to_dot();
+//! // randomize the graph, uses SimpleSample trait
+//! er.randomize();
+//!
 //! let mut f = File::create("50_1.dot")
 //!                    .expect("Unable to create file");
-//! f.write_all(dot.as_bytes())
-//!     .expect("Unable to write data");
+//! er.graph().dot_with_indices(
+//!     dot_options!(NO_OVERLAP, MARGIN_0),
+//!     &mut f
+//! );
 //!
+//! // Note, you can also create a str this way:
+//! let mut s = Vec::<u8>::new();
+//! er.graph().dot("", &mut s);
+//! let dot_str = std::str::from_utf8(s.as_slice()).unwrap();
 //! ```
 //! To visualize, you can use something like
 //! ```dot

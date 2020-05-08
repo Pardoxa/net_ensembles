@@ -9,6 +9,7 @@ use std::collections::HashSet;
 use std::marker::PhantomData;
 use crate::GraphErrors;
 use crate::iter::*;
+use std::io::Write;
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 /// # Generic graph implementation
@@ -559,6 +560,10 @@ where T: Node,
     /// that can be used by **circo** etc. to generate a pdf of the graph.
     /// * **indices** are used as **labels**
     /// * search for **graphviz** to learn about **.dot** format
+    #[deprecated(
+        since = "0.3.0",
+        note = "Please use any method of the `Dot` trait instead, e.g., `dot_with_indices`"
+    )]
     pub fn to_dot(&self) -> String {
         let mut s = "graph{\n\t".to_string();
 
@@ -1019,6 +1024,41 @@ where T: Node,
         closed_path_count as f64 / path_count as f64
     }
 
+}
+
+impl<T, A> Dot for GenericGraph<T, A>
+where T: Node,
+      A: AdjContainer<T>
+{
+    fn dot_from_indices<F, W, S1, S2>(&self, writer: &mut W, dot_options: S1, mut f: F) -> Result<(), std::io::Error>
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        W: Write,
+        F: FnMut(usize) -> S2,
+    {
+        write!(writer, "graph G{{\n\t{}\n\t", dot_options.as_ref())?;
+
+        for i in 0..self.vertex_count() {
+            write!(writer, "{} ", i)?;
+        }
+        write!(writer, ";\n")?;
+
+        for index in 0..self.vertex_count() as usize {
+            let fun = f(index);
+            write!(writer, "\t\"{}\" [label=\"{}\"];\n", index, fun.as_ref())?;
+        }
+
+        for i in 0..self.vertex_count() as usize {
+            for j in self.container(i).neighbors() {
+                if i < *j as usize {
+                    write!(writer, "\t{} -- {}\n", i, j)?;
+
+                }
+            }
+        }
+        write!(writer, "}}")
+    }
 }
 
 /// # Breadth first search Iterator with **index** and **depth** of corresponding nodes

@@ -12,6 +12,9 @@ pub use crate::ensemble_traits::GraphIterators;
 pub use crate::ensemble_traits::GraphIteratorsMut;
 pub use crate::iter::IterWrapper;
 
+mod dot_traits;
+pub use dot_traits::Dot;
+
 #[cfg(feature = "serde_support")]
 use serde::{Serialize};
 
