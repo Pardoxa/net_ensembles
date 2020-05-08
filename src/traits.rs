@@ -1,15 +1,21 @@
 //! # You should `use net_ensembles::traits::*`
 //! * I recommend doing so for a smooth experience
 //! * contains traits you should use for accessing complete functionallity
-pub use crate::graph_traits::Node;
-pub use crate::graph_traits::AdjContainer;
-pub use crate::graph_traits::MeasurableGraphQuantities;
-pub use crate::ensemble_traits::MarkovChain;
-pub use crate::ensemble_traits::SimpleSample;
-pub use crate::ensemble_traits::HasRng;
-pub use crate::ensemble_traits::WithGraph;
-pub use crate::ensemble_traits::GraphIterators;
-pub use crate::ensemble_traits::GraphIteratorsMut;
+
+mod graph_traits;
+pub use graph_traits::Node;
+pub use graph_traits::AdjContainer;
+pub use graph_traits::MeasurableGraphQuantities;
+pub use graph_traits::GraphErrors;
+
+mod ensemble_traits;
+pub use ensemble_traits::MarkovChain;
+pub use ensemble_traits::SimpleSample;
+pub use ensemble_traits::HasRng;
+pub use ensemble_traits::WithGraph;
+pub use ensemble_traits::GraphIterators;
+pub use ensemble_traits::GraphIteratorsMut;
+
 pub use crate::iter::IterWrapper;
 
 mod dot_traits;

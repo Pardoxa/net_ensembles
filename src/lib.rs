@@ -282,8 +282,6 @@ pub mod graph;
 pub mod er_c;
 pub mod sw;
 pub mod er_m;
-mod graph_traits;
-mod ensemble_traits;
 pub mod traits;
 #[macro_use]
 pub mod dot_constants;
@@ -298,8 +296,8 @@ pub use er_c::ErEnsembleC;
 pub use graph::Graph;
 pub use generic_graph::GenericGraph;
 pub use example_nodes::EmptyNode;
-pub use graph_traits::GraphErrors;
 pub use traits::*;
+pub use traits::GraphErrors;
 pub use iter::IterWrapper;
 pub use step_structs::*;
 
