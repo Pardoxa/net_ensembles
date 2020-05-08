@@ -38,8 +38,8 @@
 //!                    .expect("Unable to create file");
 //! // look at Dot trait
 //! er.graph().dot(
-//!      "", // you do not have to use dot_options
-//!      f
+//!      f,
+//!      "" // you do not have to use dot_options
 //!  ).unwrap();
 //!
 //! // randomize the graph, uses SimpleSample trait
@@ -53,9 +53,7 @@
 //! ).unwrap();
 //!
 //! // Note, you can also create a String this way:
-//! let mut s = Vec::<u8>::new();
-//! er.graph().dot("", &mut s);
-//! let dot_str = String::from_utf8(s).unwrap();
+//! let s =  er.graph().dot_string("");
 //! ```
 //! To visualize, you can use something like
 //! ```dot

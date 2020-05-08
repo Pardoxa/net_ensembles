@@ -22,8 +22,25 @@ pub trait DotExtra<T, A>{
             F: FnMut(usize, &A) -> S2,
             W: Write;
 
+    /// * same as `self.dot_string_from_container_index` but returns String instead
+    fn dot_string_from_container_index<F, S1, S2>(&self, dot_options: S1, f: F)
+        -> String
+        where
+            S1: AsRef<str>,
+            S2: AsRef<str>,
+            F: FnMut(usize, &A) -> S2
+    {
+        let mut s = Vec::new();
+        self.dot_from_container_index(
+            &mut s,
+            dot_options,
+            f
+        ).unwrap();
+        String::from_utf8(s).unwrap()
+    }
+
     /// * create a dot representation
-    /// * you can use the information of the container `A` (usually stored at for_each
+    /// * you can use the information of the container `A` (usually stored at each
     ///     index) to create the lables
     fn dot_from_container<F, S1, S2, W>(&self, writer: W, dot_options: S1, mut f: F)
         -> Result<(), std::io::Error>
@@ -40,6 +57,23 @@ pub trait DotExtra<T, A>{
         )
     }
 
+    /// * same as `self.dot_from_container` but returns String instead
+    fn dot_string_from_container<F, S1, S2>(&self, dot_options: S1, f: F)
+        -> String
+        where
+            S1: AsRef<str>,
+            S2: AsRef<str>,
+            F: FnMut(&A) -> S2
+    {
+        let mut s = Vec::<u8>::new();
+        self.dot_from_container(
+            &mut s,
+            dot_options,
+            f
+        ).unwrap();
+        String::from_utf8(s).unwrap()
+    }
+
     /// * create a dot representation
     /// * you can use the indices and `T` (usually something contained in `A` (see `dot_from_container`)
     ///   and stored at each vertex) to create the lables
@@ -50,6 +84,23 @@ pub trait DotExtra<T, A>{
             S1: AsRef<str>,
             S2: AsRef<str>,
             F: FnMut(usize, &T) -> S2;
+
+    /// * same as `self.dot_from_contained` but returns String instead
+    fn dot_string_from_contained_index<F, S1, S2>(&self, dot_options: S1, f: F)
+        -> String
+        where
+            S1: AsRef<str>,
+            S2: AsRef<str>,
+            F: FnMut(usize, &T) -> S2
+    {
+        let mut s = Vec::<u8>::new();
+        self.dot_from_contained_index(
+            &mut s,
+            dot_options,
+            f
+        ).unwrap();
+        String::from_utf8(s).unwrap()
+    }
 
     /// * create a dot representation
     /// * you can use `T` (usually something contained in `A` (see `dot_from_container`)
@@ -67,6 +118,23 @@ pub trait DotExtra<T, A>{
             dot_options,
             |_, c| f(c)
         )
+    }
+
+    /// * same as `self.dot_from_contained` but returns String
+    fn dot_string_from_contained<F, S1, S2>(&self, dot_options: S1, f: F)
+        -> String
+        where
+            S1: AsRef<str>,
+            S2: AsRef<str>,
+            F: FnMut(&T) -> S2
+    {
+        let mut s = Vec::<u8>::new();
+        self.dot_from_contained(
+            &mut s,
+            dot_options,
+            f
+        ).unwrap();
+        String::from_utf8(s).unwrap()
     }
 }
 
@@ -90,6 +158,23 @@ pub trait Dot {
             W: Write,
             F: FnMut(usize) -> S2;
 
+    /// * same as `self.dot_from_indices` but returns String instead
+    fn dot_string_from_indices<F, S1, S2>(&self, dot_options: S1, f: F)
+        -> String
+        where
+            S1: AsRef<str>,
+            S2: AsRef<str>,
+            F: FnMut(usize) -> S2
+    {
+        let mut s = Vec::new();
+        self.dot_from_indices(
+            &mut s,
+            dot_options,
+            f
+        ).unwrap();
+        String::from_utf8(s).unwrap()
+    }
+
     /// * use index as labels for the nodes
     /// * default implementation uses `dot_from_indices`
     fn dot_with_indices<S, W>(&self, writer: W, dot_options: S) -> Result<(), std::io::Error>
@@ -106,9 +191,22 @@ pub trait Dot {
         )
     }
 
+    /// * same as `self.dot_with_indices` but returns String instead
+    fn dot_string_with_indices<S>(&self, dot_options: S) -> String
+        where
+            S: AsRef<str>
+    {
+        let mut s = Vec::<u8>::new();
+        self.dot_with_indices(
+            &mut s,
+            dot_options
+        ).unwrap();
+        String::from_utf8(s).unwrap()
+    }
+
     /// * create dot file with empty labels
     /// * default implementation uses `dot_from_indices`
-    fn dot<S, W>(&self, dot_options: S, writer: W) -> Result<(), std::io::Error>
+    fn dot<S, W>(&self, writer: W, dot_options: S) -> Result<(), std::io::Error>
         where
             S: AsRef<str>,
             W: Write
@@ -120,5 +218,15 @@ pub trait Dot {
                 ""
             }
         )
+    }
+
+    /// * same as `self.dot()`, but returns a String instead
+    fn dot_string<S>(&self, dot_options: S) -> String
+        where
+            S: AsRef<str>
+    {
+        let mut s = Vec::<u8>::new();
+        self.dot(&mut s, dot_options).unwrap();
+        String::from_utf8(s).unwrap()
     }
 }
