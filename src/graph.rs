@@ -132,9 +132,10 @@ impl<T: Node> NodeContainer<T> {
 /// # Example:
 /// A graph, where each node stores a phase
 /// ```
-/// use net_ensembles::{traits::*,Graph};
+/// use net_ensembles::{Graph, Node, AdjContainer};
+/// use net_ensembles::traits::DotExtra;
+///
 /// use std::fs::File;
-/// use std::io::prelude::*;
 ///
 /// // Note: feature "serde_support" is enabled on default
 /// #[cfg(feature = "serde_support")]
@@ -195,44 +196,32 @@ impl<T: Node> NodeContainer<T> {
 ///     );
 /// }
 ///
-/// // if you want to visualize your graph, you can generate a string with graphviz representation
-/// let dot = graph.to_dot_with_labels_from_contained(
+/// // if you want to visualize your graph, you can generate a file with graphviz representation
+/// let mut f = File::create("phase_example.dot").expect("Unable to create file");
+/// graph.dot_from_contained_index(
+///     f,
 ///     "",
-///     |contained, index|
-///            format!(
+///     |index, contained|
+///         format!(
 ///                 "Phase: {} at index {}",
 ///                 contained.get_phase(),
 ///                 index
-///             )
-/// );
-/// // which you can store in a dot file
-/// let mut f = File::create("phase_example.dot").expect("Unable to create file");
-/// f.write_all(dot.as_bytes()).expect("Unable to write data");
-///
-/// // or just print it out
-/// println!("{}", dot);
+///         )
+/// ).unwrap();
 ///
 /// // storing the graph only works, if the feature "serde_support" is enabled (enabled by default)
 /// #[cfg(feature = "serde_support")]
 /// {
-///     let s = serde_json::to_string(&graph).unwrap();
 ///     let mut graph_file = File::create("store_graph_example.dat")
 ///            .expect("Unable to create file");
-///     // write to file
-///     graph_file.write_all(s.as_bytes())
-///         .expect("Unable to write data");
-///     // close file
-///     drop(graph_file);
+///     let s = serde_json::to_writer_pretty(graph_file, &graph).unwrap();
 ///
 ///     // loading stored graph:
 ///     let mut read_in = File::open("store_graph_example.dat")
 ///         .expect("Unable to open file");
 ///
-///     let mut test_data = String::new();
-///     read_in.read_to_string(&mut test_data)
-///         .expect("unable to read file");
 ///
-///     let graph2:  Graph<PhaseNode> = serde_json::from_str(&test_data).unwrap();
+///     let graph2:  Graph<PhaseNode> = serde_json::from_reader(read_in).unwrap();
 ///
 ///
 ///     // now, to show, that the graphs are equal, here is one of my test functions:

@@ -10,6 +10,7 @@ use std::marker::PhantomData;
 use crate::GraphErrors;
 use crate::iter::*;
 use std::io::Write;
+
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 /// # Generic graph implementation
@@ -628,17 +629,25 @@ where T: Node,
     /// ```
     /// to create a **pdf** representation from it.
     /// Search for **graphviz** to learn more.
+    #[deprecated(
+        since = "0.3.0",
+        note = "Please use any method of the `DotExtra` trait instead, e.g., `dot_from_contained_index`"
+    )]
     pub fn to_dot_with_labels_from_contained<F, S1, S2>(&self, dot_options: S1, f: F ) -> String
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
         F: Fn(&T, usize) -> S2
     {
-        self.to_dot_with_labels_from_container(
+        let mut writer = Vec::<u8>::with_capacity(40 * self.vertices.len());
+        self.dot_from_contained_index(
+            &mut writer,
             dot_options,
-            |a, index|
-            f(a.contained(), index)
-        )
+            |index, c|
+            f(c, index)
+        ).unwrap();
+        String::from_utf8(writer)
+            .unwrap()
     }
 
     /// # Same as `to_dot_with_labels_from_contained` but with access to neighbor information
@@ -699,34 +708,25 @@ where T: Node,
     /// ```
     /// to create a **pdf** representation from it.
     /// Search for **graphviz** to learn more.
+    #[deprecated(
+        since = "0.3.0",
+        note = "Please use any method of the `DotExtra` trait instead, e.g., `dot_from_container_index`"
+    )]
     pub fn to_dot_with_labels_from_container<F, S1, S2>(&self, dot_options: S1, f: F ) -> String
         where
             S1: AsRef<str>,
             S2: AsRef<str>,
             F: Fn(&A, usize) -> S2,
     {
-        let mut s = "graph G{\n\t"
-                    .to_string();
-        s += dot_options.as_ref();
-        s+= "\n\t";
-
-        for i in 0..self.vertex_count() {
-            s += &format!("{} ", i);
-        }
-        s += ";\n";
-        for (index, vertex) in self.vertices.iter().enumerate() {
-            s += &format!("\t\"{}\" [label=\"{}\"];\n", index, f(vertex, index).as_ref());
-        }
-
-        for i in 0..self.vertex_count() as usize {
-            for j in self.container(i).neighbors() {
-                if i < *j as usize {
-                    s.push_str(&format!("\t{} -- {}\n", i, j));
-                }
-            }
-        }
-        s += "}";
-        s
+        let mut writer = Vec::<u8>::with_capacity(40 * self.vertices.len());
+        self.dot_from_container_index(
+            &mut writer,
+            dot_options,
+            |index, c|
+            f(c, index)
+        ).unwrap();
+        String::from_utf8(writer)
+            .unwrap()
     }
 
     /// * returns `None` **if** graph not connected **or** does not contain any vertices
@@ -1026,11 +1026,63 @@ where T: Node,
 
 }
 
+impl<T, A> DotExtra<T, A> for GenericGraph<T, A>
+where
+    T: Node,
+    A: AdjContainer<T>,
+{
+    fn dot_from_container_index<F, S1, S2, W>(&self, mut writer: W, dot_options: S1, mut f: F)
+        -> Result<(), std::io::Error>
+        where
+            S1: AsRef<str>,
+            S2: AsRef<str>,
+            F: FnMut(usize, &A) -> S2,
+            W: Write
+    {
+        write!(writer, "graph G{{\n\t{}\n\t", dot_options.as_ref())?;
+
+        for i in 0..self.vertex_count() {
+            write!(writer, "{} ", i)?;
+        }
+        write!(writer, ";\n")?;
+
+        for (index, container) in self.container_iter().enumerate() {
+            let fun = f(index, container);
+            write!(writer, "\t\"{}\" [label=\"{}\"];\n", index, fun.as_ref())?;
+        }
+
+        for i in 0..self.vertex_count() as usize {
+            for j in self.container(i).neighbors() {
+                if i < *j as usize {
+                    write!(writer, "\t{} -- {}\n", i, j)?;
+
+                }
+            }
+        }
+        write!(writer, "}}")
+    }
+
+    fn dot_from_contained_index<F, S1, S2, W>(&self, writer: W, dot_options: S1, mut f: F)
+        -> Result<(), std::io::Error>
+        where
+            W: Write,
+            S1: AsRef<str>,
+            S2: AsRef<str>,
+            F: FnMut(usize, &T) -> S2
+    {
+        self.dot_from_container_index(
+            writer,
+            dot_options,
+            |index, a| f(index, a.contained())
+        )
+    }
+}
+
 impl<T, A> Dot for GenericGraph<T, A>
 where T: Node,
       A: AdjContainer<T>
 {
-    fn dot_from_indices<F, W, S1, S2>(&self, writer: &mut W, dot_options: S1, mut f: F) -> Result<(), std::io::Error>
+    fn dot_from_indices<F, W, S1, S2>(&self, mut writer: W, dot_options: S1, mut f: F) -> Result<(), std::io::Error>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,

@@ -6,9 +6,6 @@
 * optimization for `q_core`
 * major optimization for `vertex_load`
 
-## macro
-* add `dot_options!` macro for ease of use
-
 ## traits
 * implemented `Borrow<GenericGraph>` for the ensembles
 * implemented `AsRef<GenericGraph>` for the ensembles
@@ -16,6 +13,11 @@
 * implemented trait `MeasurableGraphQuantities` for ensembles
 * new trait `Dot`
 * implemented `Dot` for `GenericGraph`
+* new trait `DotExtra`
+* implemented `DotExtra` for `GenericGraph`
+
+## macro
+* add `dot_options!` macro for ease of use
 
 
 ## new iterator
@@ -27,6 +29,10 @@
 ## fixes
 * trait `GraphIteratorsMut<'a, T, G, A>` &rarr; `GraphIteratorsMut<T, G, A>`
 * trait `GraphIterators<'a, T, G, A>` &rarr; `GraphIterators<T, G, A>`
+
+## deprecated
+* `to_dot*` members of `GenericGraph`. Use members of `Dot` or `DotExtra`
+  trait instead
 
 ## other
 * `fn is_adjacent(&self, other_id: &u32) -> bool;` &rarr; `fn is_adjacent(&self, other_id: u32) -> bool;`

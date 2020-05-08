@@ -13,7 +13,7 @@ pub use crate::ensemble_traits::GraphIteratorsMut;
 pub use crate::iter::IterWrapper;
 
 mod dot_traits;
-pub use dot_traits::Dot;
+pub use dot_traits::{Dot, DotExtra};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize};

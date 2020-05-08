@@ -16,7 +16,7 @@
 //! therefore, e.g., `ensemble.graph().transitivity()` and `ensemble.transitivity()`
 //! are equivalent
 //! # Example 1
-//! Create an Erdős-Rényi graph
+//!
 //! ```
 //! use net_ensembles::{ErEnsembleC, EmptyNode, rand::SeedableRng};
 //! use net_ensembles::traits::{WithGraph, SimpleSample, Dot};
@@ -26,21 +26,21 @@
 //! // rand_pcg = { version = "*", features = ["serde1"]}
 //! use rand_pcg::Pcg64;
 //! use std::fs::File;
-//! use std::io::prelude::*;
 //!
 //! let rng = Pcg64::seed_from_u64(75676526);
 //! // create graph with 50 vertices and target connectivity of 2.7
 //! // using Pcg64 as random number generator
-//! let mut er = ErEnsembleC::<EmptyNode, Pcg64>::new(50, 2.7, rng);
+//! // NOTE: you can exchange `EmptyNode` with anything implementing the `Node` trait
+//! let mut er = ErEnsembleC::<EmptyNode, _>::new(50, 2.7, rng);
+//!
 //! // create dot file to visualize the graph
-//! let dot = er.graph().to_dot();
 //! let mut f = File::create("50.dot")
 //!                    .expect("Unable to create file");
 //! // look at Dot trait
 //! er.graph().dot(
 //!      "", // you do not have to use dot_options
-//!      &mut f
-//!  );
+//!      f
+//!  ).unwrap();
 //!
 //! // randomize the graph, uses SimpleSample trait
 //! er.randomize();
@@ -48,14 +48,14 @@
 //! let mut f = File::create("50_1.dot")
 //!                    .expect("Unable to create file");
 //! er.graph().dot_with_indices(
-//!     dot_options!(NO_OVERLAP, MARGIN_0),
-//!     &mut f
-//! );
+//!     f,
+//!     dot_options!(NO_OVERLAP, MARGIN_0)
+//! ).unwrap();
 //!
-//! // Note, you can also create a str this way:
+//! // Note, you can also create a String this way:
 //! let mut s = Vec::<u8>::new();
 //! er.graph().dot("", &mut s);
-//! let dot_str = std::str::from_utf8(s.as_slice()).unwrap();
+//! let dot_str = String::from_utf8(s).unwrap();
 //! ```
 //! To visualize, you can use something like
 //! ```dot
