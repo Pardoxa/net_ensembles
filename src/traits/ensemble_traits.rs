@@ -1,6 +1,7 @@
 use crate::{AdjContainer, traits::*, iter::*, GenericGraph};
 use crate::generic_graph::{Dfs, DfsWithIndex, Bfs};
 use crate::{sw_graph::SwContainer, graph::NodeContainer};
+
 /// # Access internal random number generator
 pub trait HasRng<Rng>
 where Rng: rand::Rng
@@ -63,6 +64,87 @@ pub trait MarkovChain<S, Res> {
             .rev();
         for step in iter {
             self.undo_step_quiet(step);
+        }
+    }
+
+    /// # Metropolis Monte Carlo
+    ///
+    ///
+    /// |               | meaning                                                                      |
+    /// |---------------|------------------------------------------------------------------------------|
+    /// | `rng`         | the Rng used to decide, if a state should be accepted or rejected            |
+    /// | `temperature` | used in metropolis probability                                               |
+    /// | `stepsize`    | is used for each markov step, i.e., `self.m_steps(stepsize)` is called       |
+    /// | `steps`       | is the number of steps with size `stepsize`, that this method should perform |
+    /// | `valid_self`  | checks, if the markov steps produced a valid state                           |
+    /// | `energy`      | should calculate the "energy" of the system used for acceptance probability  |
+    /// | `measure`     | called after each step                                                       |
+    ///
+    /// **Important**: if possible, treat `energy(&mut Self)` as `energy(&Self)`. This will be safer.
+    ///
+    /// **Note**: instead of the `temperature` T the literature sometimes uses &beta;. The relation between them is:
+    /// &beta; = T⁻¹
+    ///
+    /// **Note**: If `valid_self` returns `false`, the state will be rejected. If you do not need this,
+    /// use `|_| true`
+    ///
+    /// **`measure`**: function is intended for storing measurable quantities etc.
+    /// Is called at the end of each iteration. As for the parameter:
+    ///
+    /// | type        | name suggestion  | description                                                                                                                                  |
+    /// |-------------|------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+    /// | `&mut Self` | `current_state`  | current `self`. After stepping and accepting/rejecting                                                                                       |
+    /// | `usize`     | `i`              | counter, starts at 0, each step counter increments by 1                                                                                      |
+    /// | `f64`       | `current_energy` | `energy(&mut self)`. Assumes that `energy` of a state deterministic and invariant under: `let steps = self.steps(n); self.undo_steps(steps);`|
+    /// | `bool`      | `rejected`       | `true` if last step was rejected. That should mean, that the current state is the same as the last state.                                    |
+    ///
+    /// Citation see, e.g,
+    /// > M. E. J. Newman and G. T. Barkema, "Monte Carlo Methods in Statistical Physics"
+    ///   *Clarendon Press*, 1999, ISBN:&nbsp;978-0-19-8517979
+    #[allow(clippy::clippy::too_many_arguments)]
+    fn monte_carlo_metropolis<F, G, H, Rng>(
+        &mut self,
+        mut rng: Rng,
+        temperature: f64,
+        stepsize: usize,
+        steps: usize,
+        mut valid_self: F,
+        mut energy: G,
+        mut measure: H,
+    )
+    where
+        F: FnMut(&mut Self) -> bool,
+        G: FnMut(&mut Self) -> f64,
+        H: FnMut(&mut Self, usize, f64, bool),
+        Rng: rand::Rng
+    {
+        let mut old_energy = energy(self);
+        let mut current_energy: f64;
+        let mut last_steps: Vec<_>;
+        let mut a_prob: f64;
+        let mbeta = -1.0 / temperature;
+
+        for i in 0..steps {
+            last_steps = self.m_steps(stepsize);
+            current_energy = energy(self);
+
+            // calculate acacceptance probability
+            let mut rejected = !valid_self(self);
+            if !rejected {
+                // I only have to calculate this for a valid state
+                a_prob = 1.0_f64.min((mbeta * (current_energy - old_energy)).exp());
+                rejected = rng.gen::<f64>() > a_prob;
+            }
+
+
+            // if step is NOT accepted
+            if rejected {
+                self.undo_steps_quiet(last_steps);
+                current_energy = old_energy;
+            } else {
+                old_energy = current_energy;
+            }
+            measure(self, i, current_energy, rejected);
         }
     }
 }

@@ -1044,17 +1044,17 @@ where
         for i in 0..self.vertex_count() {
             write!(writer, "{} ", i)?;
         }
-        write!(writer, ";\n")?;
+        writeln!(writer, ";")?;
 
         for (index, container) in self.container_iter().enumerate() {
             let fun = f(index, container);
-            write!(writer, "\t\"{}\" [label=\"{}\"];\n", index, fun.as_ref())?;
+            writeln!(writer, "\t\"{}\" [label=\"{}\"];", index, fun.as_ref())?;
         }
 
         for i in 0..self.vertex_count() as usize {
             for j in self.container(i).neighbors() {
                 if i < *j as usize {
-                    write!(writer, "\t{} -- {}\n", i, j)?;
+                    writeln!(writer, "\t{} -- {}", i, j)?;
 
                 }
             }
@@ -1094,17 +1094,17 @@ where T: Node,
         for i in 0..self.vertex_count() {
             write!(writer, "{} ", i)?;
         }
-        write!(writer, ";\n")?;
+        writeln!(writer, ";")?;
 
         for index in 0..self.vertex_count() as usize {
             let fun = f(index);
-            write!(writer, "\t\"{}\" [label=\"{}\"];\n", index, fun.as_ref())?;
+            writeln!(writer, "\t\"{}\" [label=\"{}\"];", index, fun.as_ref())?;
         }
 
         for i in 0..self.vertex_count() as usize {
             for j in self.container(i).neighbors() {
                 if i < *j as usize {
-                    write!(writer, "\t{} -- {}\n", i, j)?;
+                    writeln!(writer, "\t{} -- {}", i, j)?;
 
                 }
             }

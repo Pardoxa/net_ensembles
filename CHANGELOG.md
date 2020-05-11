@@ -15,6 +15,7 @@
 * implemented `Dot` for `GenericGraph`
 * new trait `DotExtra`
 * implemented `DotExtra` for `GenericGraph`
+* `MarkovChain` now has member: `monte_carlo_metropolis<F, G, H, Rng>`
 
 ## macro
 * add `dot_options!` macro for ease of use
