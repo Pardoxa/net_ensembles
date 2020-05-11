@@ -1,6 +1,7 @@
 use crate::{AdjContainer, traits::*, iter::*, GenericGraph};
 use crate::generic_graph::{Dfs, DfsWithIndex, Bfs};
 use crate::{sw_graph::SwContainer, graph::NodeContainer};
+use crate::monte_carlo::MetropolisState;
 
 /// # Access internal random number generator
 pub trait HasRng<Rng>
@@ -68,7 +69,7 @@ pub trait MarkovChain<S, Res> {
     }
 
     /// # Metropolis Monte Carlo
-    ///
+    /// **panics**: `stepsize = 0` is not allowed and will result in a panic
     ///
     /// |               | meaning                                                                      |
     /// |---------------|------------------------------------------------------------------------------|
@@ -102,7 +103,38 @@ pub trait MarkovChain<S, Res> {
     /// > M. E. J. Newman and G. T. Barkema, "Monte Carlo Methods in Statistical Physics"
     ///   *Clarendon Press*, 1999, ISBN:&nbsp;978-0-19-8517979
     #[allow(clippy::clippy::too_many_arguments)]
-    fn monte_carlo_metropolis<F, G, H, Rng>(
+    fn monte_carlo_metropolis<Rng, F, G, H>(
+        &mut self,
+        rng: Rng,
+        temperature: f64,
+        stepsize: usize,
+        steps: usize,
+        valid_self: F,
+        energy: G,
+        measure: H,
+    ) -> MetropolisState<Rng>
+    where
+        F: FnMut(&mut Self) -> bool,
+        G: FnMut(&mut Self) -> f64,
+        H: FnMut(&mut Self, usize, f64, bool),
+        Rng: rand::Rng
+    {
+        self.monte_carlo_metropolis_while(
+            rng,
+            temperature,
+            stepsize,
+            steps,
+            valid_self,
+            energy,
+            measure,
+            |_, _| false
+        )
+    }
+
+    /// same as `monte_carlo_metropolis`, but checks function `break_if(current_state, counter)` after each step and
+    /// stops if `true` is returned.
+    #[allow(clippy::clippy::too_many_arguments)]
+    fn monte_carlo_metropolis_while<Rng, F, G, H, B>(
         &mut self,
         mut rng: Rng,
         temperature: f64,
@@ -111,28 +143,34 @@ pub trait MarkovChain<S, Res> {
         mut valid_self: F,
         mut energy: G,
         mut measure: H,
-    )
+        mut brake_if: B,
+    ) -> MetropolisState<Rng>
     where
         F: FnMut(&mut Self) -> bool,
         G: FnMut(&mut Self) -> f64,
         H: FnMut(&mut Self, usize, f64, bool),
+        B: FnMut(&Self, usize) -> bool,
         Rng: rand::Rng
     {
+        assert!(
+            stepsize > 0,
+            "StepSize 0 is not allowed!"
+        );
         let mut old_energy = energy(self);
-        let mut current_energy: f64;
+        let mut current_energy = old_energy;
         let mut last_steps: Vec<_>;
         let mut a_prob: f64;
-        let mbeta = -1.0 / temperature;
+        let m_beta = -1.0 / temperature;
 
         for i in 0..steps {
             last_steps = self.m_steps(stepsize);
-            current_energy = energy(self);
 
-            // calculate acacceptance probability
+            // calculate acceptance probability
             let mut rejected = !valid_self(self);
             if !rejected {
+                current_energy = energy(self);
                 // I only have to calculate this for a valid state
-                a_prob = 1.0_f64.min((mbeta * (current_energy - old_energy)).exp());
+                a_prob = 1.0_f64.min((m_beta * (current_energy - old_energy)).exp());
                 rejected = rng.gen::<f64>() > a_prob;
             }
 
@@ -145,7 +183,112 @@ pub trait MarkovChain<S, Res> {
                 old_energy = current_energy;
             }
             measure(self, i, current_energy, rejected);
+
+            #[cold]
+            if brake_if(self, i) {
+                return MetropolisState::new(stepsize, steps, m_beta, rng, current_energy, i + 1);
+            }
         }
+
+        MetropolisState::new(stepsize, steps, m_beta, rng, current_energy, steps)
+    }
+
+    /// same as `monte_carlo_metropolis`, but checks function `break_if(current_state, counter)` after each step and
+    /// stops if `true` is returned.
+    ///
+    /// * asserts, that the `energy(self)` matches the energy stored in `state`. Can be turned of
+    /// with `ignore_energy_missmatch = true`
+    ///
+    #[allow(clippy::clippy::too_many_arguments)]
+    fn monte_carlo_metropolis_while_resume<Rng, F, G, H, B>(
+        &mut self,
+        state: MetropolisState<Rng>,
+        ignore_energy_missmatch: bool,
+        mut valid_self: F,
+        mut energy: G,
+        mut measure: H,
+        mut brake_if: B,
+    ) -> MetropolisState<Rng>
+    where
+        F: FnMut(&mut Self) -> bool,
+        G: FnMut(&mut Self) -> f64,
+        H: FnMut(&mut Self, usize, f64, bool),
+        B: FnMut(&Self, usize) -> bool,
+        Rng: rand::Rng
+    {
+        let mut old_energy = energy(self);
+        if !ignore_energy_missmatch {
+            assert_eq!(
+                old_energy,
+                state.current_energy(),
+                "Energy missmatch!"
+            );
+        }
+        let mut current_energy = old_energy;
+        let mut last_steps: Vec<_>;
+        let mut a_prob: f64;
+        let m_beta = state.m_beta();
+        let steps = state.step_target();
+        let stepsize = state.stepsize();
+        let counter = state.counter();
+        let mut rng = state.to_rng();
+
+        for i in counter..steps {
+            last_steps = self.m_steps(stepsize);
+
+            // calculate acceptance probability
+            let mut rejected = !valid_self(self);
+            if !rejected {
+                // I only have to calculate this for a valid state
+                current_energy = energy(self);
+
+                a_prob = 1.0_f64.min((m_beta * (current_energy - old_energy)).exp());
+                rejected = rng.gen::<f64>() > a_prob;
+            }
+
+
+            // if step is NOT accepted
+            if rejected {
+                self.undo_steps_quiet(last_steps);
+                current_energy = old_energy;
+            } else {
+                old_energy = current_energy;
+            }
+            measure(self, i, current_energy, rejected);
+
+            #[cold]
+            if brake_if(self, i) {
+                return MetropolisState::new(stepsize, steps, m_beta, rng, current_energy, i + 1);
+            }
+        }
+
+        MetropolisState::new(stepsize, steps, m_beta, rng, current_energy, steps)
+    }
+
+
+    /// same as `monte_carlo_metropolis_while_resume`, but without the `brake_if`
+    fn monte_carlo_metropolis_resume<Rng, F, G, H>(
+        &mut self,
+        state: MetropolisState<Rng>,
+        ignore_energy_missmatch: bool,
+        valid_self: F,
+        energy: G,
+        measure: H,
+    ) -> MetropolisState<Rng>
+    where
+        F: FnMut(&mut Self) -> bool,
+        G: FnMut(&mut Self) -> f64,
+        H: FnMut(&mut Self, usize, f64, bool),
+        Rng: rand::Rng
+    {
+        self.monte_carlo_metropolis_while_resume(
+            state,
+            ignore_energy_missmatch,
+            valid_self,
+            energy,
+            measure,
+            |_, _| false
+        )
     }
 }
 

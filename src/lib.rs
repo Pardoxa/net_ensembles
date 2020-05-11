@@ -286,6 +286,7 @@ pub mod dot_constants;
 pub mod sw_graph;
 pub mod iter;
 pub mod step_structs;
+pub mod monte_carlo;
 
 pub use sw::SwEnsemble;
 pub use sw_graph::SwGraph;
