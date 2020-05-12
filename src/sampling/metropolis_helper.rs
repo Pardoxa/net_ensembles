@@ -1,9 +1,6 @@
-//! # Helper for large deviation methods
-//!
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
-
 
 /// For saving MetropolisState + corresponding ensemble in one file
 #[derive(Clone)]

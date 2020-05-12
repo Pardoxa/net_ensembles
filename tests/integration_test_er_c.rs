@@ -4,9 +4,7 @@ use rand::SeedableRng;
 use net_ensembles::*;
 mod common;
 use common::{equal_graphs, PhaseNode};
-use serde_json;
-use std::fs::File;
-use net_ensembles::large_deviations::{MetropolisState, MetropolisSave};
+use net_ensembles::sampling::{MetropolisState, MetropolisSave};
 use std::fmt::Write;
 
 #[test]
@@ -27,71 +25,6 @@ fn step_test() {
 }
 
 #[test]
-fn monte_save(){
-    // first init an ensemble, which implements MarkovChain
-    let rng = Pcg64::seed_from_u64(7567526);
-    let mut ensemble = ErEnsembleC::<EmptyNode, _>::new(300, 4.0, rng);
-    // ensure that inital state is valid
-    while !ensemble.is_connected().unwrap() {
-        ensemble.randomize();
-    }
-
-    // now perform large deviation simulation
-    // in this example the simulation will be interrupted, when the counter hits 20:
-    // break_if = |_, counter| counter == 20
-    let metropolis_rng = Pcg64::seed_from_u64(77526);
-    let state = ensemble.monte_carlo_metropolis_while(
-        metropolis_rng, // rng
-        -10.0,          // temperature
-        30,             // stepsize
-        100,            // steps
-        |ensemble| ensemble.is_connected().unwrap(),    // valid_self
-        |ensemble| ensemble.diameter().unwrap() as f64, // energy
-        |ensemble, counter, energy, rejected| {         // measure
-            // of cause, you can store it in a file instead
-            println!("{}, {}, {}, {}", counter, rejected, energy, ensemble.leaf_count());
-        },
-        |_, counter| counter == 20,                     // break_if
-    );
-
-    // NOTE: You will likely not need the cfg part
-    // I only need it, because the example has to work with and without serde_support
-    #[cfg(feature = "serde_support")]
-    {
-        // saving
-        let save_file = File::create("metropolis.save")
-            .expect("Unable to create file");
-
-        let save = MetropolisSave::new(ensemble, state);
-        serde_json::to_writer_pretty(save_file, &save).unwrap();
-
-
-        // loading
-        let reader = File::open("metropolis.save")
-        .expect("Unable to open file");
-
-        let save: MetropolisSave::<ErEnsembleC::<EmptyNode, Pcg64>, Pcg64>
-            = serde_json::from_reader(reader).unwrap();
-
-        let (mut loaded_ensemble, loaded_state) = save.unpack();
-
-        // resume the simulation
-        loaded_ensemble.monte_carlo_metropolis_while_resume(
-            loaded_state,
-            false,
-            |ensemble| ensemble.is_connected().unwrap(),    // valid_self
-            |ensemble| ensemble.diameter().unwrap() as f64, // energy
-            |ensemble, counter, energy, rejected| {         // measure
-                // of cause, you can store it in a file instead
-                println!("{}, {}, {}, {}", counter, rejected, energy, ensemble.leaf_count());
-            },
-            |_, _| false,                     // break_if
-        );
-    }
-}
-
-
-#[test]
 fn monte_continue(){
     // first init an ensemble, which implements MarkovChain
     let rng = Pcg64::seed_from_u64(7567526);
@@ -104,7 +37,7 @@ fn monte_continue(){
 
     // now perform large deviation simulation
     let metropolis_rng = Pcg64::seed_from_u64(77526);
-    let state = ensemble.monte_carlo_metropolis_while(
+    let state = ensemble.metropolis_while(
         metropolis_rng, // rng
         -10.0,          // temperature
         30,             // stepsize
@@ -120,7 +53,7 @@ fn monte_continue(){
     );
 
     // resume the simulation
-    ensemble.monte_carlo_metropolis_while_resume(
+    ensemble.continue_metropolis_while(
         state,
         false,
         |ensemble| ensemble.is_connected().unwrap(),    // valid_self
@@ -138,7 +71,7 @@ fn monte_continue(){
 
     let metropolis_rng = Pcg64::seed_from_u64(77526);
 
-    ensemble_clone.monte_carlo_metropolis_while(
+    ensemble_clone.metropolis_while(
         metropolis_rng, // rng
         -10.0,          // temperature
         30,             // stepsize

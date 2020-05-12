@@ -43,8 +43,8 @@ impl ErStepM{
 /// * **Note** simple sampling of this ensemble is somewhat inefficient right now -
 ///   I might change it in the future, though that will change the results of the simple sampling
 ///   (Not on average of cause)
-/// * for *simple sampling* look at [```SimpleSample``` trait](./traits/trait.SimpleSample.html)
-/// * for *markov steps* look at [```MarkovChain``` trait](../traits/trait.MarkovChain.html)
+/// * for *simple sampling* look at [```SimpleSample``` trait](./sampling/traits/trait.SimpleSample.html)
+/// * for *markov steps* look at [```MarkovChain``` trait](../sampling/traits/trait.MarkovChain.html)
 /// ## Other
 /// * for topology functions look at [`GenericGraph`](../generic_graph/struct.GenericGraph.html)
 /// * to access underlying topology or manipulate additional data look at [```WithGraph``` trait](../traits/trait.WithGraph.html)

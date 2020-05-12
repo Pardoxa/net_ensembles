@@ -9,13 +9,12 @@ pub use graph_traits::MeasurableGraphQuantities;
 pub use graph_traits::GraphErrors;
 
 mod ensemble_traits;
-pub use ensemble_traits::MarkovChain;
-pub use ensemble_traits::SimpleSample;
 pub use ensemble_traits::HasRng;
 pub use ensemble_traits::WithGraph;
 pub use ensemble_traits::GraphIterators;
 pub use ensemble_traits::GraphIteratorsMut;
 
+pub use crate::sampling::traits::*;
 pub use crate::iter::IterWrapper;
 
 mod dot_traits;

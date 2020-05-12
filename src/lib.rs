@@ -86,7 +86,7 @@
 //! ## Simple sample for small-world ensemble
 //! * **Note:** simple sampling also works for [`ErEnsembleC`](er_c/struct.ErEnsembleC.html)
 //! and [`ErEnsembleM`](er_m/struct.ErEnsembleM.html)
-//! * see trait [```SimpleSample```](./traits/trait.SimpleSample.html)
+//! * see trait [```SimpleSample```](./sampling/traits/trait.SimpleSample.html)
 //! ```
 //! use net_ensembles::{SwEnsemble, EmptyNode};
 //! use net_ensembles::traits::*; // I recommend always using this
@@ -181,7 +181,7 @@
 //! # Example 5: Marcov Chain
 //! * example for a Marcov chain of connected graphs
 //! * you can also create a Marcov chain with unconnected graphs if you want
-//! * see trait [```MarcovChain```](./traits/trait.MarkovChain.html)
+//! * see trait [```MarcovChain```](./sampling/traits/trait.MarkovChain.html)
 //! ```
 //! use net_ensembles::{EmptyNode, ErEnsembleM, traits::*};
 //! use rand_pcg::Pcg64;
@@ -286,7 +286,7 @@ pub mod dot_constants;
 pub mod sw_graph;
 pub mod iter;
 pub mod step_structs;
-pub mod large_deviations;
+pub mod sampling;
 
 pub use sw::SwEnsemble;
 pub use sw_graph::SwGraph;

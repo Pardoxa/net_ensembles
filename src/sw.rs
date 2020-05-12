@@ -94,8 +94,8 @@ impl SwChangeState {
 /// # Implements small-world graph ensemble
 /// * for more details look at [documentation](index.html) of module `sw`
 /// ## Sampling
-/// * for markov steps look at [```MarkovChain``` trait](../traits/trait.MarkovChain.html)
-/// * for simple sampling look at [```SimpleSample``` trait](./traits/trait.SimpleSample.html)
+/// * for markov steps look at [```MarkovChain``` trait](../sampling/traits/trait.MarkovChain.html)
+/// * for simple sampling look at [```SimpleSample``` trait](./sampling/traits/trait.SimpleSample.html)
 /// ## Other
 /// * for topology functions look at [`GenericGraph`](../generic_graph/struct.GenericGraph.html)
 /// * to access underlying topology or manipulate additional data look at [```WithGraph``` trait](../traits/trait.WithGraph.html)
