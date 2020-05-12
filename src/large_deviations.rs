@@ -1,9 +1,33 @@
-//! # Helper for monte carlo methods
+//! # Helper for large deviation methods
 //!
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
+
+/// For saving MetropolisState + corresponding ensemble in one file
+#[derive(Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub struct MetropolisSave<E, R> {
+    state: MetropolisState<R>,
+    ensemble: E,
+}
+
+impl<E, R> MetropolisSave<E, R> {
+    /// create a new save state for a Metropolis Monte Carlo Simulation
+    pub fn new(ensemble: E, state: MetropolisState<R>) -> Self
+    {
+        Self{
+            ensemble,
+            state,
+        }
+    }
+
+    /// Convert `self` back into the `ensemble` and the `MetropolisState`
+    pub fn unpack(self) -> (E, MetropolisState<R>) {
+        (self.ensemble, self.state)
+    }
+}
 
 /// used to store the current state of the monte carlo simulation
 #[derive(Clone)]
@@ -13,9 +37,9 @@ pub struct MetropolisState<R>
     stepsize: usize,
     step_target: usize,
     m_beta: f64,
-    rng: R,
     current_energy: f64,
     counter: usize,
+    rng: R,
 }
 
 impl<R> MetropolisState<R> {

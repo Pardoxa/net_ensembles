@@ -1,7 +1,7 @@
 use crate::{AdjContainer, traits::*, iter::*, GenericGraph};
 use crate::generic_graph::{Dfs, DfsWithIndex, Bfs};
 use crate::{sw_graph::SwContainer, graph::NodeContainer};
-use crate::monte_carlo::MetropolisState;
+use crate::large_deviations::MetropolisState;
 
 /// # Access internal random number generator
 pub trait HasRng<Rng>

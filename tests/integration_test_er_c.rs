@@ -6,7 +6,7 @@ mod common;
 use common::{equal_graphs, PhaseNode};
 use serde_json;
 use std::fs::File;
-use net_ensembles::monte_carlo::MetropolisState;
+use net_ensembles::large_deviations::{MetropolisState, MetropolisSave};
 use std::fmt::Write;
 
 #[test]
@@ -59,30 +59,21 @@ fn monte_save(){
     #[cfg(feature = "serde_support")]
     {
         // saving
-        let save_ensemble = File::create("metropolis_ensemble.save")
-        .expect("Unable to create file");
-        serde_json::to_writer_pretty(save_ensemble, &ensemble).unwrap();
+        let save_file = File::create("metropolis.save")
+            .expect("Unable to create file");
 
-        let save_state = File::create("metropolis_state.save")
-        .expect("Unable to create file");
-        serde_json::to_writer_pretty(save_state, &state).unwrap();
-
+        let save = MetropolisSave::new(ensemble, state);
+        serde_json::to_writer_pretty(save_file, &save).unwrap();
 
 
         // loading
-        let ensemble_reader = File::open("metropolis_ensemble.save")
+        let reader = File::open("metropolis.save")
         .expect("Unable to open file");
 
-        let mut loaded_ensemble: ErEnsembleC::<EmptyNode, Pcg64>
-        = serde_json::from_reader(ensemble_reader).unwrap();
+        let save: MetropolisSave::<ErEnsembleC::<EmptyNode, Pcg64>, Pcg64>
+            = serde_json::from_reader(reader).unwrap();
 
-        let state_reader = File::open("metropolis_state.save")
-        .expect("Unable to open file");
-
-        let loaded_state: MetropolisState::<Pcg64>
-        = serde_json::from_reader(state_reader).unwrap();
-
-
+        let (mut loaded_ensemble, loaded_state) = save.unpack();
 
         // resume the simulation
         loaded_ensemble.monte_carlo_metropolis_while_resume(

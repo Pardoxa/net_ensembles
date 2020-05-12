@@ -4,5 +4,6 @@ Cargo.lock
 *.dot
 *.pdf
 *.dat
+*.save
 callgrind.out*
 perf.data
