@@ -185,8 +185,8 @@ pub trait Metropolis<S, Res>: MarkovChain<S, Res> {
             }
             measure(self, i, current_energy, rejected);
 
-            #[cold]
             if brake_if(self, i) {
+                #[cold]
                 return MetropolisState::new(stepsize, steps, m_beta, rng, current_energy, i + 1);
             }
         }
@@ -339,8 +339,8 @@ pub trait Metropolis<S, Res>: MarkovChain<S, Res> {
             }
             measure(self, i, current_energy, rejected);
 
-            #[cold]
             if brake_if(self, i) {
+                #[cold]
                 return MetropolisState::new(stepsize, steps, m_beta, rng, current_energy, i + 1);
             }
         }
