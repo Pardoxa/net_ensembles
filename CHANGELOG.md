@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.2 &rarr; master
+## v0.2.2 &rarr; v0.3.0
 
 ## optimizations
 * optimization for `q_core`

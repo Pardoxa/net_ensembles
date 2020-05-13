@@ -116,7 +116,8 @@ pub trait MeasurableGraphQuantities<G>
     /// * `(2 * edge_count) / vertex_count`
     fn average_degree(&self) -> f32;
 
-    /// returns number of vertices adjacent to vertex `index`
+    /// * returns number of vertices adjacent to vertex `index`
+    /// * `None` if index out of bounds
     fn degree(&self, index: usize) -> Option<usize>;
 
     /// # compute sizes of all *connected components*

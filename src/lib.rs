@@ -1,9 +1,9 @@
-//! I am writing this libary for my scientific simulations
+//! # This lib is intended for scientific simulations
 //!
 //! * you probably want to take a look at [`GenericGraph`](generic_graph/struct.GenericGraph.html).
 //! * take a look at the module [`er_c`](er_c/index.html)
-//!   or [`er_m`](er_m/index.html) if you want to do something with an Erdős-Rényi ensemble
-//! * if you want to work with small-world ensemble, look at module [`sw`](sw/index.html)
+//!   or [`er_m`](er_m/index.html) if you want to do something with an **Erdős-Rényi** ensemble
+//! * if you want to work with a **small-world** ensemble, look at module [`sw`](sw/index.html)
 //! * an example for implementing your own Node can be found [here](graph/type.Graph.html#example-2).
 //!   Note that the defined Node can be used in the Graph ensembles
 //! * Note: The ensembles implement the trait [`GraphIterators`](./traits/trait.GraphIterators.html),
@@ -15,6 +15,7 @@
 //! [`MeasurableGraphQuantities`](./traits/trait.MeasurableGraphQuantities.html),
 //! therefore, e.g., `ensemble.graph().transitivity()` and `ensemble.transitivity()`
 //! are equivalent
+//! * for **sampling** the ensemble, take a look at [these traits](./sampling/traits/index.html)
 //! # Example 1
 //!
 //! ```

@@ -307,7 +307,8 @@ where T: Node,
         self.edge_count
     }
 
-    /// returns number of vertices adjacent to vertex `index`
+    /// * returns number of vertices adjacent to vertex `index`
+    /// * `None` if index out of bounds
     pub fn degree(&self, index: usize) -> Option<usize> {
         Some(
             self

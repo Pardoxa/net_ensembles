@@ -19,7 +19,8 @@ license = "MIT OR Apache-2.0"
 homepage = "https://www.yfeld.de/Library.html"
 exclude = [
   "TestData/*",
-  "tests/*"
+  "tests/*",
+  "benches/*",
 ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

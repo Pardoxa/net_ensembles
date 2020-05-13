@@ -93,6 +93,16 @@ pub trait Metropolis<S, Res>: MarkovChain<S, Res> {
     /// Citation see, e.g,
     /// > M. E. J. Newman and G. T. Barkema, "Monte Carlo Methods in Statistical Physics"
     ///   *Clarendon Press*, 1999, ISBN:&nbsp;978-0-19-8517979
+    ///
+    /// # Explanation
+    /// * Performes markov chain using the markov chain trait
+    ///
+    /// Let the current state of the system be S(i) with corresponding energy `E(i) = energy(S(i))`.
+    /// Now perform a markov step, such that the new system is Snew with energy Enew.
+    /// The new state will be accepted (meaning S(i+1) = Snew) with probability:
+    /// `min[1.0, exp{-1/T * (Enew - E(i))}]`
+    /// otherwise the new state will be rejected, meaning S(i + 1) = S(i).
+    /// Afterwards, `measure` is called.
     #[allow(clippy::clippy::too_many_arguments)]
     fn metropolis<Rng, F, G, H>(
         &mut self,
