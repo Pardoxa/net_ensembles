@@ -22,7 +22,8 @@ exclude = [
   "tests/*",
   "benches/*",
   "LICENSE*",
-  "CHANGELOG.md"
+  "CHANGELOG.md",
+  "CHECKLIST*.md"
 ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
