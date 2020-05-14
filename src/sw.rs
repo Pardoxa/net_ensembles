@@ -19,6 +19,7 @@ use crate::GraphErrors;
 use crate::iter::{INContainedIterMut, NContainedIterMut, ContainedIterMut};
 use crate::sw_graph::SwContainer;
 use std::borrow::Borrow;
+use std::convert::TryFrom;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -236,6 +237,41 @@ impl <T, R> SwEnsemble<T, R>
             };
         result.randomize();
         result
+    }
+
+    /// # Connect the connected components
+    /// * resets edges, to connect the connected components
+    pub fn make_connected(&mut self)
+    {
+        while !self.is_connected().unwrap_or(true){
+            let (num, ids) = self.graph.connected_components_ids();
+            let mut new_connection = vec![false; num];
+            let vc_usize = self.vertex_count() as usize;
+
+            for  index in  0..vc_usize {
+                let min = ids[index].min(ids[(index + 1) % vc_usize]);
+                if !new_connection[min as usize] && ids[index] != ids[(index + 1) % vc_usize] {
+                    // find out, where the desired edge is pointing to right now
+                    new_connection[min as usize] = true;
+                    let to = *self.graph.container_mut(index)
+                        .iter_raw_edges()
+                        .filter(
+                            |edge|
+                            edge.originally_to().map(|c| c as usize) == Some((index + 1) % vc_usize)
+                        )
+                        .next()
+                        .unwrap()
+                        .to();
+                    self.graph.reset_edge(
+                        u32::try_from(index).unwrap(),
+                        to
+                    );
+                }
+            }
+        }
+
+
+
     }
 
     /// draw number <= high but not index
@@ -502,4 +538,44 @@ where   T: Node + SerdeStateConform,
             SwChangeState::GError(error)         => panic!(format!("undo_step - GError {} - corrupt step?", error))
         }
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::EmptyNode;
+    use rand_pcg::Pcg64;
+    use rand::SeedableRng;
+
+    #[test]
+    #[ignore]
+    fn sw_make_connected() {
+        let rng = Pcg64::seed_from_u64(7526);
+        let mut e = SwEnsemble::<EmptyNode, Pcg64>::new(20, 0.0, rng);
+        e.set_r_prob(0.2);
+
+        // the following code creates 3 connected components
+        while e.is_connected().unwrap(){
+            e.m_steps(10);
+        }
+
+        let mut comp = e.connected_components();
+
+        while comp.len() < 3{
+            let step = e.m_steps(10);
+            comp = e.connected_components();
+
+            if  comp.len() < 2{
+                e.undo_steps_quiet(step);
+            }
+
+        }
+
+        // now I reconnect them
+        e.make_connected();
+        assert!(e.is_connected().unwrap());
+    }
+
+
 }

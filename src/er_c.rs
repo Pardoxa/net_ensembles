@@ -244,6 +244,18 @@ where T: Node + SerdeStateConform,
         e
     }
 
+    /// # Connect the connected components
+    /// * adds edges, to connect the connected components
+    /// * panics if no vertices are in the graph
+    pub fn make_connected(&mut self){
+        let mut suggestions = self.graph.suggest_connections();
+        let mut last_suggestion = suggestions.pop().unwrap();
+        while let Some(suggestion) = suggestions.pop(){
+            self.graph.add_edge(last_suggestion, suggestion).unwrap();
+            last_suggestion = suggestion;
+        }
+    }
+
     /// returns target connectivity
     /// # Explanation
     /// The target connectivity `c_target` is used to

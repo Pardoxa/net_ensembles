@@ -503,14 +503,12 @@ where T: Node,
         Some(result)
     }
 
-    /// # compute sizes of all *connected components*
-    ///
-    /// * the **number** of connected components is the **size** of the returned vector, i.e. `result.len()`
-    /// * returns **empty** vector, if graph does not contain vertices
-    /// * returns (reverse) **ordered vector of sizes** of the connected components,
-    /// i.e. the biggest component is of size `result[0]` and the smallest is of size `result[result.len() - 1]`
-    pub fn connected_components(&self) -> Vec<u32> {
-
+    /// # compute connected component ids
+    /// * used for `self.connected_components()`
+    /// * each vertex gets an id, all vertices with the same id are in the same connected component
+    /// * returns (number of components, vector of ids)
+    pub fn connected_components_ids(&self) -> (usize, Vec<i32>)
+    {
         let mut component_id : Vec<i32> = vec![-1; self.vertex_count() as usize];
         let mut current_id = 0;
 
@@ -531,6 +529,19 @@ where T: Node,
         let num_components = usize::try_from(current_id)
             .expect("connected_components ERROR 0");
 
+        return (num_components, component_id)
+    }
+
+    /// # compute sizes of all *connected components*
+    ///
+    /// * the **number** of connected components is the **size** of the returned vector, i.e. `result.len()`
+    /// * returns **empty** vector, if graph does not contain vertices
+    /// * returns (reverse) **ordered vector of sizes** of the connected components,
+    /// i.e. the biggest component is of size `result[0]` and the smallest is of size `result[result.len() - 1]`
+    pub fn connected_components(&self) -> Vec<u32> {
+
+        let (num_components, component_id) = self.connected_components_ids();
+
         let mut result = vec![0; num_components];
 
         for i in component_id {
@@ -548,6 +559,31 @@ where T: Node,
                 .reverse()
         );
         result
+    }
+
+    /// # Connects connected components (CCs)
+    /// * returns vector of indices, where each corresponding node is in a different
+    /// connected component
+    pub(crate) fn suggest_connections(& self) -> Vec<u32>
+    {
+        let mut suggestions = Vec::new();
+        let mut component_id : Vec<i32> = vec![-1; self.vertex_count() as usize];
+        let mut current_id = 0;
+        for i in 0..self.vertex_count(){
+            // already in a component?
+            if component_id[i as usize] != -1 {
+                continue;
+            }
+            suggestions.push(i);
+
+            // start depth first search over indices of vertices connected with vertex i
+            for (j, _) in self.dfs_with_index(i) {
+                component_id[j as usize] = current_id;
+            }
+            current_id += 1;
+
+        }
+        suggestions
     }
 
     /// Count number of leaves in the graph, i.e. vertices with exactly one neighbor

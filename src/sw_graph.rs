@@ -21,7 +21,7 @@ impl SwEdge {
         &self.to
     }
 
-    fn originally_to(&self) -> &Option<u32> {
+    pub(crate) fn originally_to(&self) -> &Option<u32> {
         &self.originally_to
     }
 

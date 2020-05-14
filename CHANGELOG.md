@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.0 &rarr; master
+
+# GenericGraph
+* add member `connected_components_ids`
+
+# ensembles
+* add member `make_connected` for ErEnsembleC
+* add member `make_connected` for SwEnsemble
+
 ## v0.2.2 &rarr; v0.3.0
 
 ## optimizations
