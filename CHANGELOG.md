@@ -4,10 +4,21 @@
 
 # GenericGraph
 * add member `connected_components_ids`
+* add member `contained_iter_neighbors_with_index` which returns new iterator
+
+# MetropolisState
+* rename `fn to_rng` &rarr; `fn into_rng`
 
 # ensembles
-* add member `make_connected` for ErEnsembleC
-* add member `make_connected` for SwEnsemble
+* add member `make_connected` for `ErEnsembleC`
+* add member `make_connected` for `SwEnsemble`
+
+# traits
+* `GraphIterators` added member `contained_iter_neighbors_with_index(&self, index: usize)`
+
+#  Iterator
+* new Iterator `NIContainedIter`; similar to `INContainedIterMut`
+  but differs in mutability
 
 ## v0.2.2 &rarr; v0.3.0
 

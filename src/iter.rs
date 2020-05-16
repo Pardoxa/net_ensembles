@@ -349,6 +349,88 @@ where T: 'a + Node,
 }
 
 
+///////////////////////////
+/// Iterator over additional information + indices stored at vertices
+/// that are directly connected to specific vertex
+pub struct NIContainedIter<'a, T, A>
+where T: Node,
+      A: AdjContainer<T>
+{
+    vertex_slice:   &'a[A],
+    index_iter:     IterWrapper<'a>,
+    phantom:        PhantomData<T>
+
+}
+
+impl<'a, T, A> FusedIterator for NIContainedIter<'a, T, A>
+where T: Node + 'a,
+      A: AdjContainer<T>
+{     }
+
+impl<'a, T, A> NIContainedIter<'a, T, A>
+where T: Node,
+      A: AdjContainer<T>
+{
+    /// Create new iterator
+    pub(crate) fn new(vertex_slice: &'a[A], index_iter: IterWrapper::<'a>) -> Self {
+        Self {
+            vertex_slice,
+            index_iter,
+            phantom: PhantomData::<T>
+        }
+    }
+}
+
+impl<'a, T, A> Iterator for NIContainedIter<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+    type Item = (usize, &'a T);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let index = self.index_iter.next()?;
+        let index = *index as usize;
+        Some((index, &self.vertex_slice[index].contained()))
+    }
+
+    #[inline]
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let index = self.index_iter.nth(n)?;
+        let index = *index as usize;
+        Some((index, &self.vertex_slice[index].contained()))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+}
+
+impl<'a, T, A> DoubleEndedIterator for NIContainedIter<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let index = self.index_iter.next_back()?;
+        let index = *index as usize;
+        Some((index, &self.vertex_slice[index].contained()))
+    }
+}
+
+impl<'a, T, A> ExactSizeIterator for NIContainedIter<'a, T, A>
+where T: 'a + Node,
+      A: AdjContainer<T>
+{
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.index_iter.len()
+    }
+}
+
+
 
 ///////////////////////////
 /// * same as NContainedIter but mutable

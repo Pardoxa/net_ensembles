@@ -255,11 +255,10 @@ impl <T, R> SwEnsemble<T, R>
                     new_connection[min as usize] = true;
                     let to = *self.graph.container_mut(index)
                         .iter_raw_edges()
-                        .filter(
+                        .find(
                             |edge|
                             edge.originally_to().map(|c| c as usize) == Some((index + 1) % vc_usize)
                         )
-                        .next()
                         .unwrap()
                         .to();
                     self.graph.reset_edge(

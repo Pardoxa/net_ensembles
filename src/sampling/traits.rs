@@ -1,7 +1,6 @@
 
 use crate::sampling::MetropolisState;
 
-
 /// # Create a markov chain by doing markov steps
 pub trait MarkovChain<S, Res> {
     /// * undo a markov step, return result-state
@@ -282,22 +281,22 @@ pub trait Metropolis<S, Res>: MarkovChain<S, Res> {
     ///     );
     /// }
     /// ```
-    #[allow(clippy::clippy::too_many_arguments)]
-    fn continue_metropolis_while<Rng, F, G, H, B>(
+    #[allow(clippy::clippy::too_many_arguments, clippy::float_cmp)]
+    fn continue_metropolis_while<R, F, G, H, B>(
         &mut self,
-        state: MetropolisState<Rng>,
+        state: MetropolisState<R>,
         ignore_energy_missmatch: bool,
         mut valid_self: F,
         mut energy: G,
         mut measure: H,
         mut brake_if: B,
-    ) -> MetropolisState<Rng>
+    ) -> MetropolisState<R>
     where
         F: FnMut(&mut Self) -> bool,
         G: FnMut(&mut Self) -> f64,
         H: FnMut(&mut Self, usize, f64, bool),
         B: FnMut(&Self, usize) -> bool,
-        Rng: rand::Rng
+        R: rand::Rng
     {
         let mut old_energy = energy(self);
         if !ignore_energy_missmatch {
@@ -314,7 +313,7 @@ pub trait Metropolis<S, Res>: MarkovChain<S, Res> {
         let steps = state.step_target();
         let stepsize = state.stepsize();
         let counter = state.counter();
-        let mut rng = state.to_rng();
+        let mut rng: R = state.into_rng();
 
         for i in counter..steps {
             last_steps = self.m_steps(stepsize);

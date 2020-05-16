@@ -68,6 +68,12 @@ pub trait GraphIterators<T, G, A>
     /// * **panics** if index out of bounds
     fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, A>;
 
+    /// * iterate over additional information of neighbors of vertex `index`
+    /// * iterator returns (`index_neighbor`,`&T`)
+    /// * `sort_adj` will affect the order
+    /// * **panics** if index out of bounds
+    fn contained_iter_neighbors_with_index(&self, index: usize) -> NIContainedIter<T, A>;
+
     /// * get iterator over AdjContainer in order of the indices
     /// * iterator returns `AdjContainer<Node>`, i.e., `A`
     fn container_iter(&self) -> core::slice::Iter<'_, A>;
@@ -161,6 +167,10 @@ where
         self.graph().container_iter_neighbors(index)
     }
 
+    fn contained_iter_neighbors_with_index(&self, index: usize) -> NIContainedIter<T, NodeContainer<T>> {
+        self.graph().contained_iter_neighbors_with_index(index)
+    }
+
     fn dfs(&self, index: u32) -> Dfs<'_, T, NodeContainer<T>>
     {
         self.graph().dfs(index)
@@ -200,6 +210,12 @@ where
     fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, SwContainer<T>>
     {
         self.graph().container_iter_neighbors(index)
+    }
+
+    fn contained_iter_neighbors_with_index(&self, index: usize)
+        -> NIContainedIter<T, SwContainer<T>>
+    {
+        self.graph().contained_iter_neighbors_with_index(index)
     }
 
     fn dfs(&self, index: u32) -> Dfs<'_, T, SwContainer<T>>

@@ -124,6 +124,17 @@ where T: Node,
         )
     }
 
+    /// * iterate over additional information of neighbors of vertex `index`
+    /// * iterator returns (`index_neighbor`,`&T`)
+    /// * `sort_adj` will affect the order
+    /// * **panics** if index out of bounds
+    pub fn contained_iter_neighbors_with_index(&self, index: usize) -> NIContainedIter<T, A> {
+        NIContainedIter::new(
+            self.vertices.as_slice(),
+            self.vertices[index].neighbors()
+        )
+    }
+
     /// * iterate over mutable additional information of neighbors of vertex `index`
     /// * iterator returns `&mut T`
     /// * `sort_adj` will affect the order
@@ -529,7 +540,7 @@ where T: Node,
         let num_components = usize::try_from(current_id)
             .expect("connected_components ERROR 0");
 
-        return (num_components, component_id)
+        (num_components, component_id)
     }
 
     /// # compute sizes of all *connected components*

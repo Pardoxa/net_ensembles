@@ -98,7 +98,7 @@ impl<R> MetropolisState<R> {
     }
 
     /// converts `self` in underlying rng generator
-    pub fn to_rng(self) -> R {
+    pub fn into_rng(self) -> R {
         self.rng
     }
 
