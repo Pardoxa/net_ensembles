@@ -24,6 +24,12 @@ impl<E, R> MetropolisSave<E, R> {
     pub fn unpack(self) -> (E, MetropolisState<R>) {
         (self.ensemble, self.state)
     }
+
+    /// returns `MetropolisState.is_finished()`
+    pub fn is_finished(&self) -> bool
+    {
+        self.state.is_finished()
+    }
 }
 
 /// used to store the current state of the monte carlo simulation
@@ -62,6 +68,12 @@ impl<R> MetropolisState<R> {
         }
     }
 
+    /// returns true if step target was reached
+    pub fn is_finished(&self) -> bool
+    {
+        self.step_target <= self.counter
+    }
+
     /// returns stored `m_beta` value (-&beta; for metropolis)
     pub fn m_beta(&self) -> f64 {
         self.m_beta
@@ -95,6 +107,15 @@ impl<R> MetropolisState<R> {
     /// returns, how many steps should be performed in total
     pub fn step_target(&self) -> usize {
         self.step_target
+    }
+
+    /// converts `self` in underlying rng generator
+    #[deprecated(
+        since = "0.3.1",
+        note = "Renamed to `into_rng`, use that instead. This member will be removed in the next braking release"
+    )]
+    pub fn to_rng(self) -> R {
+        self.rng
     }
 
     /// converts `self` in underlying rng generator

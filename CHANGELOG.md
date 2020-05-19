@@ -8,6 +8,10 @@
 
 # MetropolisState
 * rename `fn to_rng` &rarr; `fn into_rng`
+* add member `is_finished`
+
+# MetropolisSave
+* add member `is_finished`
 
 # ensembles
 * add member `make_connected` for `ErEnsembleC`
