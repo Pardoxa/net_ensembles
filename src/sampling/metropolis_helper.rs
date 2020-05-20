@@ -79,6 +79,18 @@ impl<R> MetropolisState<R> {
         self.m_beta
     }
 
+    /// sets m_beta (minus beta). Is related to the temperature: m_beta = -1 / temperature
+    pub fn set_m_beta(&mut self, m_beta: f64)
+    {
+        self.m_beta = m_beta;
+    }
+
+    /// sets m_beta according to m_beta = -1 / temperature
+    pub fn set_temperature(&mut self, temperature: f64)
+    {
+        self.m_beta = -1.0 / temperature;
+    }
+
     /// returns stored value for `current_energy`
     pub fn current_energy(&self) -> f64 {
         self.current_energy

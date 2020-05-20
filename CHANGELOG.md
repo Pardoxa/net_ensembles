@@ -9,6 +9,8 @@
 # MetropolisState
 * rename `fn to_rng` &rarr; `fn into_rng`
 * add member `is_finished`
+* add member `set_m_beta`
+* add member `set_temperature`
 
 # MetropolisSave
 * add member `is_finished`
