@@ -33,7 +33,7 @@ impl<E, R> MetropolisSave<E, R> {
 }
 
 /// used to store the current state of the monte carlo simulation
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct MetropolisState<R>
 {

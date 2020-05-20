@@ -11,6 +11,7 @@
 * add member `is_finished`
 * add member `set_m_beta`
 * add member `set_temperature`
+* derive Debug
 
 # MetropolisSave
 * add member `is_finished`
