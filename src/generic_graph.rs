@@ -783,12 +783,19 @@ where T: Node,
         } else {
             // well, then calculate from every node
             // (except 1 node) and use maximum found
-            self.container_iter()
-            .skip(1)
-            .map( |n|
-                self.longest_shortest_path_from_index(n.id())
-                    .expect("diameter ERROR 1")
-            ).max()
+            
+            let mut max = 0;
+            let mut bfs = self.bfs_index_depth(0);
+            for index in 1..self.vertex_count() {
+                let mut depth = 0;
+                bfs.reuse(index);
+                for (.., d) in &mut bfs {
+                    depth = d;
+                }
+                max = max.max(depth);
+            }
+
+            Some(max)
         }
     }
 
@@ -970,15 +977,22 @@ where T: Node,
         let mut queue1 = VecDeque::with_capacity(self.vertex_count());
         let mut ordering: Vec<usize> = Vec::with_capacity(self.vertex_count());
         let mut b = vec![0.0; self.vertex_count()];
+        let mut distance: Vec<Option<usize>> = vec![None; self.vertex_count()];
         let mut predecessor: Vec<Vec<usize>> = vec![Vec::new(); self.vertex_count()];
+        
 
         // init
         for i in 0..self.vertex_count() {
-            // clean predecessors, way more efficient then new allocation
-            predecessor.iter_mut()
-                .for_each(|list| list.clear());
-
-            let mut distance: Vec<Option<usize>> = vec![None; self.vertex_count()];
+            
+            if i > 0 {
+                for j in 0..self.vertex_count()
+                {
+                    distance[j] = None;
+                    // clear predecessors, way more efficient then new allocation
+                    predecessor[j].clear();
+                }
+            }
+            
 
             let mut depth = 0;
             queue0.push_back(i);
@@ -1043,20 +1057,20 @@ where T: Node,
     /// For the definition see for example:
     /// > M. E. J. Newman, "Networks: an Introduction" *Oxfort University Press*, 2010, ISBN: 978-0-19-920665-0.
     pub fn transitivity(&self) -> f64 {
-        let mut path_count = 0u64;
-        let mut closed_path_count = 0u64;
+        let mut path_count: usize = 0;
+        let mut closed_path_count: usize = 0;
         for source_index in 0..self.vertex_count() {
-            for &neighbor_1 in self
+            for neighbor_1 in self
                                 .container(source_index)
                                 .neighbors()
             {
-                for &neighbor_2 in self
-                                    .container(neighbor_1)
+                for neighbor_2 in self
+                                    .container(*neighbor_1)
                                     .neighbors()
                                     .filter(|&i| *i != source_index)  // do not use edge we came from
                 {
                     if self
-                        .container(neighbor_2)
+                        .container(*neighbor_2)
                         .is_adjacent(source_index)
                     {
                         closed_path_count += 1;
@@ -1191,6 +1205,20 @@ where   T: 'a + Node,
                 queue0,
                 queue1,
                 depth,
+            }
+        }
+
+        fn reuse(&mut self, index: usize) {
+            for item in self.handled.iter_mut(){
+                *item = false;
+            }
+            self.queue0.clear();
+            self.queue1.clear();
+            self.depth = 0;
+
+            if index < self.graph.vertex_count() {
+                self.queue0.push_back(index);
+                self.handled[index] = true;
             }
         }
 }
