@@ -239,8 +239,14 @@ impl <T, R> SwEnsemble<T, R>
         result
     }
 
-    /// # Connect the connected components
+    /// # **Experimental!** Connect the connected components
     /// * resets edges, to connect the connected components
+    /// * intended as starting point for a markov chain, if you require connected graphs
+    /// * do **not** use this to independently (simple-) sample connected networks,
+    ///   as this will skew the statistics 
+    /// * **This is still experimental, this member might change the internal functionallity
+    ///   resulting in different connected networks, without prior notice**
+    /// * **This member might be removed in braking releases**
     pub fn make_connected(&mut self)
     {
         while !self.is_connected().unwrap_or(true){

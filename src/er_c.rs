@@ -244,9 +244,15 @@ where T: Node + SerdeStateConform,
         e
     }
 
-    /// # Connect the connected components
+    /// # **Experimental!** Connect the connected components
     /// * adds edges, to connect the connected components
     /// * panics if no vertices are in the graph
+    /// * intended as starting point for a markov chain, if you require connected graphs
+    /// * do **not** use this to independently (simple-) sample connected networks,
+    ///   as this will skew the statistics
+    /// * **This is still experimental, this member might change the internal functionallity
+    ///   resulting in different connected networks, without prior notice**
+    /// * **This member might be removed in braking releases**
     pub fn make_connected(&mut self){
         let mut suggestions = self.graph.suggest_connections();
         let mut last_suggestion = suggestions.pop().unwrap();

@@ -17,8 +17,8 @@
 * add member `is_finished`
 
 # ensembles
-* add member `make_connected` for `ErEnsembleC`
-* add member `make_connected` for `SwEnsemble`
+* add **experimental** member `make_connected` for `ErEnsembleC`
+* add **experimental** member `make_connected` for `SwEnsemble`
 
 # traits
 * `GraphIterators` added member `contained_iter_neighbors_with_index(&self, index: usize)`
