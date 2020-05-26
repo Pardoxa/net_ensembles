@@ -40,7 +40,7 @@ fn connected_components() {
     assert_eq!(vec![1;20], graph.connected_components());
 
     let graph2: Graph<EmptyNode> = Graph::new(0);
-    assert_eq!(Vec::<u32>::new(), graph2.connected_components());
+    assert_eq!(Vec::<usize>::new(), graph2.connected_components());
 }
 
 #[test]
@@ -122,6 +122,7 @@ fn check_is_connected() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn dot_labeled() {
     let graph = create_graph_1();
     let s = graph.to_dot_with_labels_from_contained(EXAMPLE_DOT_OPTIONS, |_, index| format!("Hey {}!", index));
@@ -134,6 +135,7 @@ fn dot_labeled() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn dot() {
     let graph = create_graph_1();
     let s = graph.to_dot();
@@ -314,12 +316,12 @@ fn transitivity() {
 fn iter_neighbors() {
     let mut graph: Graph<EmptyNode> = Graph::new(6);
 
-    for i in 0..graph.vertex_count() as usize {
+    for i in 0..graph.vertex_count() {
         let mut iter = graph.contained_iter_neighbors(i);
         assert!(iter.next().is_none());
     }
 
-    for i in 0..graph.vertex_count() as usize {
+    for i in 0..graph.vertex_count() {
         let mut iter = graph.container_iter_neighbors(i);
         assert!(iter.next().is_none());
     }
@@ -328,16 +330,16 @@ fn iter_neighbors() {
         graph.add_edge(i, (i + 1) %  6).unwrap();
     }
 
-    for i in 0..graph.vertex_count() as usize {
+    for i in 0..graph.vertex_count() {
         let iter = graph.contained_iter_neighbors(i);
         assert!(iter.len() == 2);
     }
 
-    for i in 0..graph.vertex_count() as usize {
+    for i in 0..graph.vertex_count() {
         let mut iter = graph.container_iter_neighbors(i);
         assert!(iter.len() == 2);
         let next = iter.next();
-        let id = next.unwrap().id() as usize;
+        let id = next.unwrap().id();
         assert!(
             id == (i + 5) % 6 ||
             id == (i + 1) % 6
@@ -347,7 +349,7 @@ fn iter_neighbors() {
 
     graph.sort_adj();
 
-    for i in 0..graph.vertex_count() as usize {
+    for i in 0..graph.vertex_count() {
         let mut iter = graph.container_iter_neighbors(i);
         assert!(iter.len() == 2);
         assert!(

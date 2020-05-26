@@ -35,7 +35,7 @@ fn phase_test() {
             i as f64 * 0.5
         );
     }
-
+    #[allow(deprecated)]
     let dot = graph.to_dot_with_labels_from_contained(
         "",
         |contained, index| format!("Phase: {} at index {}", contained.get_phase(), index)
@@ -55,7 +55,7 @@ fn graph_parsing_big_random() {
 }
 
 #[cfg(feature = "serde_support")]
-fn graph_parsing_compare_random(seed: u64, size: u32) {
+fn graph_parsing_compare_random(seed: u64, size: usize) {
     // now check with a random graph
     let mut rng = Pcg64::seed_from_u64(seed);
     let mut graph: Graph<PhaseNode> = Graph::new(size);
@@ -70,7 +70,7 @@ fn graph_parsing_compare_random(seed: u64, size: u32) {
     let s = serde_json::to_string(&graph).unwrap();
     let parsed_graph: Graph::<PhaseNode> = serde_json::from_str(&s).unwrap();
     // check, that graphs are equal
-    for i in 0..size as usize {
+    for i in 0..size {
         assert_eq!(
             graph.at(i).get_phase(),
             parsed_graph.at(i).get_phase()
@@ -93,7 +93,7 @@ fn clone(){
     }
 
     let clone = graph.clone();
-    for i in 0..100 as usize {
+    for i in 0..100 {
         assert_eq!(
             graph.at(i).get_phase(),
             clone.at(i).get_phase()

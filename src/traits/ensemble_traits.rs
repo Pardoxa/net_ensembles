@@ -99,7 +99,7 @@ pub trait GraphIterators<T, G, A>
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    fn dfs(&self, index: u32) -> Dfs<'_, T, A>;
+    fn dfs(&self, index: usize) -> Dfs<'_, T, A>;
 
     /// # returns `Iterator`
     ///
@@ -116,7 +116,7 @@ pub trait GraphIterators<T, G, A>
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    fn dfs_with_index(&self, index: u32) -> DfsWithIndex<'_, T, A>;
+    fn dfs_with_index(&self, index: usize) -> DfsWithIndex<'_, T, A>;
 
     /// # returns `Iterator`
     ///
@@ -138,7 +138,7 @@ pub trait GraphIterators<T, G, A>
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    fn bfs_index_depth(&self, index: u32) -> Bfs<'_, T, A>;
+    fn bfs_index_depth(&self, index: usize) -> Bfs<'_, T, A>;
 }
 
 
@@ -171,17 +171,17 @@ where
         self.graph().contained_iter_neighbors_with_index(index)
     }
 
-    fn dfs(&self, index: u32) -> Dfs<'_, T, NodeContainer<T>>
+    fn dfs(&self, index: usize) -> Dfs<'_, T, NodeContainer<T>>
     {
         self.graph().dfs(index)
     }
 
-    fn dfs_with_index(&self, index: u32) -> DfsWithIndex<'_, T, NodeContainer<T>>
+    fn dfs_with_index(&self, index: usize) -> DfsWithIndex<'_, T, NodeContainer<T>>
     {
         self.graph().dfs_with_index(index)
     }
 
-    fn bfs_index_depth(&self, index: u32) -> Bfs<'_, T, NodeContainer<T>>
+    fn bfs_index_depth(&self, index: usize) -> Bfs<'_, T, NodeContainer<T>>
     {
         self.graph().bfs_index_depth(index)
     }
@@ -218,17 +218,17 @@ where
         self.graph().contained_iter_neighbors_with_index(index)
     }
 
-    fn dfs(&self, index: u32) -> Dfs<'_, T, SwContainer<T>>
+    fn dfs(&self, index: usize) -> Dfs<'_, T, SwContainer<T>>
     {
         self.graph().dfs(index)
     }
 
-    fn dfs_with_index(&self, index: u32) -> DfsWithIndex<'_, T, SwContainer<T>>
+    fn dfs_with_index(&self, index: usize) -> DfsWithIndex<'_, T, SwContainer<T>>
     {
         self.graph().dfs_with_index(index)
     }
 
-    fn bfs_index_depth(&self, index: u32) -> Bfs<'_, T, SwContainer<T>>
+    fn bfs_index_depth(&self, index: usize) -> Bfs<'_, T, SwContainer<T>>
     {
         self.graph().bfs_index_depth(index)
     }

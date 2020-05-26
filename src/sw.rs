@@ -19,12 +19,11 @@ use crate::GraphErrors;
 use crate::iter::{INContainedIterMut, NContainedIterMut, ContainedIterMut};
 use crate::sw_graph::SwContainer;
 use std::borrow::Borrow;
-use std::convert::TryFrom;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
-const ROOT_EDGES_PER_VERTEX: u32 = 2;
+const ROOT_EDGES_PER_VERTEX: usize = 2;
 
 /// # Returned by markov steps
 /// * information about the performed step and possible errors
@@ -37,9 +36,9 @@ pub enum SwChangeState {
     /// Nothing happend
     Nothing,
     /// old edge: (Rewire.0, Rewire.1), new edge (Rewire.0, Rewire.2)
-    Rewire(u32, u32, u32),
+    Rewire(usize, usize, usize),
     /// old edge: (Reset.0, Reset.1), new edge (Reset.0, Reset.2)
-    Reset(u32, u32, u32),
+    Reset(usize, usize, usize),
     /// A GraphError occurred
     GError(GraphErrors),
 }
@@ -226,7 +225,7 @@ impl <T, R> SwEnsemble<T, R>
     /// * `r_prob` is probability of rewiring for each edge
     /// * `rng` is consumed and used as random number generator in the following
     /// * internally uses `SwGraph<T>::new(n)`
-    pub fn new(n: u32, r_prob: f64, rng: R) -> Self {
+    pub fn new(n: usize, r_prob: f64, rng: R) -> Self {
         let mut graph = SwGraph::new(n);
         graph.init_ring_2();
         let mut result =
@@ -252,9 +251,9 @@ impl <T, R> SwEnsemble<T, R>
         while !self.is_connected().unwrap_or(true){
             let (num, ids) = self.graph.connected_components_ids();
             let mut new_connection = vec![false; num];
-            let vc_usize = self.vertex_count() as usize;
+            let vc_usize = self.vertex_count();
 
-            for  index in  0..vc_usize {
+            for index in  0..vc_usize {
                 let min = ids[index].min(ids[(index + 1) % vc_usize]);
                 if !new_connection[min as usize] && ids[index] != ids[(index + 1) % vc_usize] {
                     // find out, where the desired edge is pointing to right now
@@ -263,12 +262,12 @@ impl <T, R> SwEnsemble<T, R>
                         .iter_raw_edges()
                         .find(
                             |edge|
-                            edge.originally_to().map(|c| c as usize) == Some((index + 1) % vc_usize)
+                            edge.originally_to().map(|c| c) == Some((index + 1) % vc_usize)
                         )
                         .unwrap()
                         .to();
                     self.graph.reset_edge(
-                        u32::try_from(index).unwrap(),
+                        index,
                         to
                     );
                 }
@@ -280,7 +279,7 @@ impl <T, R> SwEnsemble<T, R>
     }
 
     /// draw number <= high but not index
-    fn draw_remaining(&mut self, index: u32, high: u32) -> u32 {
+    fn draw_remaining(&mut self, index: usize, high: usize) -> usize {
         let num = self.rng.gen_range(0, high);
 
         if num < index {
@@ -291,7 +290,7 @@ impl <T, R> SwEnsemble<T, R>
     }
 
     /// edge `(index0, index1)` has to be rooted at `index0`
-    fn randomize_edge(&mut self, index0: u32, index1: u32) -> SwChangeState {
+    fn randomize_edge(&mut self, index0: usize, index1: usize) -> SwChangeState {
         let vertex_count = self.graph.vertex_count();
 
         if self.rng.gen::<f64>() <= self.r_prob {
@@ -317,7 +316,7 @@ impl <T, R> SwEnsemble<T, R>
     /// * uniform probability
     /// * result dependent on order of adjecency lists
     /// * `mut` because it uses the `rng`
-    pub fn draw_edge(&mut self) -> (u32, u32) {
+    pub fn draw_edge(&mut self) -> (usize, usize) {
         // each vertex has the same number of root nodes
         // the root nodes have an order -> adjecency lists
         let rng_num = self.rng.gen_range(0, self.graph.edge_count());
@@ -325,12 +324,12 @@ impl <T, R> SwEnsemble<T, R>
         let e_index = rng_num % ROOT_EDGES_PER_VERTEX;
 
         let mut iter = self.graph
-            .container(v_index as usize)
+            .container(v_index)
             .iter_raw_edges()
             .filter(|x| x.is_root());
 
         let &to = iter
-            .nth(e_index as usize)
+            .nth(e_index)
             .unwrap()
             .to();
 
@@ -462,7 +461,7 @@ where   T: Node + SerdeStateConform,
 
         for i in 0..count {
             let vertex = self.graph
-                .get_mut_unchecked(i as usize);
+                .get_mut_unchecked(i);
 
             let mut root_iter = vertex
                 .iter_raw_edges()

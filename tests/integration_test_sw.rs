@@ -17,7 +17,7 @@ fn sanity_check() {
         assert_eq!(e.graph().vertex_count(), size);
         assert_eq!(e.graph().leaf_count(), 0);
         for i in 0..size {
-            assert_eq!(2, e.graph().container(i as usize).count_root());
+            assert_eq!(2, e.graph().container(i).count_root());
         }
     }
 }
@@ -34,7 +34,7 @@ fn random_step() {
         assert_eq!(e.graph().vertex_count(), size);
         assert_eq!(e.graph().leaf_count(), 0);
         for i in 0..size {
-            assert_eq!(2, e.graph().container(i as usize).count_root());
+            assert_eq!(2, e.graph().container(i).count_root());
         }
     }
 }

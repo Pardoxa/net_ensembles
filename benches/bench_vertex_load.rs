@@ -3,7 +3,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use rand_pcg::Pcg64;
 use core::time::Duration;
 
-const SIZE: u32 = 50;
+const SIZE: usize = 50;
 const C: f64 = 4.0;
 const SEED: u64 = 123_239_010;
 const M: usize = 100;

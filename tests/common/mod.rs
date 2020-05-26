@@ -39,7 +39,7 @@ impl PhaseNode {
 }
 
 impl Node for PhaseNode {
-    fn new_from_index(index: u32) -> Self {
+    fn new_from_index(index: usize) -> Self {
         PhaseNode { phase: 10.0 * index as f64 }
     }
 }

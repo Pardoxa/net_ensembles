@@ -4,7 +4,6 @@ use rand::SeedableRng;
 use net_ensembles::*;
 mod common;
 use common::{equal_graphs, PhaseNode};
-use net_ensembles::sampling::{MetropolisState, MetropolisSave};
 use std::fmt::Write;
 
 #[test]

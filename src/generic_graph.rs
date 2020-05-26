@@ -19,8 +19,8 @@ use serde::{Serialize, Deserialize};
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct GenericGraph<T, A>
 {
-    next_id: u32,
-    edge_count: u32,
+    next_id: usize,
+    edge_count: usize,
     vertices: Vec<A>,
     phantom: PhantomData<T>,
 }
@@ -30,8 +30,8 @@ where T: Node,
       A: AdjContainer<T> {
     /// Create new graph with `size` nodes
     /// and no edges
-    pub fn new(size: u32) -> Self {
-        let mut vertices = Vec::with_capacity(size as usize);
+    pub fn new(size: usize) -> Self {
+        let mut vertices = Vec::with_capacity(size);
         for i in 0..size {
             let container = A::new(i, T::new_from_index(i));
             vertices.push(container);
@@ -194,7 +194,7 @@ where T: Node,
     }
 
     /// returns number of vertices present in graph
-    pub fn vertex_count(&self) -> u32 {
+    pub fn vertex_count(&self) -> usize {
         self.next_id
     }
 
@@ -214,9 +214,9 @@ where T: Node,
     /// ## panics if:
     /// * index out of bounds
     /// * in debug: if indices are not unique
-    pub(crate) fn get_2_mut(&mut self, index0: u32, index1: u32) -> (&mut A, &mut A)
+    pub(crate) fn get_2_mut(&mut self, index0: usize, index1: usize) -> (&mut A, &mut A)
     {
-        assert!(
+        debug_assert!(
             index0 < self.next_id &&
             index1 < self.next_id,
             format!("net_ensembles - panic - index out of bounds! \
@@ -251,10 +251,10 @@ where T: Node,
     /// ## panics:
     /// * index out of bounds
     /// * in debug: if indices are not unique
-    pub(crate) fn get_3_mut(&mut self, index0: u32, index1: u32, index2: u32) ->
+    pub(crate) fn get_3_mut(&mut self, index0: usize, index1: usize, index2: usize) ->
         (&mut A, &mut A, &mut A)
     {
-        assert!(
+        debug_assert!(
             index0 < self.next_id &&
             index1 < self.next_id &&
             index2 < self.next_id
@@ -290,7 +290,7 @@ where T: Node,
     /// ## panics
     /// * if indices out of bounds
     /// * in debug: If `index0 == index1`
-    pub fn add_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
+    pub fn add_edge(&mut self, index1: usize, index2: usize) -> Result<(),GraphErrors> {
         let (r1, r2) = self.get_2_mut(index1, index2);
         unsafe{ r1.push(r2)?; }
         self.edge_count += 1;
@@ -306,7 +306,7 @@ where T: Node,
     /// # panics
     /// * if index out of bounds
     /// * in debug: If `index0 == index1`
-    pub fn remove_edge(&mut self, index1: u32, index2: u32) -> Result<(),GraphErrors> {
+    pub fn remove_edge(&mut self, index1: usize, index2: usize) -> Result<(),GraphErrors> {
         let (r1, r2) = self.get_2_mut(index1, index2);
         unsafe{ r1.remove(r2)?; }
         self.edge_count -= 1;
@@ -314,7 +314,7 @@ where T: Node,
     }
 
     /// returns total number of edges in graph
-    pub fn edge_count(&self) -> u32 {
+    pub fn edge_count(&self) -> usize {
         self.edge_count
     }
 
@@ -344,7 +344,7 @@ where T: Node,
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn dfs(&self, index: u32) -> Dfs<T, A> {
+    pub fn dfs(&self, index: usize) -> Dfs<T, A> {
         Dfs::new(&self, index)
     }
 
@@ -363,7 +363,7 @@ where T: Node,
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn dfs_with_index(&self, index: u32) -> DfsWithIndex<T, A> {
+    pub fn dfs_with_index(&self, index: usize) -> DfsWithIndex<T, A> {
         DfsWithIndex::new(&self, index)
     }
 
@@ -387,7 +387,7 @@ where T: Node,
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn bfs_index_depth(&self, index: u32) -> Bfs<T, A> {
+    pub fn bfs_index_depth(&self, index: usize) -> Bfs<T, A> {
         Bfs::new(&self, index)
     }
 
@@ -400,7 +400,7 @@ where T: Node,
         if self.vertex_count() == 0 {
             None
         } else {
-            Some(self.dfs(0).count() == self.vertex_count() as usize)
+            Some(self.dfs(0).count() == self.vertex_count())
         }
     }
 
@@ -440,12 +440,10 @@ where T: Node,
     ///
     /// assert_eq!(graph3.q_core(20), Some(0));
     /// ```
-    pub fn q_core(&self, q: u32) -> Option<u32> {
+    pub fn q_core(&self, q: usize) -> Option<usize> {
         if q < 2 || self.vertex_count() == 0 {
             return None;
         }
-
-        let v_count = self.vertex_count() as usize;
 
         let mut degree: Vec<_> = self.container_iter()
             .map(|vertex| vertex.degree())
@@ -456,17 +454,17 @@ where T: Node,
 
         while something_changed {
             something_changed = false;
-            for i in 0..v_count {
+            for i in 0..self.vertex_count() {
                 if degree[i] == 0 {
                     continue;
                 }
-                if degree[i] < q as usize {
+                if degree[i] < q {
                     self.vertices[i]
                         .neighbors()
-                        .for_each(|n|
+                        .for_each(|&n|
                             {
-                                if degree[*n as usize] > 0 {
-                                    degree[*n as usize] -= 1;
+                                if degree[n] > 0 {
+                                    degree[n] -= 1;
                                 }
                             }
                         );
@@ -479,9 +477,9 @@ where T: Node,
         // find biggest component
         let mut result = 0;
         // initiate stack
-        let mut stack: Vec<usize> = Vec::with_capacity(v_count);
+        let mut stack: Vec<usize> = Vec::with_capacity(self.vertex_count());
 
-        for i in 0..v_count {
+        for i in 0..self.vertex_count() {
             // skip all nodes that are removed or in a known component
             if degree[i] == 0 {
                 continue;
@@ -495,17 +493,17 @@ where T: Node,
             while let Some(index) = stack.pop() {
                 counter += 1;
 
-                for j in self
+                for &j in self
                     .container(index)
                     .neighbors()    // iterate over neighbors
                 {
                     // skip if already handled
-                    if degree[*j as usize] == 0 {
+                    if degree[j] == 0 {
                         continue;
                     }
 
-                    degree[*j as usize] = 0;
-                    stack.push(*j as usize);
+                    degree[j] = 0;
+                    stack.push(j);
                 }
             }
             result = max(result, counter);
@@ -518,20 +516,20 @@ where T: Node,
     /// * used for `self.connected_components()`
     /// * each vertex gets an id, all vertices with the same id are in the same connected component
     /// * returns (number of components, vector of ids)
-    pub fn connected_components_ids(&self) -> (usize, Vec<i32>)
+    pub fn connected_components_ids(&self) -> (usize, Vec<isize>)
     {
-        let mut component_id : Vec<i32> = vec![-1; self.vertex_count() as usize];
+        let mut component_id : Vec<isize> = vec![-1; self.vertex_count()];
         let mut current_id = 0;
 
         for i in 0..self.vertex_count(){
             // already in a component?
-            if component_id[i as usize] != -1 {
+            if component_id[i] != -1 {
                 continue;
             }
 
             // start depth first search over indices of vertices connected with vertex i
             for (j, _) in self.dfs_with_index(i) {
-                component_id[j as usize] = current_id;
+                component_id[j] = current_id;
             }
             current_id += 1;
 
@@ -549,7 +547,7 @@ where T: Node,
     /// * returns **empty** vector, if graph does not contain vertices
     /// * returns (reverse) **ordered vector of sizes** of the connected components,
     /// i.e. the biggest component is of size `result[0]` and the smallest is of size `result[result.len() - 1]`
-    pub fn connected_components(&self) -> Vec<u32> {
+    pub fn connected_components(&self) -> Vec<usize> {
 
         let (num_components, component_id) = self.connected_components_ids();
 
@@ -575,21 +573,21 @@ where T: Node,
     /// # Connects connected components (CCs)
     /// * returns vector of indices, where each corresponding node is in a different
     /// connected component
-    pub(crate) fn suggest_connections(& self) -> Vec<u32>
+    pub(crate) fn suggest_connections(& self) -> Vec<usize>
     {
         let mut suggestions = Vec::new();
-        let mut component_id : Vec<i32> = vec![-1; self.vertex_count() as usize];
+        let mut component_id : Vec<i32> = vec![-1; self.vertex_count()];
         let mut current_id = 0;
         for i in 0..self.vertex_count(){
             // already in a component?
-            if component_id[i as usize] != -1 {
+            if component_id[i] != -1 {
                 continue;
             }
             suggestions.push(i);
 
             // start depth first search over indices of vertices connected with vertex i
             for (j, _) in self.dfs_with_index(i) {
-                component_id[j as usize] = current_id;
+                component_id[j] = current_id;
             }
             current_id += 1;
 
@@ -621,9 +619,9 @@ where T: Node,
         }
         s += "\n";
 
-        for i in 0..self.vertex_count() as usize {
-            for j in self.container(i).neighbors() {
-                if i < *j as usize {
+        for i in 0..self.vertex_count() {
+            for &j in self.container(i).neighbors() {
+                if i < j {
                     s.push_str(&format!("\t{} -- {}\n", i, j));
                 }
             }
@@ -779,7 +777,7 @@ where T: Node,
 
     /// * returns `None` **if** graph not connected **or** does not contain any vertices
     /// * uses repeated breadth first search
-    pub fn diameter(&self) -> Option<u32> {
+    pub fn diameter(&self) -> Option<usize> {
         if !self.is_connected()? {
             None
         } else {
@@ -796,7 +794,7 @@ where T: Node,
 
     /// calculate the size of the longest shortest path **starting from** vertex with **index** `index`
     /// using breadth first search
-    pub fn longest_shortest_path_from_index(&self, index: u32) -> Option<u32> {
+    pub fn longest_shortest_path_from_index(&self, index: usize) -> Option<usize> {
         let (.., depth) = self.bfs_index_depth(index)
                             .last()?;
         Some(depth)
@@ -830,43 +828,42 @@ where T: Node,
     /// > M. E. J. Newman, "Networks: an Introduction" *Oxfort University Press*, 2010, ISBN: 978-0-19-920665-0.
     pub fn vertex_biconnected_components(mut self, alternative_definition: bool) -> Vec<usize> {
 
-        let mut low: Vec<usize> = vec![0; self.vertex_count() as usize];
-        let mut number: Vec<usize> = vec![0; self.vertex_count() as usize];
-        let mut handled: Vec<bool> = vec![false; self.vertex_count() as usize];
-        let mut edge_stack: Vec<(u32, u32)> = Vec::with_capacity(self.vertex_count() as usize);
-        let mut vertex_stack: Vec<u32> = Vec::with_capacity(self.vertex_count() as usize);
-        let mut biconnected_components: Vec<Vec<(u32, u32)>> = Vec::new();
+        let mut low: Vec<usize> = vec![0; self.vertex_count()];
+        let mut number: Vec<usize> = vec![0; self.vertex_count()];
+        let mut handled: Vec<bool> = vec![false; self.vertex_count()];
+        let mut edge_stack: Vec<(usize, usize)> = Vec::with_capacity(self.vertex_count());
+        let mut vertex_stack: Vec<usize> = Vec::with_capacity(self.vertex_count());
+        let mut biconnected_components: Vec<Vec<(usize, usize)>> = Vec::new();
 
-        let mut next_edge: (u32, u32);
+        let mut next_edge: (usize, usize);
 
-        for pivot in 0..self.vertex_count(){
-            let pivot_as_usize = pivot as usize;
-            if handled[pivot_as_usize] {
+        for pivot in 0..self.vertex_count() {
+
+            if handled[pivot] {
                 continue;
             }
-            low[pivot_as_usize] = 0;
-            number[pivot_as_usize] = 0;
-            handled[pivot_as_usize] = true;
+            low[pivot] = 0;
+            number[pivot] = 0;
+            handled[pivot] = true;
             vertex_stack.push(pivot);
 
-            while let Some(top_vertex) = vertex_stack.last() {
+            while let Some(&top_vertex) = vertex_stack.last() {
                 // if it has neighbors
-                let top_vertex_usize = *top_vertex as usize;
                 // does the vertex have neighbors?
                 if self
-                    .degree(top_vertex_usize)
+                    .degree(top_vertex)
                     .unwrap() > 0
                     {
                         // remove one edge from graph, put it on stack
                         next_edge = (
-                            *top_vertex,
+                            top_vertex,
                             *self
-                            .container(top_vertex_usize)
+                            .container(top_vertex)
                             .get_adj_first()
                             .unwrap()
                         );
                         edge_stack.push(next_edge);
-                        let next_vertex = next_edge.1 as usize;
+                        let next_vertex = next_edge.1;
                         self.remove_edge(next_edge.0, next_edge.1).unwrap();
 
                         // check if next_vertex is not handled yet
@@ -876,28 +873,28 @@ where T: Node,
                             // add to stack of points
                             vertex_stack.push(next_edge.1);
                             // set LOWPOINT of the new point to NUMBER of current point
-                            low[next_vertex] = number[top_vertex_usize];
+                            low[next_vertex] = number[top_vertex];
                             // now the point was visited once -> handled
                             handled[next_vertex] = true;
                         }
                         // Head of edge new point? NO -> Number of Head of edge lower than LOWPOINT of top point?
-                        else if number[next_vertex] < low[top_vertex_usize] {
+                        else if number[next_vertex] < low[top_vertex] {
                             // Set LOWPOINT of top Point to that number
-                            low[top_vertex_usize] = number[next_vertex];
+                            low[top_vertex] = number[next_vertex];
                         }
                     }
                     // top point on stack has no edge
                     else {
                         vertex_stack.pop();
                         // at least one point in stack?
-                        if let Some(next_vertex) = vertex_stack.last() {
+                        if let Some(&next_vertex) = vertex_stack.last() {
                             // LOWPOINT of top point equals NUMBER of next point on stack?
-                            if low[top_vertex_usize] == number[*next_vertex as usize]{
-                                let mut tmp_component: Vec<(u32, u32)> = Vec::new();
+                            if low[top_vertex] == number[next_vertex]{
+                                let mut tmp_component: Vec<(usize, usize)> = Vec::new();
 
                                 while let Some(current_edge) = edge_stack.last() {
-                                    if number[current_edge.1 as usize] < number[*next_vertex as usize]
-                                    || number[current_edge.0 as usize] < number[*next_vertex as usize]
+                                    if number[current_edge.1] < number[next_vertex]
+                                    || number[current_edge.0] < number[next_vertex]
                                     {
                                         break;
                                     }
@@ -910,9 +907,9 @@ where T: Node,
                                 }
                             }
                             // LOWPOINT of top point equals NUMBER of next point on stack? NO
-                            else if low[top_vertex_usize] < low[*next_vertex as usize] {
+                            else if low[top_vertex] < low[next_vertex] {
                                 // Set LOWPOINT of next point equal LOWPOINT of current point if less
-                                low[*next_vertex as usize] = low[top_vertex_usize]
+                                low[next_vertex] = low[top_vertex]
                             }
 
                         }
@@ -969,11 +966,11 @@ where T: Node,
     /// > Phys. Rev. E **73**, 039906, 2006, DOI: [10.1103/PhysRevE.73.039906](https://doi.org/10.1103/PhysRevE.73.039906)
     pub fn vertex_load(&self, include_endpoints: bool) -> Vec<f64> {
 
-        let mut queue0 = VecDeque::with_capacity(self.vertex_count() as usize);
-        let mut queue1 = VecDeque::with_capacity(self.vertex_count() as usize);
-        let mut ordering: Vec<u32> = Vec::with_capacity(self.vertex_count() as usize);
-        let mut b = vec![0.0; self.vertex_count() as usize];
-        let mut predecessor: Vec<Vec<u32>> = vec![Vec::new(); self.vertex_count() as usize];
+        let mut queue0 = VecDeque::with_capacity(self.vertex_count());
+        let mut queue1 = VecDeque::with_capacity(self.vertex_count());
+        let mut ordering: Vec<usize> = Vec::with_capacity(self.vertex_count());
+        let mut b = vec![0.0; self.vertex_count()];
+        let mut predecessor: Vec<Vec<usize>> = vec![Vec::new(); self.vertex_count()];
 
         // init
         for i in 0..self.vertex_count() {
@@ -981,29 +978,29 @@ where T: Node,
             predecessor.iter_mut()
                 .for_each(|list| list.clear());
 
-            let mut distance: Vec<Option<u32>> = vec![None; self.vertex_count() as usize];
+            let mut distance: Vec<Option<usize>> = vec![None; self.vertex_count()];
 
             let mut depth = 0;
             queue0.push_back(i);
-            distance[i as usize] = Some(depth);
+            distance[i] = Some(depth);
 
-            let mut b_k = vec![1f64; self.vertex_count() as usize];
+            let mut b_k = vec![1f64; self.vertex_count()];
 
             // build up predecessor and ordering information
             while let Some(index) = queue0.pop_front() {
                 ordering.push(index); // to get indices in reverse order of distance
-                let container = self.container(index as usize);
-                for neighbor in container.neighbors() {
-                    if let Some(d) = distance[*neighbor as usize] {
+                let container = self.container(index);
+                for &neighbor in container.neighbors() {
+                    if let Some(d) = distance[neighbor] {
                         if d == depth + 1 {
-                            predecessor[*neighbor as usize].push(index);
+                            predecessor[neighbor].push(index);
                         }
                     }
                     // None
                     else {
-                        distance[*neighbor as usize] = Some(depth + 1);
-                        queue1.push_back(*neighbor);
-                        predecessor[*neighbor as usize].push(index);
+                        distance[neighbor] = Some(depth + 1);
+                        queue1.push_back(neighbor);
+                        predecessor[neighbor].push(index);
                     }
                 }
                 if queue0.is_empty() {
@@ -1020,15 +1017,15 @@ where T: Node,
                 }
                 // add number of shortest path to total count
 
-                b[index as usize] += b_k[index as usize];
+                b[index] += b_k[index];
                 if !include_endpoints {
-                    b[index as usize] -= 1.0;
+                    b[index] -= 1.0;
                 }
 
 
-                let fraction = b_k[index as usize] / predecessor[index as usize].len() as f64;
-                for pred in predecessor[index as usize].iter() {
-                    b_k[*pred as usize] += fraction;
+                let fraction = b_k[index] / predecessor[index].len() as f64;
+                for pred in predecessor[index].iter() {
+                    b_k[*pred] += fraction;
                 }
             }
 
@@ -1049,17 +1046,17 @@ where T: Node,
         let mut path_count = 0u64;
         let mut closed_path_count = 0u64;
         for source_index in 0..self.vertex_count() {
-            for neighbor_1 in self
-                                .container(source_index as usize)
+            for &neighbor_1 in self
+                                .container(source_index)
                                 .neighbors()
             {
-                for neighbor_2 in self
-                                    .container(*neighbor_1 as usize)
+                for &neighbor_2 in self
+                                    .container(neighbor_1)
                                     .neighbors()
                                     .filter(|&i| *i != source_index)  // do not use edge we came from
                 {
                     if self
-                        .container(*neighbor_2 as usize)
+                        .container(neighbor_2)
                         .is_adjacent(source_index)
                     {
                         closed_path_count += 1;
@@ -1099,9 +1096,9 @@ where
             writeln!(writer, "\t\"{}\" [label=\"{}\"];", index, fun.as_ref())?;
         }
 
-        for i in 0..self.vertex_count() as usize {
-            for j in self.container(i).neighbors() {
-                if i < *j as usize {
+        for i in 0..self.vertex_count() {
+            for &j in self.container(i).neighbors() {
+                if i < j {
                     writeln!(writer, "\t{} -- {}", i, j)?;
 
                 }
@@ -1144,14 +1141,14 @@ where T: Node,
         }
         writeln!(writer, ";")?;
 
-        for index in 0..self.vertex_count() as usize {
+        for index in 0..self.vertex_count() {
             let fun = f(index);
             writeln!(writer, "\t\"{}\" [label=\"{}\"];", index, fun.as_ref())?;
         }
 
-        for i in 0..self.vertex_count() as usize {
-            for j in self.container(i).neighbors() {
-                if i < *j as usize {
+        for i in 0..self.vertex_count() {
+            for &j in self.container(i).neighbors() {
+                if i < j {
                     writeln!(writer, "\t{} -- {}", i, j)?;
 
                 }
@@ -1169,23 +1166,23 @@ where   T: 'a + Node,
 {
         graph: &'a GenericGraph<T, A>,
         handled: Vec<bool>,
-        queue0: VecDeque<u32>,
-        queue1: VecDeque<u32>,
-        depth: u32,
+        queue0: VecDeque<usize>,
+        queue1: VecDeque<usize>,
+        depth: usize,
 }
 
 impl<'a, T, A> Bfs<'a, T, A>
 where   T: 'a + Node,
         A: AdjContainer<T>
 {
-        fn new(graph: &'a GenericGraph<T, A>, index: u32) -> Self {
-            let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
-            let mut queue0 = VecDeque::with_capacity(graph.vertex_count() as usize);
-            let queue1 = VecDeque::with_capacity(graph.vertex_count() as usize);
+        fn new(graph: &'a GenericGraph<T, A>, index: usize) -> Self {
+            let mut handled: Vec<bool> = vec![false; graph.vertex_count()];
+            let mut queue0 = VecDeque::with_capacity(graph.vertex_count());
+            let queue1 = VecDeque::with_capacity(graph.vertex_count());
             let depth = 0;
             if index < graph.vertex_count() {
                 queue0.push_back(index);
-                handled[index as usize] = true;
+                handled[index] = true;
             }
 
             Bfs {
@@ -1204,15 +1201,15 @@ impl<'a, T, A> Iterator for Bfs<'a, T, A>
 where   T: 'a + Node,
         A: AdjContainer<T>
 {
-        type Item = (u32, &'a T, u32);
+        type Item = (usize, &'a T, usize);
         fn next(&mut self) -> Option<Self::Item> {
             // if queue0 is not empty, take element from queue, push neighbors to other queue
             if let Some(index) = self.queue0.pop_front() {
-                let container = self.graph.container(index as usize);
-                for i in container.neighbors() {
-                    if !self.handled[*i as usize] {
-                        self.handled[*i as usize] = true;
-                        self.queue1.push_back(*i);
+                let container = self.graph.container(index);
+                for &i in container.neighbors() {
+                    if !self.handled[i] {
+                        self.handled[i] = true;
+                        self.queue1.push_back(i);
                     }
                 }
                 Some((index, container.contained(), self.depth))
@@ -1233,19 +1230,19 @@ where   T: 'a + Node,
 {
         graph: &'a GenericGraph<T, A>,
         handled: Vec<bool>,
-        stack: Vec<u32>,
+        stack: Vec<usize>,
 }
 
 impl<'a, T, A> DfsWithIndex<'a, T, A>
     where   T: 'a + Node,
             A: AdjContainer<T>
 {
-        fn new(graph: &'a GenericGraph<T, A>, index: u32) -> Self {
-            let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
-            let mut stack: Vec<u32> = Vec::with_capacity(graph.vertex_count() as usize);
+        fn new(graph: &'a GenericGraph<T, A>, index: usize) -> Self {
+            let mut handled: Vec<bool> = vec![false; graph.vertex_count()];
+            let mut stack: Vec<usize> = Vec::with_capacity(graph.vertex_count() / 2);
             if index < graph.vertex_count() {
                 stack.push(index);
-                handled[index as usize] = true;
+                handled[index] = true;
             }
 
             DfsWithIndex {
@@ -1261,21 +1258,18 @@ impl<'a, T, A> Iterator for DfsWithIndex<'a, T, A>
 where   T: 'a + Node,
         A: AdjContainer<T>
 {
-        type Item = (u32, &'a T);
+        type Item = (usize, &'a T);
 
         fn next(&mut self) -> Option<Self::Item> {
-            if let Some(index) = self.stack.pop(){
-                let container = self.graph.container(index as usize);
-                for i in container.neighbors() {
-                    if !self.handled[*i as usize] {
-                        self.handled[*i as usize] = true;
-                        self.stack.push(*i);
-                    }
+            let index = self.stack.pop()?;
+            let container = self.graph.container(index);
+            for &i in container.neighbors() {
+                if !self.handled[i] {
+                    self.handled[i] = true;
+                    self.stack.push(i);
                 }
-                Some((index, container.contained()))
-            } else {
-                None
             }
+            Some((index, container.contained()))
         }
 }
 
@@ -1286,7 +1280,7 @@ where   T: 'a + Node,
 {
         graph: &'a GenericGraph<T, A>,
         handled: Vec<bool>,
-        stack: Vec<u32>,
+        stack: Vec<usize>,
 }
 
 
@@ -1295,12 +1289,12 @@ where   T: 'a + Node,
         A: AdjContainer<T>
 {
     /// panics if `index` >= graph.vertex_count()
-    fn new(graph: &'a GenericGraph<T, A>, index: u32) -> Self {
-        let mut handled: Vec<bool> = vec![false; graph.vertex_count() as usize];
-        let mut stack: Vec<u32> = Vec::with_capacity(graph.vertex_count() as usize);
+    fn new(graph: &'a GenericGraph<T, A>, index: usize) -> Self {
+        let mut handled: Vec<bool> = vec![false; graph.vertex_count()];
+        let mut stack: Vec<usize> = Vec::with_capacity(graph.vertex_count() / 2);
         if index < graph.vertex_count() {
             stack.push(index);
-            handled[index as usize] = true;
+            handled[index] = true;
         }
 
         Dfs {
@@ -1318,17 +1312,14 @@ where   T: 'a + Node,
         type Item = &'a T;
 
         fn next(&mut self) -> Option<Self::Item> {
-            if let Some(index) = self.stack.pop(){
-                let container = self.graph.container(index as usize);
-                for i in container.neighbors() {
-                    if !self.handled[*i as usize] {
-                        self.handled[*i as usize] = true;
-                        self.stack.push(*i);
-                    }
+            let index = self.stack.pop()?;
+            let container = self.graph.container(index);
+            for &i in container.neighbors() {
+                if !self.handled[i] {
+                    self.handled[i] = true;
+                    self.stack.push(i);
                 }
-                Some(container.contained())
-            } else {
-                None
             }
+            Some(container.contained())
         }
 }

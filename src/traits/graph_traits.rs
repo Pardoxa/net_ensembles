@@ -7,7 +7,7 @@ use crate::GenericGraph;
 pub trait Node
 where Self: Clone + SerdeStateConform {
     /// how to construct a blank object
-    fn new_from_index(index: u32) -> Self;
+    fn new_from_index(index: usize) -> Self;
 }
 
 
@@ -49,7 +49,7 @@ impl fmt::Display for GraphErrors {
 pub trait AdjContainer<T: Node>
 {
     /// Create new instance with id
-    fn new(id: u32, node: T) -> Self;
+    fn new(id: usize, node: T) -> Self;
 
 
     /// return reference to what the AdjContainer contains
@@ -65,15 +65,15 @@ pub trait AdjContainer<T: Node>
     fn degree(&self) -> usize;
 
     /// returns id of container
-    fn id(&self) -> u32;
+    fn id(&self) -> usize;
 
     /// returns `Some(first element from the adjecency List)` or `None`
-    fn get_adj_first(&self) -> Option<&u32>;
+    fn get_adj_first(&self) -> Option<&usize>;
 
     /// check if vertex with `other_id` is adjacent to self
     /// ## Note:
     /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
-    fn is_adjacent(&self, other_id: u32) -> bool;
+    fn is_adjacent(&self, other_id: usize) -> bool;
 
     /// Sorting adjecency lists
     fn sort_adj(&mut self);
@@ -126,14 +126,14 @@ pub trait MeasurableGraphQuantities<G>
     /// * returns **empty** vector, if graph does not contain vertices
     /// * returns (reverse) **ordered vector of sizes** of the connected components,
     /// i.e. the biggest component is of size `result[0]` and the smallest is of size `result[result.len() - 1]`
-    fn connected_components(&self) -> Vec<u32>;
+    fn connected_components(&self) -> Vec<usize>;
 
     /// * returns `None` **if** graph not connected **or** does not contain any vertices
     /// * uses repeated breadth first search
-    fn diameter(&self) -> Option<u32>;
+    fn diameter(&self) -> Option<usize>;
 
     /// returns total number of edges in graph
-    fn edge_count(&self) -> u32;
+    fn edge_count(&self) -> usize;
 
     /// | result       |                          condition                       |
     /// |--------------|----------------------------------------------------------|
@@ -147,14 +147,14 @@ pub trait MeasurableGraphQuantities<G>
 
     /// calculate the size of the longest shortest path **starting from** vertex with **index** `index`
     /// using breadth first search
-    fn longest_shortest_path_from_index(&self, index: u32) -> Option<u32>;
+    fn longest_shortest_path_from_index(&self, index: usize) -> Option<usize>;
 
     /// # definition
     /// Calculates the size of the **q-core** (i.e. number of nodes in the biggest possible set of nodes,
     /// where all nodes from the set are connected with at least `q` other nodes from the set)
     ///
     /// returns `None` if impossible to calculate (e.g. `vertex_count == 0` or `q <= 1`)
-    fn q_core(&self, q: u32) -> Option<u32>;
+    fn q_core(&self, q: usize) -> Option<usize>;
 
     /// # Calculates transitivity of graph
     /// * related to cluster coefficient (Note: transitivity and cluster coefficient are similar,
@@ -196,7 +196,7 @@ pub trait MeasurableGraphQuantities<G>
     fn vertex_biconnected_components(&self, alternative_definition: bool) -> Vec<usize>;
 
     /// returns number of vertices present in graph
-    fn vertex_count(&self) -> u32;
+    fn vertex_count(&self) -> usize;
 
 
     /// # Closely related (most of the time equal) to betweeness
@@ -236,15 +236,15 @@ where
         self.as_ref().degree(index)
     }
 
-    fn connected_components(&self) -> Vec<u32> {
+    fn connected_components(&self) -> Vec<usize> {
         self.as_ref().connected_components()
     }
 
-    fn diameter(&self) -> Option<u32> {
+    fn diameter(&self) -> Option<usize> {
         self.as_ref().diameter()
     }
 
-    fn edge_count(&self) -> u32 {
+    fn edge_count(&self) -> usize {
         self.as_ref().edge_count()
     }
 
@@ -256,11 +256,11 @@ where
         self.as_ref().leaf_count()
     }
 
-    fn longest_shortest_path_from_index(&self, index: u32) -> Option<u32> {
+    fn longest_shortest_path_from_index(&self, index: usize) -> Option<usize> {
         self.as_ref().longest_shortest_path_from_index(index)
     }
 
-    fn q_core(&self, q: u32) -> Option<u32>{
+    fn q_core(&self, q: usize) -> Option<usize>{
         self.as_ref().q_core(q)
     }
 
@@ -273,7 +273,7 @@ where
         clone.vertex_biconnected_components(alternative_definition)
     }
 
-    fn vertex_count(&self) -> u32 {
+    fn vertex_count(&self) -> usize {
         self.as_ref().vertex_count()
     }
 

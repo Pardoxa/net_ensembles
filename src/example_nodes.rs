@@ -10,7 +10,7 @@ use serde::{Serialize, Deserialize};
 pub struct EmptyNode {}
 
 impl Node for EmptyNode {
-    fn new_from_index(_: u32) -> Self {
+    fn new_from_index(_: usize) -> Self {
         EmptyNode { }
     }
 }

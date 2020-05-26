@@ -12,16 +12,16 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub(crate) struct SwEdge {
-    to: u32,
-    originally_to: Option<u32>,
+    to: usize,
+    originally_to: Option<usize>,
 }
 
 impl SwEdge {
-    pub(crate) fn to(&self) -> &u32 {
+    pub(crate) fn to(&self) -> &usize {
         &self.to
     }
 
-    pub(crate) fn originally_to(&self) -> &Option<u32> {
+    pub(crate) fn originally_to(&self) -> &Option<usize> {
         &self.originally_to
     }
 
@@ -33,7 +33,7 @@ impl SwEdge {
         self.to = self.originally_to.unwrap();
     }
 
-    fn rewire(&mut self, other_id: u32) {
+    fn rewire(&mut self, other_id: usize) {
         self.to = other_id;
     }
 
@@ -61,7 +61,7 @@ impl<'a> SwEdgeIterNeighbors<'a> {
 impl<'a> FusedIterator for SwEdgeIterNeighbors<'a> {}
 
 impl<'a> Iterator for SwEdgeIterNeighbors<'a> {
-    type Item = &'a u32;
+    type Item = &'a usize;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -121,7 +121,7 @@ impl<'a> ExactSizeIterator for SwEdgeIterNeighbors<'a> {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SwContainer<T: Node> {
-    id: u32,
+    id: usize,
     adj: Vec<SwEdge>,
     node: T,
 }
@@ -130,7 +130,7 @@ impl<T> AdjContainer<T> for SwContainer<T>
 where T: Node + SerdeStateConform
 {
     /// Create new instance with id
-    fn new(id: u32, node: T) -> Self {
+    fn new(id: usize, node: T) -> Self {
         SwContainer{
             id,
             node,
@@ -161,12 +161,12 @@ where T: Node + SerdeStateConform
     }
 
     /// returns id of container
-    fn id(&self) -> u32{
+    fn id(&self) -> usize {
         self.id
     }
 
     /// returns `Some(first element from the adjecency List)` or `None`
-    fn get_adj_first(&self) -> Option<&u32>{
+    fn get_adj_first(&self) -> Option<&usize>{
         Some (
             self.adj
                 .first()?
@@ -177,7 +177,7 @@ where T: Node + SerdeStateConform
     /// check if vertex with `other_id` is adjacent to self
     /// ## Note:
     /// (in `GenericGraph<T>`: `id` equals the index corresponding to `self`)
-    fn is_adjacent(&self, other_id: u32) -> bool{
+    fn is_adjacent(&self, other_id: usize) -> bool{
         SwEdgeIterNeighbors::new(self.adj.as_slice())
             .any(|&x| x == other_id)
     }
@@ -252,12 +252,12 @@ where T: Node + SerdeStateConform
 
 impl<T: Node + SerdeStateConform> SwContainer<T> {
 
-    fn adj_position(&self, elem: u32) -> Option<usize> {
+    fn adj_position(&self, elem: usize) -> Option<usize> {
         SwEdgeIterNeighbors::new(self.adj.as_slice())
             .position(|&x| x == elem)
     }
 
-    fn swap_remove_element(&mut self, elem: u32) {
+    fn swap_remove_element(&mut self, elem: usize) {
         let index = self.adj_position(elem)
             .expect("swap_remove_element ERROR 0");
 
@@ -283,7 +283,7 @@ impl<T: Node + SerdeStateConform> SwContainer<T> {
     /// * panics in debug, if edge exists already
     /// * intended for usage after `reset`
     /// * No guarantees whatsoever, if you use it for something else
-    unsafe fn push_single(&mut self, other_id: u32) {
+    unsafe fn push_single(&mut self, other_id: usize) {
         debug_assert!(
             !self.is_adjacent(other_id),
             "SwContainer::push single - ERROR: pushed existing edge!"
@@ -340,7 +340,7 @@ impl<T: Node + SerdeStateConform> SwContainer<T> {
     /// * If successful will return edge, that needs to be added to the graph **using `push_single`**
     /// # panics
     /// * in debug: if edge not rooted at self
-    fn reset(&mut self, other: &mut Self) -> Result<u32, SwChangeState> {
+    fn reset(&mut self, other: &mut Self) -> Result<usize, SwChangeState> {
 
         let self_index = self.adj_position(other.id());
 
@@ -395,7 +395,7 @@ where T: Node + SerdeStateConform {
     /// # Reset small-world edge to its root state
     /// * **panics** if index out of bounds
     /// * in debug: panics if `index0 == index1`
-    pub fn reset_edge(&mut self, index0: u32, index1: u32) -> SwChangeState {
+    pub fn reset_edge(&mut self, index0: usize, index1: usize) -> SwChangeState {
         let (e1, e2) = self.get_2_mut(index0, index1);
 
         let vertex_index =
@@ -406,7 +406,7 @@ where T: Node + SerdeStateConform {
 
         unsafe {
             self
-                .get_mut_unchecked(vertex_index as usize)
+                .get_mut_unchecked(vertex_index)
                 .push_single(index0);
         }
         SwChangeState::Reset(index0, index1, vertex_index)
@@ -418,7 +418,7 @@ where T: Node + SerdeStateConform {
     /// *  if indices are out of bounds
     /// *  in debug: panics if `index0 == index2`
     /// *  edge `(index0, index1)` has to be rooted at `index0`, else will panic in **debug** mode
-    pub fn rewire_edge(&mut self, index0: u32, index1: u32, index2: u32) -> SwChangeState {
+    pub fn rewire_edge(&mut self, index0: usize, index1: usize, index2: usize) -> SwChangeState {
         if index1 == index2 {
             return SwChangeState::Nothing;
         }
@@ -459,7 +459,7 @@ mod tests {
 
     #[test]
     fn sw_ring_2() {
-        let size = 300u32;
+        let size = 300;
         let mut graph = SwGraph::<EmptyNode>::new(size);
         graph.init_ring_2();
 
@@ -467,13 +467,13 @@ mod tests {
         assert_eq!(graph.edge_count(), size * 2);
 
         for i in 0..size {
-            assert_eq!(2, graph.container(i as usize).count_root());
+            assert_eq!(2, graph.container(i).count_root());
         }
 
         graph.sort_adj();
 
         for i in 0..size {
-            let container = graph.container(i as usize);
+            let container = graph.container(i);
             assert_eq!(container.id(), i);
             let m2 = if i >= 2 {i - 2} else { (i + size - 2) % size };
             let m1 = if i >= 1 {i - 1} else { (i + size - 1) % size };
@@ -483,7 +483,7 @@ mod tests {
             v.sort_unstable_by_key(|x| x.0);
 
             let iter = graph
-                .get_mut_unchecked(i as usize)
+                .get_mut_unchecked(i)
                 .iter_raw_edges();
             for (edge, other_edge) in iter.zip(v.iter()) {
                 assert_eq!(edge.to(), &other_edge.0);
@@ -503,7 +503,7 @@ mod tests {
                 None
             };
             let e = SwEdge{
-                to: rng.gen::<u32>(),
+                to: rng.gen::<usize>(),
                 originally_to: o,
             };
 

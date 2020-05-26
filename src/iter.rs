@@ -12,7 +12,7 @@ use core::iter::FusedIterator;
 /// * Iterator returns `&u32`
 pub enum IterWrapper<'a>{
     /// contains generic slice iter
-    GenericIter(std::slice::Iter::<'a,u32>),
+    GenericIter(std::slice::Iter::<'a, usize>),
     /// contains iter from sw implementation
     SwIter(SwEdgeIterNeighbors::<'a>),
 }
@@ -20,7 +20,7 @@ pub enum IterWrapper<'a>{
 impl<'a> FusedIterator for IterWrapper<'a> { }
 
 impl<'a> Iterator for IterWrapper<'a> {
-    type Item = &'a u32;
+    type Item = &'a usize;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -82,7 +82,7 @@ impl<'a> DoubleEndedIterator for IterWrapper<'a> {
 impl<'a> IterWrapper<'a> {
     /// Create new `IterWrapper` from generic slice iterator
     #[inline]
-    pub fn new_generic(iter: std::slice::Iter::<'a,u32>) -> Self {
+    pub fn new_generic(iter: std::slice::Iter::<'a, usize>) -> Self {
         Self::GenericIter(iter)
     }
 
@@ -226,15 +226,13 @@ where T: 'a + Node,
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next()?;
-        let index = *index as usize;
-        Some(&self.vertex_slice[index])
+        Some(&self.vertex_slice[*index])
     }
 
     #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         let index = self.index_iter.nth(n)?;
-        let index = *index as usize;
-        Some(&self.vertex_slice[index])
+        Some(&self.vertex_slice[*index])
     }
 
     #[inline]
@@ -250,8 +248,7 @@ where T: 'a + Node,
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next_back()?;
-        let index = *index as usize;
-        Some(&self.vertex_slice[index])
+        Some(&self.vertex_slice[*index])
     }
 }
 
@@ -308,15 +305,13 @@ where T: 'a + Node,
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next()?;
-        let index = *index as usize;
-        Some(&self.vertex_slice[index].contained())
+        Some(&self.vertex_slice[*index].contained())
     }
 
     #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         let index = self.index_iter.nth(n)?;
-        let index = *index as usize;
-        Some(&self.vertex_slice[index].contained())
+        Some(&self.vertex_slice[*index].contained())
     }
 
     #[inline]
@@ -332,8 +327,7 @@ where T: 'a + Node,
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next_back()?;
-        let index = *index as usize;
-        Some(&self.vertex_slice[index].contained())
+        Some(&self.vertex_slice[*index].contained())
     }
 }
 
@@ -389,15 +383,13 @@ where T: 'a + Node,
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        let index = self.index_iter.next()?;
-        let index = *index as usize;
+        let index = *self.index_iter.next()?;
         Some((index, &self.vertex_slice[index].contained()))
     }
 
     #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        let index = self.index_iter.nth(n)?;
-        let index = *index as usize;
+        let index = *self.index_iter.nth(n)?;
         Some((index, &self.vertex_slice[index].contained()))
     }
 
@@ -413,8 +405,7 @@ where T: 'a + Node,
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        let index = self.index_iter.next_back()?;
-        let index = *index as usize;
+        let index = *self.index_iter.next_back()?;
         Some((index, &self.vertex_slice[index].contained()))
     }
 }
@@ -568,8 +559,7 @@ where T: 'a + Node,
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        let index = self.index_iter.next()?;
-        let index = *index as usize;
+        let index = *self.index_iter.next()?;
 
         assert!(index < self.vertex_slice.len());
 
@@ -581,8 +571,7 @@ where T: 'a + Node,
 
     #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        let index = self.index_iter.nth(n)?;
-        let index = *index as usize;
+        let index = *self.index_iter.nth(n)?;
 
         assert!(index < self.vertex_slice.len());
 
@@ -605,9 +594,7 @@ where T: 'a + Node,
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        let index = self.index_iter.next_back()?;
-
-        let index = *index as usize;
+        let index = *self.index_iter.next_back()?;
 
         assert!(index < self.vertex_slice.len());
 

@@ -5,7 +5,7 @@ use core::time::Duration;
 mod common;
 use common::*;
 
-const SIZE: u32 = 50;
+const SIZE: usize = 50;
 const SEED: u64 = 123_239_010;
 const M_STEPSIZE: usize = 100;
 

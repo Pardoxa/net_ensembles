@@ -1,6 +1,6 @@
 [package]
 name = "net_ensembles"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["Yannick Feld"]
 edition = "2018"
 readme = "README.md"
@@ -39,3 +39,26 @@ criterion = "0.3"
 [features]
 serde_support = ["serde"]
 default = ["serde_support"]
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+[[bench]]
+name = "sw_bench"
+harness = false
+
+[[bench]]
+name = "er_m_bench"
+harness = false
+
+[[bench]]
+name = "er_c_bench"
+harness = false
+
+[[bench]]
+name = "bench_vertex_load"
+harness = false
+
+[[bench]]
+name = "bench_q_core"
+harness = false

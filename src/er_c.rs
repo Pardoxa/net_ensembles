@@ -25,9 +25,9 @@ pub enum ErStepC {
     /// nothing was changed
     Nothing,
     /// an edge was added
-    AddedEdge((u32, u32)),
+    AddedEdge((usize, usize)),
     /// an edge was removed
-    RemovedEdge((u32, u32)),
+    RemovedEdge((usize, usize)),
     /// a GraphError occured and is wrapped here
     GError(GraphErrors),
 }
@@ -231,7 +231,7 @@ where T: Node + SerdeStateConform,
     /// * `rng` is consumed and used as random number generator in the following
     /// * internally uses `Graph<T>::new(n)`
     /// * generates random edges according to ER model
-    pub fn new(n: u32, c_target: f64, rng: R) -> Self {
+    pub fn new(n: usize, c_target: f64, rng: R) -> Self {
         let prob = c_target / (n - 1) as f64;
         let graph: Graph<T> = Graph::new(n);
         let mut e = ErEnsembleC {
@@ -340,7 +340,7 @@ where   T: Node + SerdeStateConform,
 }
 
 /// high is exclusive
-fn draw_two_from_range<T: rand::Rng>(rng: &mut T, high: u32) -> (u32, u32){
+fn draw_two_from_range<T: rand::Rng>(rng: &mut T, high: usize) -> (usize, usize){
     let first = rng.gen_range(0, high);
     let second = rng.gen_range(0, high - 1);
 

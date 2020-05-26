@@ -236,7 +236,7 @@
 //! }
 //!
 //! impl Node for SirState {
-//!     fn new_from_index(index: u32) -> Self {
+//!     fn new_from_index(index: usize) -> Self {
 //!         SirState::Susceptible
 //!     }
 //! }

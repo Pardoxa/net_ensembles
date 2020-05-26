@@ -20,8 +20,8 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NodeContainer<T: Node>{
-    id: u32,
-    adj: Vec<u32>,
+    id: usize,
+    adj: Vec<usize>,
     node: T,
 }
 
@@ -29,7 +29,7 @@ pub struct NodeContainer<T: Node>{
 impl<T: Node + SerdeStateConform> AdjContainer<T> for NodeContainer<T> {
 
     /// Create new instance with id
-    fn new(id: u32, node: T) -> Self {
+    fn new(id: usize, node: T) -> Self {
         NodeContainer{
             id,
             adj: Vec::new(),
@@ -60,14 +60,14 @@ impl<T: Node + SerdeStateConform> AdjContainer<T> for NodeContainer<T> {
     /// returns id of container
     /// ## Note:
     /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
-    fn id(&self) -> u32 {
+    fn id(&self) -> usize {
         self.id
     }
 
     /// check if vertex with `other_id` is adjacent to self
     /// ## Note:
     /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
-    fn is_adjacent(&self, other_id: u32) -> bool {
+    fn is_adjacent(&self, other_id: usize) -> bool {
         self.adj.contains(&other_id)
     }
 
@@ -109,14 +109,14 @@ impl<T: Node + SerdeStateConform> AdjContainer<T> for NodeContainer<T> {
         Ok(())
     }
 
-    fn get_adj_first(&self) -> Option<&u32> {
+    fn get_adj_first(&self) -> Option<&usize> {
         self.adj.first()
     }
 }
 
 impl<T: Node> NodeContainer<T> {
 
-    fn swap_remove_element(&mut self, elem: u32) {
+    fn swap_remove_element(&mut self, elem: usize) {
         let index = self.adj
             .iter()
             .position(|&x| x == elem)
@@ -162,7 +162,7 @@ impl<T: Node> NodeContainer<T> {
 ///
 /// // implement the trait `Node`
 /// impl Node for PhaseNode {
-///     fn new_from_index(index: u32) -> Self {
+///     fn new_from_index(index: usize) -> Self {
 ///         PhaseNode { phase: index as f64 * 10.0}
 ///     }
 ///
@@ -239,7 +239,7 @@ impl<T: Node> NodeContainer<T> {
 ///             }
 ///         }
 ///
-///         for i in 0..g2.vertex_count() as usize {
+///         for i in 0..g2.vertex_count() {
 ///             assert_eq!(
 ///                 g1.at(i).get_phase(),
 ///                 g2.at(i).get_phase()

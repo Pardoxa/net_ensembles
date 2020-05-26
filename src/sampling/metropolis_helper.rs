@@ -123,7 +123,7 @@ impl<R> MetropolisState<R> {
 
     /// converts `self` in underlying rng generator
     #[deprecated(
-        since = "0.3.1",
+        since = "0.4.0",
         note = "Renamed to `into_rng`, use that instead. This member will be removed in the next braking release"
     )]
     pub fn to_rng(self) -> R {

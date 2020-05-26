@@ -23,9 +23,9 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug)]
 pub struct ErStepM{
     /// removed edge
-    pub(crate) removed: (u32, u32),
+    pub(crate) removed: (usize, usize),
     pub(crate) i_removed: usize,
-    pub(crate) inserted: (u32, u32),
+    pub(crate) inserted: (usize, usize),
     pub(crate) i_inserted: usize,
 }
 
@@ -94,9 +94,9 @@ where T: Node,
     graph: Graph<T>,
     m: usize,
     rng: R,
-    all_edges: Vec<(u32, u32)>,
-    possible_edges: Vec<(u32, u32)>,
-    current_edges: Vec<(u32, u32)>,
+    all_edges: Vec<(usize, usize)>,
+    possible_edges: Vec<(usize, usize)>,
+    current_edges: Vec<(usize, usize)>,
 }
 
 
@@ -234,11 +234,10 @@ where T: Node + SerdeStateConform,
     /// * `rng` is consumed and used as random number generator in the following
     /// * internally uses `Graph<T>::new(n)`
     /// * generates random edges according to ER model
-    pub fn new(n: u32, m: usize, rng: R) -> Self {
+    pub fn new(n: usize, m: usize, rng: R) -> Self {
         let graph: Graph<T> = Graph::new(n);
 
-        let n_usize = n as usize;
-        let p_edges = (n_usize * (n_usize - 1)) / 2;
+        let p_edges = (n * (n - 1)) / 2;
 
         // panic, if you try to create a graph with to many edges
         assert!(
