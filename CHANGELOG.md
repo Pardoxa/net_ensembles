@@ -4,13 +4,17 @@
 # Major breaking change: `u32 -> usize`
 * **Almost all `u32` where changed into `usize`**. 
   In fact so many, that I will not list them all, sorry for the inconvinience.
-  Why? Because `u32` was a very bad choice and I had to convert it into `usize` almost anywhere anyway. 
-  Currently (almost?) noone uses my lib anyway. That might change, meaning:
+  Why? Because `u32` was a very bad choice and I had to convert it into `usize` almost everywhere anyway. 
+  Currently (almost?) noone uses this library anyway. That might change, meaning:
   if I do not do this change now, it will only become increasingly inconvinient in the future,
   so I'd be stuck with it.
-* **IMPORTANT**: This sadly might affect the state of the rng, as I am now generating usize instead of u32.
-  Therefore this might affect the individual networks drawn for any given seed.
-  I plan to test this before releasing, but if this message is still here, I forgot to do that. 
+* This increases the performance of some iterators
+* **IMPORTANT**: This will sadly affect the state of the rng, as I am now generating usize instead of u32.
+  Therefore this affects the individual networks drawn for any given seed.
+
+## optimizations
+* optimization for `diameter`
+
 
 # GenericGraph
 * add member `connected_components_ids`
