@@ -1,9 +1,6 @@
 //! # Topology for SwEnsemble
 
-use crate::traits::*;
-use crate::GraphErrors;
-use crate::sw::SwChangeState;
-use crate::GenericGraph;
+use crate::{step_structs::*, GenericGraph, traits::*};
 use core::iter::FusedIterator;
 
 #[cfg(feature = "serde_support")]

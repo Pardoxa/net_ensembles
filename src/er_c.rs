@@ -7,12 +7,7 @@
 //! > P. Erdős and A. Rényi, "On the evolution of random graphs,"
 //!   Publ. Math. Inst. Hungar. Acad. Sci. **5**, 17-61 (1960)
 
-use crate::graph::Graph;
-use crate::GraphErrors;
-use crate::Node;
-use crate::traits::*;
-use crate::iter::{INContainedIterMut, NContainedIterMut, ContainedIterMut};
-use crate::graph::NodeContainer;
+use crate::{traits::*, iter::*, graph::*};
 use std::borrow::Borrow;
 use std::convert::AsRef;
 

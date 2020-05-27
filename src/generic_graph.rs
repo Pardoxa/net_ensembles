@@ -1,14 +1,10 @@
 //! # Generic implementation for Topology
 //! * contains multiple measurable quantities
 //! * used by `Graph<T>` and `SwGraph<T>`
-use crate::traits::*;
-use std::cmp::max;
+use crate::{traits::*, iter::*, GraphErrors};
 use std::convert::TryFrom;
-use std::collections::VecDeque;
-use std::collections::HashSet;
+use std::collections::{VecDeque, HashSet};
 use std::marker::PhantomData;
-use crate::GraphErrors;
-use crate::iter::*;
 use std::io::Write;
 
 #[cfg(feature = "serde_support")]
@@ -506,7 +502,7 @@ where T: Node,
                     stack.push(j);
                 }
             }
-            result = max(result, counter);
+            result = result.max(counter);
         }
 
         Some(result)

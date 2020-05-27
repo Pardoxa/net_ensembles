@@ -13,11 +13,7 @@
 //! # Citations
 //! > D. J. Watts and S. H. Strogatz, "Collective dynamics on 'small-world' networks,"
 //!   Nature **393**, 440-442 (1998), DOI:&nbsp;[10.1038/30918](https://doi.org/10.1038/30918)
-use crate::traits::*;
-use crate::SwGraph;
-use crate::GraphErrors;
-use crate::iter::{INContainedIterMut, NContainedIterMut, ContainedIterMut};
-use crate::sw_graph::SwContainer;
+use crate::{traits::*, sw_graph::*, iter::*};
 use std::borrow::Borrow;
 
 #[cfg(feature = "serde_support")]

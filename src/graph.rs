@@ -5,9 +5,7 @@
 //! since it contains the topology information.
 //!
 //! For Erdős-Rényi Graphs, see struct `ER`
-use crate::traits::*;
-use crate::GraphErrors;
-use crate::GenericGraph;
+use crate::{traits::*, GraphErrors, GenericGraph};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
