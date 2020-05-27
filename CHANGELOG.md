@@ -1,7 +1,7 @@
 # Changelog
 
 ## v0.3.0 &rarr; v0.4.0
-# Major breaking change: `u32 -> usize`
+## Major breaking change: `u32 -> usize`
 * **Almost all `u32` where changed into `usize`**. 
   In fact so many, that I will not list them all, sorry for the inconvinience.
   Why? Because `u32` was a very bad choice and I had to convert it into `usize` almost everywhere anyway. 
@@ -12,42 +12,42 @@
 * **IMPORTANT**: This will sadly affect the state of the rng, as I am now generating usize instead of u32.
   Therefore this affects the individual networks drawn for any given seed.
 
-## optimizations
+### optimizations
 * optimization for `diameter`
 
 
-# GenericGraph
+### GenericGraph
 * add member `connected_components_ids`
 * add member `contained_iter_neighbors_with_index` which returns new iterator
 
-# MetropolisState
+### MetropolisState
 * rename `fn to_rng` &rarr; `fn into_rng`
 * add member `is_finished`
 * add member `set_m_beta`
 * add member `set_temperature`
 * derive Debug
 
-# MetropolisSave
+### MetropolisSave
 * add member `is_finished`
 
-# ensembles
+### ensembles
 * add **experimental** member `make_connected` for `ErEnsembleC`
 * add **experimental** member `make_connected` for `SwEnsemble`
 
-# traits
+### traits
 * `GraphIterators` added member `contained_iter_neighbors_with_index(&self, index: usize)`
 
-#  Iterator
+###  Iterator
 * new Iterator `NIContainedIter`; similar to `INContainedIterMut`
   but differs in mutability
 
 ## v0.2.2 &rarr; v0.3.0
 
-## optimizations
+### optimizations
 * optimization for `q_core`
 * major optimization for `vertex_load`
 
-## traits
+### traits
 * implemented `Borrow<GenericGraph>` for the ensembles
 * implemented `AsRef<GenericGraph>` for the ensembles
 * new trait `MeasurableGraphQuantities<G>`
@@ -58,25 +58,25 @@
 * implemented `DotExtra` for `GenericGraph`
 * new trait `Metropolis`
 
-## macro
+### macro
 * add `dot_options!` macro for ease of use
 
 
-## new iterator
+### new iterator
 *  `INContainedIterMut` to mutably iterate over neighbors
   of specified vertex and also get the indices of the neighbors
 * added member in `GraphIteratorsMut<T, G, A>` and `GenericGraph`
   to return `INContainedIterMut`
 
-## fixes
+### fixes
 * trait `GraphIteratorsMut<'a, T, G, A>` &rarr; `GraphIteratorsMut<T, G, A>`
 * trait `GraphIterators<'a, T, G, A>` &rarr; `GraphIterators<T, G, A>`
 
-## deprecated
+### deprecated
 * `to_dot*` members of `GenericGraph`. Use members of `Dot` or `DotExtra`
   trait instead
 
-## other
+### other
 * `fn is_adjacent(&self, other_id: &u32) -> bool;` &rarr; `fn is_adjacent(&self, other_id: u32) -> bool;`
 * now `dot_options` from `to_dot_with_labels*` do not have to be a string,
 they only have to implement `AsRef<str>`, and the closure `f` only has to
