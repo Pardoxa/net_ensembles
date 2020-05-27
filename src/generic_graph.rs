@@ -1191,10 +1191,10 @@ where   T: 'a + Node,
         A: AdjContainer<T>
 {
         fn new(graph: &'a GenericGraph<T, A>, index: usize) -> Self {
-            let mut handled: Vec<bool> = vec![false; graph.vertex_count()];
-            let mut queue0 = VecDeque::with_capacity(graph.vertex_count());
-            let queue1 = VecDeque::with_capacity(graph.vertex_count());
-            let depth = 0;
+            let mut handled= vec![false; graph.vertex_count()];
+            let mut queue0 = VecDeque::with_capacity(graph.vertex_count() / 2);
+            let queue1 = VecDeque::with_capacity(graph.vertex_count() / 2);
+            
             if index < graph.vertex_count() {
                 queue0.push_back(index);
                 handled[index] = true;
@@ -1205,13 +1205,13 @@ where   T: 'a + Node,
                 handled,
                 queue0,
                 queue1,
-                depth,
+                depth: 0,
             }
         }
 
         fn reuse(&mut self, index: usize) {
-            for item in self.handled.iter_mut(){
-                *item = false;
+            for i in 0..self.handled.len() {
+                self.handled[i] = false;
             }
             self.queue0.clear();
             self.queue1.clear();
@@ -1242,9 +1242,9 @@ where   T: 'a + Node,
                     }
                 }
                 Some((index, container.contained(), self.depth))
-            }else if self.queue1.is_empty() {
+            } else if self.queue1.is_empty() {
                 None
-            }else {
+            } else {
                 std::mem::swap(&mut self.queue0, &mut self.queue1);
                 self.depth += 1;
                 self.next()
