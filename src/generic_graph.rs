@@ -15,10 +15,10 @@ use serde::{Serialize, Deserialize};
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct GenericGraph<T, A>
 {
-    next_id: usize,
-    edge_count: usize,
-    vertices: Vec<A>,
-    phantom: PhantomData<T>,
+    pub(crate) next_id: usize,
+    pub(crate) edge_count: usize,
+    pub(crate) vertices: Vec<A>,
+    pub(crate) phantom: PhantomData<T>,
 }
 
 impl<T, A> GenericGraph<T, A>

@@ -281,6 +281,7 @@ pub mod graph;
 pub mod er_c;
 pub mod sw;
 pub mod er_m;
+mod barabasi_albert;
 pub mod traits;
 #[macro_use]
 pub mod dot_constants;
@@ -293,6 +294,7 @@ pub use sw::SwEnsemble;
 pub use sw_graph::SwGraph;
 pub use er_m::ErEnsembleM;
 pub use er_c::ErEnsembleC;
+pub use barabasi_albert::BAensemble;
 pub use graph::Graph;
 pub use generic_graph::GenericGraph;
 pub use example_nodes::EmptyNode;

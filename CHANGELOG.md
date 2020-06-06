@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.0 &rarr; master
+### Graph
+* adding `From<&GenericGraph>`
+
+### BAensemble
+* adding Barabási-Albert ensemble - work in progress
+
 ## v0.3.0 &rarr; v0.4.0
 ## Major breaking change: `u32 -> usize`
 * **Almost all `u32` where changed into `usize`**. 

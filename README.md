@@ -36,6 +36,9 @@ with all following versions, though no guarantees are made.
 * Erdős-Rényi (x2)
 * small-world
 
+## work in progress
+* Barabási-Albert
+
 ### Note
 
 On a 64 bit system drawing an usize consumes more than on a 32 bit system, 

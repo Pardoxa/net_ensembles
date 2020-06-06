@@ -6,6 +6,8 @@
 //!
 //! For Erdős-Rényi Graphs, see struct `ER`
 use crate::{traits::*, GraphErrors, GenericGraph};
+use std::marker::PhantomData;
+use std::convert::From;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -274,6 +276,29 @@ impl<T: Node> NodeContainer<T> {
 /// Now you can use `circo` or similar programs to create a pdf from that.
 /// Search for **graphviz** for more info.
 pub type Graph<T> = GenericGraph<T, NodeContainer<T>>;
+
+impl<T: Node, A: AdjContainer<T>> From<&GenericGraph<T, A>> for Graph<T>
+{
+    fn from(source: &GenericGraph<T, A>) -> Self
+    {
+        // efficiently convert 
+        let vertices = source
+            .container_iter()
+            .map(|container| 
+                NodeContainer{
+                    id: container.id(),
+                    node: container.contained().clone(),
+                    adj: container.neighbors().copied().collect(),
+                }
+            ).collect();
+        Self{
+            next_id: source.next_id,
+            edge_count: source.edge_count(),
+            vertices,
+            phantom: PhantomData::<T>,
+        }
+    }
+}
 
 
 #[cfg(test)]
