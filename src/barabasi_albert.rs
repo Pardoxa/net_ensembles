@@ -99,7 +99,10 @@ where T: Node + SerdeStateConform,
             "Source graph is not allowed to contain any vertices without edges!"
         );
         assert!(n > source_graph.vertex_count());
-        let ba_graph: Graph<T> = Graph::new(n);
+        let mut ba_graph: Graph<T> = Graph::new(n);
+        for i in 0..source_graph.vertex_count() {
+            *ba_graph.at_mut(i) = (*source_graph.at(i)).clone();
+        }
         let mut e = Self {
             m,
             rng,
@@ -118,7 +121,10 @@ where T: Node + SerdeStateConform,
     pub fn new_from_generic_graph<A2: AdjContainer<T>>(n:usize, rng: R, m: usize, generic_source_graph: &GenericGraph<T, A2>) -> Self
     {
         let source_graph: Graph<T> = generic_source_graph.into();
-        let ba_graph: Graph<T> = Graph::new(n);
+        let mut ba_graph: Graph<T> = Graph::new(n);
+        for i in 0..source_graph.vertex_count() {
+            *ba_graph.at_mut(i) = (*source_graph.at(i)).clone();
+        }
         let mut e = Self {
             m,
             rng,
