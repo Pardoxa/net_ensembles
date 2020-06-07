@@ -277,6 +277,40 @@ impl<T: Node> NodeContainer<T> {
 /// Search for **graphviz** for more info.
 pub type Graph<T> = GenericGraph<T, NodeContainer<T>>;
 
+impl<T> Graph<T>
+where T: Node
+{
+    /// Efficiently create a complete graph with n nodes
+    pub fn complete_graph(n: usize) -> Self
+    {
+
+        let mut vertices = Vec::with_capacity(n);
+        for i in 0..n {
+            let mut adj = Vec::with_capacity(n - 1);
+            for index in 0..i {
+                adj.push(index);
+            }
+            for index in (i + 1)..n {
+                adj.push(index);
+            }
+            vertices.push(
+                NodeContainer{
+                    id: i,
+                    node: T::new_from_index(i),
+                    adj,
+                }
+            )
+        }
+
+        Self{
+            next_id: n,
+            edge_count: n*(n - 1) / 2,
+            vertices,
+            phantom: PhantomData::<T>,
+        }
+    }
+}
+
 impl<T: Node, A: AdjContainer<T>> From<&GenericGraph<T, A>> for Graph<T>
 {
     fn from(source: &GenericGraph<T, A>) -> Self
@@ -322,6 +356,21 @@ mod tests {
         assert!(res.is_err());
 
         assert_eq!(0, c.id());
+    }
+
+    #[test]
+    fn correct_complete_graphs() {
+        let g = Graph::<EmptyNode>::complete_graph(50);
+        for index in 0..50 {
+            let container = g.container(index);
+            for neigbor in 0..50 {
+                if neigbor == index {
+                    assert!(!container.is_adjacent(neigbor));
+                } else {
+                    assert!(container.is_adjacent(neigbor));
+                }
+            }
+        }
     }
 
 

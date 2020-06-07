@@ -73,15 +73,16 @@ where T: Node + SerdeStateConform,
     /// * `n`: Number of nodes, `n > 1` has to be true *panics* otherwise
     /// * `rng`:  Rng to use
     /// 
-    pub fn new(n: usize, rng: R) -> Self {
-        assert!(n > 1);
-        let source_graph: Graph::<T> = Graph::new(1);
+    pub fn new(n: usize, rng: R, m: usize, source_n: usize) -> Self {
+        assert!(source_n >= 2);
+        assert!(n > source_n);
+        let source_graph: Graph::<T> = Graph::complete_graph(source_n);
         let ba_graph: Graph<T> = Graph::new(n);
         let mut e = BAensemble {
             ba_graph,
             source_graph,
             rng,
-            m: 1,
+            m,
         };
         e.randomize();
         e
@@ -189,13 +190,13 @@ where   T: Node + SerdeStateConform,
         }
 
         
-        let mut prev: Vec<_> = (0..self.source_graph.vertex_count()).collect();
-        prev.reserve(self.ba_graph.vertex_count() - prev.len());
+        
         let mut random_order: Vec<_> = (self.source_graph.vertex_count()..self.ba_graph.vertex_count()).collect();
         random_order.shuffle(&mut self.rng);
 
-        let final_edge_count = self.source_graph.edge_count() + self.m * (self.ba_graph.vertex_count() - prev.len());
+        let final_edge_count = self.source_graph.edge_count() + self.m * (self.ba_graph.vertex_count() - self.source_graph.vertex_count());
         let mut deg_vec: Vec<_> = Vec::with_capacity(2 * final_edge_count);
+        println!("reserved: {}", 2 * final_edge_count);
 
         // deg_vec should contain the index of every vertex i exactly deg(i) times
         for (i, container) in self.source_graph.container_iter().enumerate() {
@@ -225,5 +226,21 @@ where   T: Node + SerdeStateConform,
             
 
         }
+        println!("total: {}", deg_vec.len());
+    }
+}
+
+#[cfg(test)]
+mod testing {
+    use super::*;
+    use rand_pcg::Pcg64;
+    use crate::EmptyNode;
+    use rand::SeedableRng;
+
+    #[test]
+    fn create() {
+        let rng = Pcg64::seed_from_u64(12);
+        let _e: BAensemble<EmptyNode, _> =  BAensemble::new(100, rng, 1, 2);
+        
     }
 }

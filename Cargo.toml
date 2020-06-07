@@ -60,3 +60,7 @@ default = ["serde_support"]
 #[[bench]]
 #name = "bench_q_core"
 #harness = false
+
+[[bench]]
+name = "graph"
+harness = false
