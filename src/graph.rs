@@ -371,6 +371,7 @@ mod tests {
                 }
             }
         }
+        assert_eq!(g.vertex_count(), 50);
     }
 
 

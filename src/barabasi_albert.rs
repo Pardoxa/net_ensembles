@@ -93,22 +93,23 @@ where T: Node + SerdeStateConform,
     /// * `m`: how many edges should each newly added vertex have originally
     /// * `rng`: Random number generator
     /// * `n`: Number of nodes, `n > source_graph.vertex_count()` has to be true *panics* otherwise
-    pub fn new_from_graph(n:usize, rng: R, m: usize, source_graph: &Graph<T>) -> Self
+    pub fn new_from_graph<B>(n:usize, rng: R, m: usize, source_graph: B) -> Self
+    where B: Borrow<Graph<T>>
     {
         assert!(
-            source_graph.container_iter().all(|container| container.degree() > 0),
+            source_graph.borrow().container_iter().all(|container| container.degree() > 0),
             "Source graph is not allowed to contain any vertices without edges!"
         );
-        assert!(n > source_graph.vertex_count());
+        assert!(n > source_graph.borrow().vertex_count());
         let mut ba_graph: Graph<T> = Graph::new(n);
-        for i in 0..source_graph.vertex_count() {
-            *ba_graph.at_mut(i) = (*source_graph.at(i)).clone();
+        for i in 0..source_graph.borrow().vertex_count() {
+            *ba_graph.at_mut(i) = (*source_graph.borrow().at(i)).clone();
         }
         let mut e = Self {
             m,
             rng,
             ba_graph,
-            source_graph: source_graph.clone(),
+            source_graph: source_graph.borrow().clone(),
         };
         e.randomize();
         e
@@ -119,14 +120,17 @@ where T: Node + SerdeStateConform,
     /// * `m`: how many edges should each newly added vertex have originally
     /// * `rng`: Random number generator
     /// * `n`: Number of nodes, `n > source_graph.vertex_count()` has to be true *panics* otherwise
-    pub fn new_from_generic_graph<A2: AdjContainer<T>>(n:usize, rng: R, m: usize, generic_source_graph: &GenericGraph<T, A2>) -> Self
+    pub fn new_from_generic_graph<A2, B>(n:usize, rng: R, m: usize, generic_source_graph: B) -> Self
+    where
+        A2: AdjContainer<T>,
+        B: Borrow<GenericGraph<T, A2>>
     {
         assert!(
-            generic_source_graph.container_iter().all(|container| container.degree() > 0),
+            generic_source_graph.borrow().container_iter().all(|container| container.degree() > 0),
             "Source graph is not allowed to contain any vertices without edges!"
         );
-        assert!(n > generic_source_graph.vertex_count());
-        let source_graph: Graph<T> = generic_source_graph.into();
+        assert!(n > generic_source_graph.borrow().vertex_count());
+        let source_graph: Graph<T> = generic_source_graph.borrow().into();
         let mut ba_graph: Graph<T> = Graph::new(n);
         for i in 0..source_graph.vertex_count() {
             *ba_graph.at_mut(i) = (*source_graph.at(i)).clone();
@@ -196,7 +200,6 @@ where   T: Node + SerdeStateConform,
 
         let final_edge_count = self.source_graph.edge_count() + self.m * (self.ba_graph.vertex_count() - self.source_graph.vertex_count());
         let mut deg_vec: Vec<_> = Vec::with_capacity(2 * final_edge_count);
-        println!("reserved: {}", 2 * final_edge_count);
 
         // deg_vec should contain the index of every vertex i exactly deg(i) times
         for (i, container) in self.source_graph.container_iter().enumerate() {
@@ -226,7 +229,6 @@ where   T: Node + SerdeStateConform,
             
 
         }
-        println!("total: {}", deg_vec.len());
     }
 }
 
@@ -234,13 +236,27 @@ where   T: Node + SerdeStateConform,
 mod testing {
     use super::*;
     use rand_pcg::Pcg64;
-    use crate::EmptyNode;
+    use crate::*;
     use rand::SeedableRng;
 
     #[test]
-    fn create() {
+    fn creation() {
         let rng = Pcg64::seed_from_u64(12);
         let _e: BAensemble<EmptyNode, _> =  BAensemble::new(100, rng, 1, 2);
+        let rng = Pcg64::seed_from_u64(122321232);
+        let mut er: ErEnsembleC<EmptyNode, _> = ErEnsembleC::new(10, 3.0, rng);
+        // create valid graph
+        while er.graph().container_iter().any(|container| container.degree() < 1) {
+            er.randomize();
+        }
+        let rng = Pcg64::seed_from_u64(1878321232);
+        let _ba = BAensemble::new_from_graph(20, rng, 2, er.graph());
+        
+
+        let rng= Pcg64::seed_from_u64(1878321232);
+        let sw: SwEnsemble<EmptyNode, _> = SwEnsemble::new(10, 0.1, rng);
+        let rng= Pcg64::seed_from_u64(78321232);
+        let _ba2 = BAensemble::new_from_generic_graph(50, rng, 2, sw);
         
     }
 }
