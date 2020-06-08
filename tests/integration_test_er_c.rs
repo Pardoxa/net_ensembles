@@ -5,6 +5,11 @@ use net_ensembles::*;
 mod common;
 use common::{equal_graphs, PhaseNode};
 use std::fmt::Write;
+use std::fs::File;
+use std::io::BufReader;
+
+#[cfg(feature = "serde_support")]
+use serde_json;
 
 #[test]
 fn step_test() {
@@ -125,4 +130,34 @@ fn iter_optimization_nth() {
         );
         println!("{:?}", nex);
     }
+}
+
+#[cfg(feature = "serde_support")]
+#[test]
+fn unchanging_graph_construction()
+{
+    
+    let rng = Pcg64::seed_from_u64(123929);
+    let er: ErEnsembleC<EmptyNode, _> = ErEnsembleC::new(123, 2.0, rng);
+
+    let read = File::open("TestData/unchaning_erc_1.json")
+        .expect("Unable to open file");
+    let bufr1 = BufReader::new(read);
+
+    let unchaning_1_load: ErEnsembleC<EmptyNode, Pcg64> = serde_json::from_reader(bufr1).unwrap();
+
+    equal_graphs(er.graph(), unchaning_1_load.graph());
+
+    let rng = Pcg64::seed_from_u64(1929);
+    let er2: ErEnsembleC<EmptyNode, _> = ErEnsembleC::new(233, 10.0, rng);
+    
+
+    let read2 = File::open("TestData/unchaning_erc_2.json")
+        .expect("Unable to open file");
+    let bufr2 = BufReader::new(read2);
+
+    let unchaning_2_load: ErEnsembleC<EmptyNode, Pcg64> = serde_json::from_reader(bufr2).unwrap();
+
+    equal_graphs(er2.graph(), unchaning_2_load.graph());
+
 }
