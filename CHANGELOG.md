@@ -3,6 +3,10 @@
 ## v0.4.0 &rarr; master
 ### Graph
 * adding `From<&GenericGraph>`
+* adding `Graph::complete_graph`
+
+### minor optimizations
+* ErEnsembleC - `randomize` (and therefore `new`, as that uses randomize) 
 
 ### BAensemble
 * adding Barabási-Albert ensemble - work in progress

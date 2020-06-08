@@ -21,7 +21,7 @@ use serde::{Serialize, Deserialize};
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NodeContainer<T: Node>{
     id: usize,
-    adj: Vec<usize>,
+    pub(crate) adj: Vec<usize>,
     node: T,
 }
 

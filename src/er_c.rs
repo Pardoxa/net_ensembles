@@ -126,7 +126,12 @@ where   T: Node + SerdeStateConform,
         for i in 0..self.graph.vertex_count() {
             for j in i+1..self.graph.vertex_count() {
                 if self.rng.gen::<f64>() <= self.prob {
-                    self.graph.add_edge(i, j).unwrap();
+                    // in these circumstances equivalent to 
+                    // self.graph.add_edge(i, j).unwrap();
+                    // but without checking for existing edges and other errors -> a bit more efficient
+                    self.graph.vertices[i].adj.push(j);
+                    self.graph.vertices[j].adj.push(i);
+                    self.graph.edge_count += 1;
                 }
             }
         }
