@@ -309,6 +309,17 @@ where T: Node
             phantom: PhantomData::<T>,
         }
     }
+
+    pub(crate) fn reset_from_graph(&mut self, other: &Self)
+    {
+        assert!(other.vertex_count() <= self.vertex_count());
+        self.clear_edges();
+        for i in 0..other.vertex_count(){
+            self.vertices[i].adj.extend_from_slice(other.vertices[i].adj.as_slice());
+        }
+        self.edge_count = other.edge_count;
+
+    }
 }
 
 impl<T: Node, A: AdjContainer<T>> From<&GenericGraph<T, A>> for Graph<T>

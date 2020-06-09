@@ -42,6 +42,18 @@ pub fn bench(c: &mut Criterion){
     let ba = BAensemble::new_from_generic_graph(50, rng, 2, sw);
 
     bench_ba(c, ba, "ba_randomize_n50m2_sw10p0.1");
+
+
+    let rng = Pcg64::seed_from_u64(122321232);
+    let mut er: ErEnsembleC<EmptyNode, _> = ErEnsembleC::new(100, 3.0, rng);
+    // create valid graph
+    while er.graph().container_iter().any(|container| container.degree() < 1) {
+        er.randomize();
+    }
+    let rng = Pcg64::seed_from_u64(1878321232);
+    let ba = BAensemble::new_from_graph(1000, rng, 3, er.graph());
+
+    bench_ba(c, ba, "ba_randomize_n1000m3_er100c3");
 }
 
 

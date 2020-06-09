@@ -10,6 +10,8 @@ use crate::graph::NodeContainer;
 use std::borrow::Borrow;
 use std::convert::AsRef;
 use rand::seq::SliceRandom;
+use rand::distributions::WeightedIndex;
+use rand::prelude::*;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -24,6 +26,7 @@ where T: Node,
     ba_graph: Graph<T>,
     rng: R,
     m: usize,
+    weights: Vec<usize>,
 }
 
 impl<T, R> AsRef<Graph<T>> for BAensemble<T, R>
@@ -83,6 +86,7 @@ where T: Node + SerdeStateConform,
             source_graph,
             rng,
             m,
+            weights: vec![0; n],
         };
         e.randomize();
         e
@@ -110,6 +114,7 @@ where T: Node + SerdeStateConform,
             rng,
             ba_graph,
             source_graph: source_graph.borrow().clone(),
+            weights: vec![0; n],
         };
         e.randomize();
         e
@@ -140,6 +145,7 @@ where T: Node + SerdeStateConform,
             rng,
             ba_graph,
             source_graph: source_graph.clone(),
+            weights: vec![0; n],
         };
         e.randomize();
         e
@@ -181,53 +187,34 @@ where   T: Node + SerdeStateConform,
     /// # Randomizes the Barabási-Albert (BA) graph
     /// * this essentially deletes the BA graph and creates a new one using the initial graph
     fn randomize(&mut self) {
-        self.ba_graph.clear_edges();
-        
-        // "copy" original graph
-        for i in 0..self.source_graph.vertex_count() {
-            for &j in self.source_graph
-                .container(i)
-                .neighbors()
-                .filter(|&&j| i < j) {
-                let _ = self.ba_graph.add_edge(i, j);
-            }
-        }
-
-        
+        self.ba_graph.reset_from_graph(&self.source_graph);
         
         let mut random_order: Vec<_> = (self.source_graph.vertex_count()..self.ba_graph.vertex_count()).collect();
         random_order.shuffle(&mut self.rng);
 
-        let final_edge_count = self.source_graph.edge_count() + self.m * (self.ba_graph.vertex_count() - self.source_graph.vertex_count());
-        let mut deg_vec: Vec<_> = Vec::with_capacity(2 * final_edge_count);
 
-        // deg_vec should contain the index of every vertex i exactly deg(i) times
-        for (i, container) in self.source_graph.container_iter().enumerate() {
-            for _ in 0..container.degree() {
-                deg_vec.push(i);
-            }
+        // init weights
+        for i in 0..self.source_graph.vertex_count(){
+            self.weights[i] = self.source_graph.vertices[i].degree();
+        }
+        for i in self.source_graph.vertex_count()..self.ba_graph.vertex_count() {
+            self.weights[i] = 0;
         }
 
         for i in random_order {
-            deg_vec.shuffle(&mut self.rng);
-            for &sample in deg_vec.iter()
+            let dist = WeightedIndex::new(&self.weights).unwrap();
+            while self.ba_graph.container(i).degree() < self.m
             {
+                let index = dist.sample(&mut self.rng);
                 // try to add the edge
-                let _ = self.ba_graph.add_edge(i, sample);
-
-                if self.ba_graph.container(i).degree() == self.m {
-                    for &neighbor in self.ba_graph.container(i).neighbors() {
-                        deg_vec.push(neighbor);
-                    }
-                    for _ in 0..self.m {
-                        deg_vec.push(i);
-                    }
-                    break;
-                }
-
+                let _ = self.ba_graph.add_edge(i, index);
             }
-            
 
+            // update weights
+            self.weights[i] = self.ba_graph.container(i).degree();
+            for &index in self.ba_graph.container(i).neighbors() {
+                self.weights[index] += 1;
+            }
         }
     }
 }
