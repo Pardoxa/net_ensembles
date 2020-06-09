@@ -287,12 +287,9 @@ where T: Node
         let mut vertices = Vec::with_capacity(n);
         for i in 0..n {
             let mut adj = Vec::with_capacity(n - 1);
-            for index in 0..i {
-                adj.push(index);
-            }
-            for index in (i + 1)..n {
-                adj.push(index);
-            }
+            adj.extend(0..i);
+            adj.extend((i+1)..n);
+            
             vertices.push(
                 NodeContainer{
                     id: i,
