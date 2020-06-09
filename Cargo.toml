@@ -65,6 +65,10 @@ default = ["serde_support"]
 #name = "graph"
 #harness = false
 
+#[[bench]]
+#name = "er_c_creation"
+#harness = false
+
 [[bench]]
-name = "er_c_creation"
+name = "barabasi_albert_creation"
 harness = false
