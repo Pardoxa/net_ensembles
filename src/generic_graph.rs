@@ -387,6 +387,36 @@ where T: Node,
         Bfs::new(&self, index)
     }
 
+    // # returns `Option<Iterator>`
+    /// * similar to self.bfs_index_depth, but allows for ignoring of vertices
+    ///
+    /// * the iterator will iterate over the vertices in breadth first search order,
+    /// beginning with vertex `index`.
+    /// * the iterator will ignore all vertices, where `filter(vertex, index_of_vertex)` returns false
+    /// * returns `None`if index is out of bounds or `filter(vertex, index)`retruns false
+    /// * Iterator returns tuple `(index, vertex, depth)`
+    ///
+    /// ### depth
+    /// * starts at 0 (i.e. the first element in the iterator will have `depth = 0`)
+    /// * `depth` equals number of edges in the *shortest path* from the *current* vertex to the
+    /// *first* vertex (i.e. to the vertex with index `index`), while ignoring paths that 
+    /// go through filtered out vertices
+    ///
+    /// Order
+    ///------------------------
+    /// Order is guaranteed to be in BFS order, however
+    /// if this order is not unambigouse
+    /// adding edges and especially removing edges will shuffle the order.
+    ///
+    /// Note:
+    /// ----------------------
+    /// Will only iterate over vertices within the connected component that contains vertex `index`
+    pub fn bfs_filtered<'a, 'b, F>(&'a self, index: usize, filter: &'b mut F) -> Option<BfsFiltered<'a, 'b, T, A, F>>
+    where F: 'b + FnMut(&T, usize) -> bool,
+    {
+        BfsFiltered::new(self, index, filter)
+    }
+
     /// | result       |                          condition                       |
     /// |--------------|----------------------------------------------------------|
     /// | `None`       | **if** graph does not contain any vertices               |
@@ -1169,6 +1199,108 @@ where T: Node,
     }
 }
 
+// # Breadth first search Iterator with **index** and **depth** of corresponding nodes
+/// * iterator returns tuple: `(index, node, depth)`
+/// * iterator uses filter to decide, if a vertex should be considered
+pub struct BfsFiltered<'a, 'b, T, A, F>
+where   T: 'a + Node,
+        A: AdjContainer<T>,
+        F: FnMut(&T, usize) -> bool,
+{
+        graph: &'a GenericGraph<T, A>,
+        handled: Vec<bool>,
+        queue0: VecDeque<usize>,
+        queue1: VecDeque<usize>,
+        depth: usize,
+        filter_fn: &'b mut  F,
+}
+
+impl<'a, 'b, T, A, F>  BfsFiltered<'a, 'b, T, A, F>
+where   T: 'a + Node,
+        A: AdjContainer<T>,
+        F: 'b + FnMut(&T, usize) -> bool,
+{
+    fn new(graph: &'a GenericGraph<T, A>, index: usize, filter: &'b mut F) -> Option<Self>
+    {
+        if index > graph.vertex_count() || !filter(graph.at(index), index) {
+            return None;
+        }
+        let mut handled= vec![false; graph.vertex_count()];
+        let mut queue0 = VecDeque::with_capacity(graph.vertex_count() / 2);
+        let queue1 = VecDeque::with_capacity(graph.vertex_count() / 2);
+        
+        queue0.push_back(index);
+        handled[index] = true;
+
+        Some(
+            Self{
+                handled,
+                graph,
+                filter_fn: filter,
+                queue0,
+                queue1,
+                depth: 0,
+            }
+        )
+    }
+
+    /// Efficiently reuse the iterator, now possibly starting at a new index
+    /// * returns Err(self) without changing self, if index out of Bounds 
+    /// or filter (filter_fn) of (vertex_at_index, index) is false
+    /// * otherwise: prepares iterator to be used again and returns Ok(self)
+    pub fn reuse(mut self, index: usize) -> Result<Self, Self>
+    {
+        if index > self.graph.vertex_count() || !(self.filter_fn)(self.graph.at(index), index) {
+            return Err(self);
+        }
+        for i in 0..self.handled.len() {
+            self.handled[i] = false;
+        }
+        self.queue0.clear();
+        self.queue1.clear();
+        self.depth = 0;
+
+        
+        self.queue0.push_back(index);
+        self.handled[index] = true;
+        Ok(self)
+    }
+}
+
+impl<'a, 'b, T, A, F> Iterator for BfsFiltered<'a, 'b, T, A, F>
+where   T: 'a + Node,
+        A: AdjContainer<T>,
+        F: 'b + FnMut(&T, usize) -> bool,
+{
+    type Item = (usize, &'a T, usize);
+    fn next(&mut self) -> Option<Self::Item> {
+        // if queue0 is not empty, take element from queue, push neighbors to other queue
+        if let Some(index) = self.queue0.pop_front() {
+            let container = self.graph.container(index);
+            for &i in container.neighbors() {
+                if self.handled[i] || !(self.filter_fn)(self.graph.at(i), i){
+                    continue;
+                }
+                
+                self.handled[i] = true;
+                self.queue1.push_back(i);
+                
+            }
+            Some((index, container.contained(), self.depth))
+        } else if self.queue1.is_empty() {
+            None
+        } else {
+            std::mem::swap(&mut self.queue0, &mut self.queue1);
+            self.depth += 1;
+            self.next()
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.queue0.len() + self.queue1.len(), Some(self.graph.vertex_count()))
+    }
+}
+
 /// # Breadth first search Iterator with **index** and **depth** of corresponding nodes
 /// * iterator returns tuple: `(index, node, depth)`
 pub struct Bfs<'a, T, A>
@@ -1246,6 +1378,10 @@ where   T: 'a + Node,
                 self.next()
             }
         }
+
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            (self.queue0.len() + self.queue1.len(), Some(self.graph.vertex_count()))
+        }
 }
 
 /// Depth first search Iterator with **index** of corresponding nodes
@@ -1296,6 +1432,10 @@ where   T: 'a + Node,
             }
             Some((index, container.contained()))
         }
+
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            (self.stack.len(), Some(self.graph.vertex_count()))
+        }
 }
 
 /// Depth first search Iterator
@@ -1334,17 +1474,21 @@ impl<'a, T, A> Iterator for Dfs<'a, T, A>
 where   T: 'a + Node,
         A: AdjContainer<T>
 {
-        type Item = &'a T;
+    type Item = &'a T;
 
-        fn next(&mut self) -> Option<Self::Item> {
-            let index = self.stack.pop()?;
-            let container = self.graph.container(index);
-            for &i in container.neighbors() {
-                if !self.handled[i] {
-                    self.handled[i] = true;
-                    self.stack.push(i);
-                }
+    fn next(&mut self) -> Option<Self::Item> {
+        let index = self.stack.pop()?;
+        let container = self.graph.container(index);
+        for &i in container.neighbors() {
+            if !self.handled[i] {
+                self.handled[i] = true;
+                self.stack.push(i);
             }
-            Some(container.contained())
         }
+        Some(container.contained())
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.stack.len(), Some(self.graph.vertex_count()))
+    }
 }

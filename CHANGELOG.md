@@ -1,6 +1,13 @@
 # Changelog
 
 ## v0.4.0 &rarr; master
+### Iterators
+* adding new breadth first iterator `BfsFiltered`
+* improve `size_hint` for a few iterators
+
+### GenericGraph
+* adding member `bfs_filtered` 
+
 ### Graph
 * adding `From<&GenericGraph>`
 * adding `Graph::complete_graph`
