@@ -1244,6 +1244,14 @@ where   T: 'a + Node,
         )
     }
 
+    /// At any state of the iterator, you can check if a given, valid Vertex, was encountered yet
+    /// * Note: That can mean, that said vertex is still in the queue
+    /// * **panics** if index is out of bounds
+    pub fn is_handled(&self, index: usize) -> bool
+    {
+        self.handled[index]
+    }
+
     /// Efficiently reuse the iterator, now possibly starting at a new index
     /// * returns Err(self) without changing self, if index out of Bounds 
     /// or filter (filter_fn) of (vertex_at_index, index) is false
