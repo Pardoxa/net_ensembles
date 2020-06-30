@@ -17,7 +17,6 @@ where T: Node
     graph: Graph<T>,
     degree_distribution: Vec<usize>,
     rng: R,
-    edge_count: usize,
 }
 
 impl<T, R> ConfigurationModel<T, R>
@@ -64,7 +63,6 @@ where T: Node,
         let mut res = Self{
             graph,
             degree_distribution,
-            edge_count: sum / 2,
             rng
         };
         res.randomize();
