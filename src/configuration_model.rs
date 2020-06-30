@@ -46,6 +46,11 @@ where T: Node,
             degree_distribution.len() > 1,
             "degree distribution has to have lenght grater than 1"
         );
+        debug_assert!(
+            degree_distribution.iter()
+                .all(|&degree| degree < degree_distribution.len() - 1),
+            "Impossible degree distribution - not enough vertices for at least on of the requested degrees"
+        );
         let mut sum = 0;
         for val in degree_distribution.iter()
         {
@@ -193,4 +198,47 @@ where T: Node,
         }
         false
     }
+}
+
+#[cfg(test)]
+mod testing {
+    use super::*;
+    use rand_pcg::Pcg64;
+    use crate::*;
+    use rand::SeedableRng;
+
+    #[test]
+    #[should_panic(expected = "Impossible degree distribution")]
+    fn impossible_degree_distribution() {
+        let rng = Pcg64::seed_from_u64(12);
+
+        let degree_distribution = vec![1,2,3];
+        let _e: ConfigurationModel<EmptyNode, _> = ConfigurationModel::from_vec(degree_distribution, rng);
+    }
+
+    #[test]
+    fn valid_degree_distributions()
+    {
+        let mut rng = Pcg64::seed_from_u64(12322);
+        let degree_distribution = vec![1,2,3,1,2,3];
+        let ensemble: ConfigurationModel<EmptyNode, _> 
+            = ConfigurationModel::from_vec(degree_distribution.clone(), Pcg64::from_rng(&mut rng).unwrap());
+        
+        for i in 0..ensemble.vertex_count()
+        {
+            assert_eq!(ensemble.graph().degree(i), Some(degree_distribution[i]));
+        }
+
+        let sw: SwEnsemble<EmptyNode, _> = SwEnsemble::new(1000, 0.1, Pcg64::from_rng(&mut rng).unwrap());
+        let degree_distribution: Vec<_> = sw.container_iter().map(|c| c.degree()).collect();
+        let ensemble: ConfigurationModel<EmptyNode, _> 
+            = ConfigurationModel::from_vec(degree_distribution.clone(), Pcg64::from_rng(&mut rng).unwrap());
+
+        for i in 0..ensemble.vertex_count()
+        {
+            assert_eq!(ensemble.graph().degree(i), Some(degree_distribution[i]));
+        }
+
+    }
+
 }
