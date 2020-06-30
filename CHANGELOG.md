@@ -15,8 +15,9 @@
 ### minor optimizations
 * ErEnsembleC - `randomize` (and therefore `new`, as that uses randomize) 
 
-### BAensemble
+### Ensemble
 * adding Barabási-Albert ensemble - work in progress
+* adding ConfigurationModel - work in progress
 
 ## v0.3.0 &rarr; v0.4.0
 ## Major breaking change: `u32 -> usize`

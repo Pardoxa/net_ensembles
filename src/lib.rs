@@ -289,6 +289,7 @@ pub mod sw_graph;
 pub mod iter;
 pub mod step_structs;
 pub mod sampling;
+mod configuration_model;
 
 pub use sw::SwEnsemble;
 pub use sw_graph::SwGraph;
@@ -302,5 +303,6 @@ pub use traits::*;
 pub use traits::GraphErrors;
 pub use iter::IterWrapper;
 pub use step_structs::*;
+pub use configuration_model::ConfigurationModel;
 
 pub use rand;
