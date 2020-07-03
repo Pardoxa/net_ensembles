@@ -212,7 +212,7 @@ where   T: Node,
         self.random_edge_halfs.extend_from_slice(&self.random_edge_halfs_backup);
 
         while self.random_edge_halfs.len() > 0 {
-            let added = self.add_random_edge();
+            let added = self.add_multiple_random_edges();
             // if adding did not work, we have to try again!
             if !added {
                 self.random_edge_halfs_backup.shuffle(&mut self.rng);
@@ -309,21 +309,35 @@ impl<T, R> ConfigurationModel<T, R>
 where T: Node,
     R: rand::Rng,
 {
-    
-    fn add_random_edge(&mut self) -> bool
+
+    fn add_multiple_random_edges(&mut self) -> bool
     {
-        let node1 = self.random_edge_halfs.pop().unwrap();
-        for i in (0..self.random_edge_halfs.len()).rev()
-        {
-            if node1 == self.random_edge_halfs[i]{
+        let mut node1 = self.random_edge_halfs.pop().unwrap();
+        let mut counter = self.random_edge_halfs.len() - 1;
+        loop {
+            if node1 == self.random_edge_halfs[counter]{
+                counter = match counter.checked_sub(1){
+                    Some(val) => val,
+                    None => break false,
+                };
                 continue;
             }
-            let node2 = self.random_edge_halfs.swap_remove(i);
-            return self.graph
+            let node2 = self.random_edge_halfs.swap_remove(counter);
+            if self.graph
                 .add_edge(node1, node2)
-                .is_ok();
+                .is_err()
+            {
+                    return false;
+            }
+            if self.random_edge_halfs.len() > 1 {
+                node1 = self.random_edge_halfs.pop().unwrap();
+                counter = self.random_edge_halfs.len() - 1;
+            }else{
+                break true;
+            }
+
         }
-        false
+
     }
 }
 
