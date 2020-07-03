@@ -18,6 +18,8 @@ where T: Node
     graph: Graph<T>,
     degree_distribution: Vec<usize>,
     rng: R,
+    random_edge_halfs: Vec<usize>,  // optimization to lessen the number of required allocations
+    random_edge_halfs_backup: Vec<usize>, // optimization to lessen the number of required allocations
 }
 
 impl<T, R> ConfigurationModel<T, R>
@@ -46,7 +48,7 @@ where T: Node,
             degree_distribution.len() > 1,
             "degree distribution has to have lenght grater than 1"
         );
-        debug_assert!(
+        assert!(
             degree_distribution.iter()
                 .all(|&degree| degree < degree_distribution.len() - 1),
             "Impossible degree distribution - not enough vertices for at least on of the requested degrees"
@@ -64,7 +66,9 @@ where T: Node,
         let mut res = Self{
             graph,
             degree_distribution,
-            rng
+            rng,
+            random_edge_halfs: Vec::new(),
+            random_edge_halfs_backup: Vec::new(),
         };
         res.randomize();
         res
@@ -76,10 +80,28 @@ where T: Node,
     /// * returns old degree distribution
     pub fn swap_distribution_vec(&mut self, mut new_degree_distribution: Vec<usize>) -> Vec<usize>
     {
-        assert_eq!(self.degree_distribution.len(), new_degree_distribution.len());
+        assert_eq!(self.degree_distribution.len(), new_degree_distribution.len(),
+        "degree distributions need the same length"
+        );
+        assert!(
+            new_degree_distribution.iter()
+                .all(|&degree| degree < new_degree_distribution.len() - 1),
+            "Impossible degree distribution - not enough vertices for at least on of the requested degrees"
+        );
         mem::swap(&mut self.degree_distribution, &mut new_degree_distribution);
         self.randomize();
         new_degree_distribution
+    }
+
+    /// # Sort adjecency lists
+    /// If you depend on the order of the adjecency lists, you can sort them
+    /// # Performance
+    /// * internally uses [pattern-defeating quicksort](https://github.com/orlp/pdqsort)
+    /// as long as that is the standard
+    /// * sorts an adjecency list with length `d` in worst-case: `O(d log(d))`
+    /// * is called for each adjecency list, i.e., `self.vertex_count()` times
+    pub fn sort_adj(&mut self) {
+        self.graph.sort_adj();
     }
 }
 
@@ -165,43 +187,134 @@ where   T: Node,
     /// # Randomizes the edges according to the configuration Model
     fn randomize(&mut self) {
         self.graph.clear_edges();
-        let mut edge_halfs = Vec::from_iter(
-            (0..self.degree_distribution.len())
-                .flat_map(|i| iter::repeat(i).take(self.degree_distribution[i]))
-        );
-        edge_halfs.shuffle(&mut self.rng);
-        let mut edge_halfs_clone = edge_halfs.clone();
+        self.random_edge_halfs.clear();
+        let ptr = self.degree_distribution.as_ptr();
+        let len = self.degree_distribution.len();
+        self.random_edge_halfs.extend(
+            (0..len)
+            .flat_map(
+                |i| 
+                {
+                    let times: usize = unsafe { *ptr.add(i)};
+                    iter::repeat(i).take(times)
 
-        while edge_halfs.len() > 0 {
-            let added = self.add_random_edge(&mut edge_halfs);
+                }
+            )
+        );
+        self.random_edge_halfs.shuffle(&mut self.rng);
+        self.random_edge_halfs_backup.clear();
+        self.random_edge_halfs_backup.extend_from_slice(&self.random_edge_halfs);
+
+        while self.random_edge_halfs.len() > 0 {
+            let added = self.add_random_edge();
             // if adding did not work, we have to try again!
             if !added {
-                edge_halfs_clone.shuffle(&mut self.rng);
-                edge_halfs.clear();
-                edge_halfs.extend_from_slice(&edge_halfs_clone);
+                self.random_edge_halfs_backup.shuffle(&mut self.rng);
+                self.random_edge_halfs.clear();
+                self.random_edge_halfs.extend_from_slice(&self.random_edge_halfs_backup);
                 self.graph.clear_edges();
             }
         }
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ConfigurationModelStep {
+    Error,
+    Added((usize, usize), (usize, usize)),
+
+}
+
+impl<T, R> MarkovChain<ConfigurationModelStep, ()> for ConfigurationModel<T, R>
+    where   T: Node + SerdeStateConform,
+            R: rand::Rng,
+{
+
+    /// # Markov step
+    /// * use this to perform a markov step, e.g., to create a markov chain
+    /// * result `ConfigurationModelStep` can be used to undo the step with `self.undo_step(result)`
+    fn m_step(&mut self) -> ConfigurationModelStep {
+        let mut vertex_list = Vec::with_capacity(2);
+        // draw two vertices that are not connected
+        while vertex_list.len() < 2 {
+            vertex_list.extend(self.random_edge_halfs_backup.choose_multiple(&mut self.rng, 2));
+            if vertex_list[0] == vertex_list[1]
+            {
+                vertex_list.clear();
+            }
+        }
+        
+        let edge_1: (usize, usize) = (vertex_list[0], *self.graph.vertices[vertex_list[0]].adj.choose(&mut self.rng).unwrap());
+        let edge_2: (usize, usize) = (vertex_list[1], *self.graph.vertices[vertex_list[1]].adj.choose(&mut self.rng).unwrap());
+
+        if edge_2.0 == edge_1.0 || edge_1.1 == edge_2.1 {
+            return ConfigurationModelStep::Error;
+        }
+
+        // try to add new edges, return on error
+        match self.graph.add_edge(edge_1.0, edge_2.0)
+        {
+            Err(..) => return ConfigurationModelStep::Error,
+            _ => ()
+        };
+        match self.graph.add_edge(edge_1.1, edge_2.1){
+            Err(..) => {
+                self.graph.remove_edge(edge_1.0, edge_2.0).unwrap();
+                return ConfigurationModelStep::Error
+            },
+            _ => ()
+        };
+
+        // remove old edges, panic on error
+        self.graph.remove_edge(edge_1.0, edge_1.1).expect("Fatal error in removing edges");
+        self.graph.remove_edge(edge_2.0, edge_2.1).expect("Fatal error in removing edges");
+        
+
+        return ConfigurationModelStep::Added(edge_1, edge_2)
+        
+    }
+
+    /// # Undo a markcov step
+    /// * adds removed edge, or removes added edge, or does nothing
+    /// * if it returns an Err value, you probably used the function wrong
+    /// ## Important:
+    /// Restored graph is the same as before the random step **except** the order of nodes
+    /// in the adjacency list might be shuffled!
+    fn undo_step(&mut self, step: ConfigurationModelStep) -> () {
+        let (edge1, edge2) = match step {
+            ConfigurationModelStep::Error => return,
+            ConfigurationModelStep::Added(edge1, edge2) => (edge1, edge2)
+        };
+        self.graph.add_edge(edge2.0, edge2.1).unwrap();
+        self.graph.add_edge(edge1.0, edge1.1).unwrap();
+        self.graph.remove_edge(edge1.1, edge2.1).unwrap();
+        self.graph.remove_edge(edge1.0, edge2.0).unwrap();
+
+    }
+
+    fn undo_step_quiet(&mut self, step: ConfigurationModelStep) {
+        self.undo_step(step)
+    }
+
+}
+
 impl<T, R> ConfigurationModel<T, R>
 where T: Node,
     R: rand::Rng,
 {
-    fn add_random_edge(&mut self, edge_halfs: &mut Vec<usize>) -> bool
+    fn add_random_edge(&mut self) -> bool
     {
-        let node1 = edge_halfs.pop().unwrap();
-        for i in (0..edge_halfs.len()).rev()
+        let node1 = self.random_edge_halfs.pop().unwrap();
+        for i in (0..self.random_edge_halfs.len()).rev()
         {
-            if node1 == edge_halfs[i]{
+            if node1 == self.random_edge_halfs[i]{
                 continue;
             }
-            let node2 = edge_halfs.remove(i);
+            let node2 = self.random_edge_halfs.remove(i);
             // shuffle if it did not removed last entry
             // to get correct statistics
-            if i != edge_halfs.len(){
-                edge_halfs.shuffle(&mut self.rng);
+            if i != self.random_edge_halfs.len(){
+                self.random_edge_halfs.shuffle(&mut self.rng);
             }
             return self.graph
                 .add_edge(node1, node2)
