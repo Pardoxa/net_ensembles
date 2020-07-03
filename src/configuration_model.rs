@@ -70,6 +70,7 @@ where T: Node,
             random_edge_halfs: Vec::new(),
             random_edge_halfs_backup: Vec::new(),
         };
+        res.init_edge_halfs();
         res.randomize();
         res
     }
@@ -89,6 +90,7 @@ where T: Node,
             "Impossible degree distribution - not enough vertices for at least on of the requested degrees"
         );
         mem::swap(&mut self.degree_distribution, &mut new_degree_distribution);
+        self.init_edge_halfs();
         self.randomize();
         new_degree_distribution
     }
@@ -102,6 +104,24 @@ where T: Node,
     /// * is called for each adjecency list, i.e., `self.vertex_count()` times
     pub fn sort_adj(&mut self) {
         self.graph.sort_adj();
+    }
+
+    fn init_edge_halfs(&mut self)
+    {
+        self.random_edge_halfs_backup.clear();
+        let ptr = self.degree_distribution.as_ptr();
+        let len = self.degree_distribution.len();
+        self.random_edge_halfs_backup.extend(
+            (0..len)
+            .flat_map(
+                |i| 
+                {
+                    let times: usize = unsafe { *ptr.add(i)};
+                    iter::repeat(i).take(times)
+
+                }
+            )
+        );
     }
 }
 
@@ -187,23 +207,9 @@ where   T: Node,
     /// # Randomizes the edges according to the configuration Model
     fn randomize(&mut self) {
         self.graph.clear_edges();
+        self.random_edge_halfs_backup.shuffle(&mut self.rng);
         self.random_edge_halfs.clear();
-        let ptr = self.degree_distribution.as_ptr();
-        let len = self.degree_distribution.len();
-        self.random_edge_halfs.extend(
-            (0..len)
-            .flat_map(
-                |i| 
-                {
-                    let times: usize = unsafe { *ptr.add(i)};
-                    iter::repeat(i).take(times)
-
-                }
-            )
-        );
-        self.random_edge_halfs.shuffle(&mut self.rng);
-        self.random_edge_halfs_backup.clear();
-        self.random_edge_halfs_backup.extend_from_slice(&self.random_edge_halfs);
+        self.random_edge_halfs.extend_from_slice(&self.random_edge_halfs_backup);
 
         while self.random_edge_halfs.len() > 0 {
             let added = self.add_random_edge();
@@ -303,6 +309,7 @@ impl<T, R> ConfigurationModel<T, R>
 where T: Node,
     R: rand::Rng,
 {
+    
     fn add_random_edge(&mut self) -> bool
     {
         let node1 = self.random_edge_halfs.pop().unwrap();
@@ -311,12 +318,7 @@ where T: Node,
             if node1 == self.random_edge_halfs[i]{
                 continue;
             }
-            let node2 = self.random_edge_halfs.remove(i);
-            // shuffle if it did not removed last entry
-            // to get correct statistics
-            if i != self.random_edge_halfs.len(){
-                self.random_edge_halfs.shuffle(&mut self.rng);
-            }
+            let node2 = self.random_edge_halfs.swap_remove(i);
             return self.graph
                 .add_edge(node1, node2)
                 .is_ok();

@@ -61,13 +61,18 @@ default = ["serde_support"]
 #name = "bench_q_core"
 #harness = false
 #
-[[bench]]
-name = "graph"
-harness = false
-
+#[[bench]]
+#name = "graph"
+#harness = false
+#
 #[[bench]]
 #name = "er_c_creation"
 #harness = false
+
+[[bench]]
+name = "configuration_bench"
+harness = false
+
 #
 #[[bench]]
 #name = "barabasi_albert_creation"
