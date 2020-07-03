@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 use crate::{traits::*, graph::*, iter::*};
 use std::{borrow::*, convert::*, iter, iter::*};
 use rand::seq::*;
+use std::mem;
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
@@ -67,6 +68,18 @@ where T: Node,
         };
         res.randomize();
         res
+    }
+
+    /// Swaps the degeedistribution for a new one and draws a new network according to this distribution
+    /// **Note** `new_degree_distribution.len()` has to be of the same length as `self.degree_distribution.len()`
+    /// will panic otherwise
+    /// * returns old degree distribution
+    pub fn swap_distribution_vec(&mut self, mut new_degree_distribution: Vec<usize>) -> Vec<usize>
+    {
+        assert_eq!(self.degree_distribution.len(), new_degree_distribution.len());
+        mem::swap(&mut self.degree_distribution, &mut new_degree_distribution);
+        self.randomize();
+        new_degree_distribution
     }
 }
 
