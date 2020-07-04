@@ -2,10 +2,8 @@
 //! * contains multiple measurable quantities
 //! * used by `Graph<T>` and `SwGraph<T>`
 use crate::{traits::*, iter::*, GraphErrors};
-use std::convert::TryFrom;
-use std::collections::{VecDeque, HashSet};
-use std::marker::PhantomData;
-use std::io::Write;
+
+use std::{convert::*, collections::*, marker::*, io::Write};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -28,10 +26,10 @@ where T: Node,
     /// and no edges
     pub fn new(size: usize) -> Self {
         let mut vertices = Vec::with_capacity(size);
-        for i in 0..size {
-            let container = A::new(i, T::new_from_index(i));
-            vertices.push(container);
-        }
+        vertices.extend(
+            (0..size)
+                .map(|i| A::new(i, T::new_from_index(i)))
+        );
         Self{
             vertices,
             next_id: size,

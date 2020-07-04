@@ -14,6 +14,7 @@
 
 ### minor optimizations
 * ErEnsembleC - `randomize` (and therefore `new`, as that uses randomize) 
+* GenericGraph - `new` roughly twice as fast now, though it was fast t begin with
 
 ### Ensemble
 * adding Barabási-Albert ensemble - work in progress
