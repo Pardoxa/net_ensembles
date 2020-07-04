@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.4.0 &rarr; master
+
 ### Iterators
 * adding new breadth first iterator `BfsFiltered`
 * improve `size_hint` for a few iterators
@@ -19,6 +20,7 @@
 ### Ensemble
 * adding Barabási-Albert ensemble - work in progress
 * adding ConfigurationModel - work in progress
+
 
 ## v0.3.0 &rarr; v0.4.0
 ## Major breaking change: `u32 -> usize`

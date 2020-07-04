@@ -371,6 +371,7 @@ mod testing {
                 .is_connected()
                 .expect("test_edge_count error 1")
         );
+        assert!(e.graph.dfs(100).next().is_none());
 
         // add edge
         e.graph_mut()

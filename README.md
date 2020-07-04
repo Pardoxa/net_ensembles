@@ -38,6 +38,7 @@ with all following versions, though no guarantees are made.
 
 ## work in progress
 * Barabási-Albert
+* Configuration Model
 
 ### Note
 

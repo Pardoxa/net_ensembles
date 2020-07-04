@@ -328,6 +328,7 @@ where T: Node,
     /// * the iterator will iterate over the vertices in depth first search order,
     /// beginning with vertex `index`.
     /// * iterator returns `node`
+    /// * iterator always returns None if index out of bounds
     ///
     /// Order
     ///------------------------
@@ -347,6 +348,7 @@ where T: Node,
     /// * the iterator will iterate over the vertices in depth first search order,
     /// beginning with vertex `index`.
     /// * Iterator returns tuple `(index, node)`
+    /// * iterator always returns None if index out of bounds
     ///
     /// Order
     ///------------------------
@@ -1404,20 +1406,23 @@ impl<'a, T, A> DfsWithIndex<'a, T, A>
     where   T: 'a + Node,
             A: AdjContainer<T>
 {
-        fn new(graph: &'a GenericGraph<T, A>, index: usize) -> Self {
-            let mut handled: Vec<bool> = vec![false; graph.vertex_count()];
-            let mut stack: Vec<usize> = Vec::with_capacity(graph.vertex_count() / 2);
-            if index < graph.vertex_count() {
-                stack.push(index);
-                handled[index] = true;
-            }
 
-            DfsWithIndex {
-                graph,
-                handled,
-                stack,
-            }
+    fn new(graph: &'a GenericGraph<T, A>, index: usize) -> Self {
+        let mut handled: Vec<bool> = vec![false; graph.vertex_count()];
+        let mut stack: Vec<usize> = Vec::with_capacity(graph.vertex_count());
+        
+        if index < handled.len()
+        {
+            stack.push(index);
+            handled[index] = true;
         }
+        
+        DfsWithIndex {
+            graph,
+            handled,
+            stack,
+        }
+    }
 
 }
 
@@ -1459,11 +1464,12 @@ impl<'a, T, A> Dfs<'a, T, A>
 where   T: 'a + Node,
         A: AdjContainer<T>
 {
-    /// panics if `index` >= graph.vertex_count()
     fn new(graph: &'a GenericGraph<T, A>, index: usize) -> Self {
         let mut handled: Vec<bool> = vec![false; graph.vertex_count()];
-        let mut stack: Vec<usize> = Vec::with_capacity(graph.vertex_count() / 2);
-        if index < graph.vertex_count() {
+        let mut stack: Vec<usize> = Vec::with_capacity(graph.vertex_count());
+        
+        if index < handled.len()
+        {
             stack.push(index);
             handled[index] = true;
         }

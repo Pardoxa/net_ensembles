@@ -240,6 +240,13 @@ impl<T, R> MarkovChain<ConfigurationModelStep, ()> for ConfigurationModel<T, R>
     /// # Markov step
     /// * use this to perform a markov step, e.g., to create a markov chain
     /// * result `ConfigurationModelStep` can be used to undo the step with `self.undo_step(result)`
+    /// # How it works
+    /// * it draws two distinct vertices, weighted with the Vertex degree
+    /// * then for each vertex a random edge is drawn from the respective adjacency list.
+    ///  let these edges be edge1 = (n, j) and edge2 = (k, l). These edges are removed and 
+    /// the edges (n, k) and (j, l) are added. 
+    /// * If the above would result in an invalid topology,
+    /// nothing is added or removed and ConfigurationModelStep::Error is returned
     fn m_step(&mut self) -> ConfigurationModelStep {
         let mut vertex_list = Vec::with_capacity(2);
         // draw two vertices that are not connected
@@ -282,11 +289,11 @@ impl<T, R> MarkovChain<ConfigurationModelStep, ()> for ConfigurationModel<T, R>
     }
 
     /// # Undo a markcov step
-    /// * adds removed edge, or removes added edge, or does nothing
-    /// * if it returns an Err value, you probably used the function wrong
+    /// * adds removed edge and removes added edge, or does nothing
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
+    /// * **panics** if you try to undo an impossible step. This most likely means you undid the steps in the wrong order
     fn undo_step(&mut self, step: ConfigurationModelStep) -> () {
         let (edge1, edge2) = match step {
             ConfigurationModelStep::Error => return,
