@@ -1,7 +1,7 @@
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
-use crate::{traits::*, graph::*, iter::*};
+use crate::{traits::*, graph::*, iter::*, GenericGraph};
 use std::{borrow::*, convert::*, iter, iter::*};
 use rand::seq::*;
 use std::mem;
@@ -9,14 +9,14 @@ use std::mem;
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 /// Generate networks with a given degree distribution
-/// * the degree of each vertex is fixed (see self.degree_distribution),
+/// * the degree of each vertex is fixed (see self.degree_vec),
 ///  while the actual edges will be drawn randomly
 /// * No self loops allowed
 pub struct ConfigurationModel<T, R>
 where T: Node
 {
     graph: Graph<T>,
-    degree_distribution: Vec<usize>,
+    degree_vec: Vec<usize>,
     rng: R,
     random_edge_halfs: Vec<usize>,  // optimization to lessen the number of required allocations
     random_edge_halfs_backup: Vec<usize>, // optimization to lessen the number of required allocations
@@ -25,10 +25,10 @@ where T: Node
 impl<T, R> ConfigurationModel<T, R>
 where T: Node,
 {
-    /// Get the degree distribution of the vertices
-    pub fn degree_distribution(&self) -> &Vec<usize>
+    /// Get the degree vector of the vertices
+    pub fn degree_vec(&self) -> &Vec<usize>
     {
-        &self.degree_distribution
+        &self.degree_vec
     }
 }
 
@@ -36,36 +36,65 @@ impl<T, R> ConfigurationModel<T, R>
 where T: Node,
     R: rand::Rng
 {
-    /// create configuration model from a degree distribution
-    /// * **Note** sum of degree distribution has to be even, will panic otherwise
-    /// * degree_distribution has to have a length grater 1
-    /// * sum of degree_distribution has to be even - otherwise there would be a dangling edge half
-    /// * drawn graphs will consist of `degree_distribution.len()` vertices, where 
-    /// a vertex i will have degree `degree_distribution[i]`
-    pub fn from_vec(degree_distribution: Vec<usize>, rng: R) -> Self
+    /// # create configuration model from a constant degree
+    /// * drawn graphs will consist of `degree_vec.len()` vertices, where 
+    /// a vertex i will have degree `degree_vec[i]`
+    /// * size: number of nodes in the resulting graphs
+    /// # Note
+    /// * None if resulting degree vector is invalid
+    pub fn from_const(constant: usize, size: usize, rng: R) -> Option<Self>
     {
-        assert!(
-            degree_distribution.len() > 1,
-            "degree distribution has to have lenght grater than 1"
-        );
-        assert!(
-            degree_distribution.iter()
-                .all(|&degree| degree < degree_distribution.len() - 1),
-            "Impossible degree distribution - not enough vertices for at least on of the requested degrees"
-        );
-        let mut sum = 0;
-        for val in degree_distribution.iter()
-        {
-            sum += val;
+        if constant >= size - 1 || size * constant % 2 != 0 {
+            None
+        } else {
+            Some(
+                Self::from_vec_unchecked(
+                    vec![constant; size]
+                    , rng
+                )
+            )
         }
-        assert!(
-            sum % 2 == 0, 
-            "Sum of degree distribution has to be even, otherwise there would be a dangling edge half, which is invalid"
+    }
+
+    /// # create ConfigurationModel from a generic graph
+    /// * same as from_vec_unchecked, but creates degree vector from a generic graph
+    pub fn from_generic_graph<T1, A1>(generic_graph: &GenericGraph<T1, A1>, rng: R) -> Self
+    where T1: Node,
+        A1: AdjContainer<T1>
+    {
+        let mut degree_vec = Vec::with_capacity(generic_graph.vertex_count());
+        degree_vec.extend(
+            generic_graph
+            .container_iter()
+            .map(|c| c.degree())
         );
-        let graph = Graph::<T>::new(degree_distribution.len());
+        Self::from_vec_unchecked(degree_vec, rng)
+    }
+
+    /// # create configuration model from a degree vector
+    /// * drawn graphs will consist of `degree_vec.len()` vertices, where 
+    /// a vertex i will have degree `degree_vec[i]`
+    /// # Note
+    /// * None if degree vector is invalid
+    pub fn from_vec(degree_vec: Vec<usize>, rng: R) -> Option<Self>
+    {
+        if Self::degree_vec_is_valid(&degree_vec){
+            Some(Self::from_vec_unchecked(degree_vec, rng))
+        } else {
+            None
+        }
+       
+    }
+
+    /// # create configuration model from a degree vector
+    /// * same as Self::from_vec, but it does not check if the 
+    /// degree_vec is valid - that is on you now
+    pub fn from_vec_unchecked(degree_vec: Vec<usize>, rng: R) -> Self
+    {
+        let graph = Graph::<T>::new(degree_vec.len());
         let mut res = Self{
             graph,
-            degree_distribution,
+            degree_vec,
             rng,
             random_edge_halfs: Vec::new(),
             random_edge_halfs_backup: Vec::new(),
@@ -75,24 +104,78 @@ where T: Node,
         res
     }
 
-    /// Swaps the degeedistribution for a new one and draws a new network according to this distribution
-    /// **Note** `new_degree_distribution.len()` has to be of the same length as `self.degree_distribution.len()`
-    /// will panic otherwise
-    /// * returns old degree distribution
-    pub fn swap_distribution_vec(&mut self, mut new_degree_distribution: Vec<usize>) -> Vec<usize>
+    /// # check if a vector is a vaild degree distribution
+    /// * sum needs to be even
+    /// * len has to be greater than 1
+    /// * no entry can request a degree larger than len-2
+    pub fn degree_vec_is_valid(degree_vec: &Vec<usize>) -> bool
     {
-        assert_eq!(self.degree_distribution.len(), new_degree_distribution.len(),
-        "degree distributions need the same length"
+        if degree_vec.len() <= 1 {
+            return false;
+        }
+        if !degree_vec.iter()
+            .all(|&degree| degree < degree_vec.len() - 1)
+        {
+            return false;
+        }
+        let mut sum = 0;
+        for val in degree_vec.iter().copied()
+        {
+            sum += val;
+        }
+        sum % 2 == 0
+    }
+
+    /// # asserts, that a vector is a vaild degree distribution
+    /// * sum needs to be even
+    /// * len has to be greater than 1
+    /// * no entry can request a degree larger than len-2
+    /// # Usecase
+    /// * intended for quick debugging to see, why the dirtibution is invalid
+    pub fn assert_degree_vec_valid(degree_vec: &Vec<usize>){
+        assert!(
+            degree_vec.len() > 1,
+            "degree vec has to have lenght grater than 1"
         );
         assert!(
-            new_degree_distribution.iter()
-                .all(|&degree| degree < new_degree_distribution.len() - 1),
-            "Impossible degree distribution - not enough vertices for at least on of the requested degrees"
+            degree_vec.iter()
+                .all(|&degree| degree < degree_vec.len() - 1),
+            "Impossible degree vec - not enough vertices for at least on of the requested degrees"
         );
-        mem::swap(&mut self.degree_distribution, &mut new_degree_distribution);
+        let mut sum = 0;
+        for val in degree_vec.iter().copied()
+        {
+            sum += val;
+        }
+        assert!(
+            sum % 2 == 0, 
+            "Sum of degree vec has to be even, otherwise there would be a dangling edge half, which is invalid"
+        );
+    }
+
+    /// # Swaps the degree vector for a new one and draws a new network accordingly
+    /// **Note** `new_degree_vec.len()` has to be of the same length as `self.degree_vec.len()`
+    /// will **panic** otherwise
+    /// * **panics** if new_degree_vec is invalid
+    /// * returns old degree vec
+    pub fn swap_degree_vec(&mut self, new_degree_vec: Vec<usize>) -> Vec<usize>
+    {
+        Self::assert_degree_vec_valid(&new_degree_vec);
+        self.swap_degree_vec_unchecked(new_degree_vec)
+    }
+
+    /// # Swaps the degree_vec for a new one and draws a new network accordingly
+    /// * same as swap_degree_vec but does not assert, that the degree vector is valid, appart from the 
+    /// length
+    pub fn swap_degree_vec_unchecked(&mut self, mut new_degree_vec: Vec<usize>) -> Vec<usize>
+    {
+        assert_eq!(self.degree_vec.len(), new_degree_vec.len(),
+        "degree_vecs need the same length"
+        );
+        mem::swap(&mut self.degree_vec, &mut new_degree_vec);
         self.init_edge_halfs();
         self.randomize();
-        new_degree_distribution
+        new_degree_vec
     }
 
     /// # Sort adjecency lists
@@ -109,8 +192,8 @@ where T: Node,
     fn init_edge_halfs(&mut self)
     {
         self.random_edge_halfs_backup.clear();
-        let ptr = self.degree_distribution.as_ptr();
-        let len = self.degree_distribution.len();
+        let ptr = self.degree_vec.as_ptr();
+        let len = self.degree_vec.len();
         self.random_edge_halfs_backup.extend(
             (0..len)
             .flat_map(
@@ -224,6 +307,43 @@ where   T: Node,
     }
 }
 
+
+impl<T, R> ConfigurationModel<T, R>
+where T: Node,
+    R: rand::Rng,
+{
+
+    fn add_multiple_random_edges(&mut self) -> bool
+    {
+        let mut node1 = self.random_edge_halfs.pop().unwrap();
+        let mut counter = self.random_edge_halfs.len() - 1;
+        loop {
+            if node1 == self.random_edge_halfs[counter]{
+                counter = match counter.checked_sub(1){
+                    Some(val) => val,
+                    None => break false,
+                };
+                continue;
+            }
+            let node2 = self.random_edge_halfs.swap_remove(counter);
+            if self.graph
+                .add_edge(node1, node2)
+                .is_err()
+            {
+                    return false;
+            }
+            if self.random_edge_halfs.len() > 1 {
+                node1 = self.random_edge_halfs.pop().unwrap();
+                counter = self.random_edge_halfs.len() - 1;
+            }else{
+                break true;
+            }
+
+        }
+
+    }
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum ConfigurationModelStep {
@@ -312,42 +432,6 @@ impl<T, R> MarkovChain<ConfigurationModelStep, ()> for ConfigurationModel<T, R>
 
 }
 
-impl<T, R> ConfigurationModel<T, R>
-where T: Node,
-    R: rand::Rng,
-{
-
-    fn add_multiple_random_edges(&mut self) -> bool
-    {
-        let mut node1 = self.random_edge_halfs.pop().unwrap();
-        let mut counter = self.random_edge_halfs.len() - 1;
-        loop {
-            if node1 == self.random_edge_halfs[counter]{
-                counter = match counter.checked_sub(1){
-                    Some(val) => val,
-                    None => break false,
-                };
-                continue;
-            }
-            let node2 = self.random_edge_halfs.swap_remove(counter);
-            if self.graph
-                .add_edge(node1, node2)
-                .is_err()
-            {
-                    return false;
-            }
-            if self.random_edge_halfs.len() > 1 {
-                node1 = self.random_edge_halfs.pop().unwrap();
-                counter = self.random_edge_halfs.len() - 1;
-            }else{
-                break true;
-            }
-
-        }
-
-    }
-}
-
 #[cfg(test)]
 mod testing {
     use super::*;
@@ -356,35 +440,35 @@ mod testing {
     use rand::SeedableRng;
 
     #[test]
-    #[should_panic(expected = "Impossible degree distribution")]
     fn impossible_degree_distribution() {
         let rng = Pcg64::seed_from_u64(12);
 
-        let degree_distribution = vec![1,2,3];
-        let _e: ConfigurationModel<EmptyNode, _> = ConfigurationModel::from_vec(degree_distribution, rng);
+        let degree_vec = vec![1,2,3];
+        
+        assert!(ConfigurationModel::<EmptyNode, _>::from_vec(degree_vec, rng).is_none());
     }
 
     #[test]
-    fn valid_degree_distributions()
+    fn degree_distribution_is_valids()
     {
         let mut rng = Pcg64::seed_from_u64(12322);
-        let degree_distribution = vec![1,2,3,1,2,3];
+        let degree_vec = vec![1,2,3,1,2,3];
         let ensemble: ConfigurationModel<EmptyNode, _> 
-            = ConfigurationModel::from_vec(degree_distribution.clone(), Pcg64::from_rng(&mut rng).unwrap());
+            = ConfigurationModel::from_vec(degree_vec.clone(), Pcg64::from_rng(&mut rng).unwrap()).unwrap();
         
         for i in 0..ensemble.vertex_count()
         {
-            assert_eq!(ensemble.graph().degree(i), Some(degree_distribution[i]));
+            assert_eq!(ensemble.graph().degree(i), Some(degree_vec[i]));
         }
 
         let sw: SwEnsemble<EmptyNode, _> = SwEnsemble::new(1000, 0.1, Pcg64::from_rng(&mut rng).unwrap());
-        let degree_distribution: Vec<_> = sw.container_iter().map(|c| c.degree()).collect();
+        let degree_vec: Vec<_> = sw.container_iter().map(|c| c.degree()).collect();
         let ensemble: ConfigurationModel<EmptyNode, _> 
-            = ConfigurationModel::from_vec(degree_distribution.clone(), Pcg64::from_rng(&mut rng).unwrap());
+            = ConfigurationModel::from_vec(degree_vec.clone(), Pcg64::from_rng(&mut rng).unwrap()).unwrap();
 
         for i in 0..ensemble.vertex_count()
         {
-            assert_eq!(ensemble.graph().degree(i), Some(degree_distribution[i]));
+            assert_eq!(ensemble.graph().degree(i), Some(degree_vec[i]));
         }
 
     }

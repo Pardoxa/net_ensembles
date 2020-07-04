@@ -10,7 +10,7 @@ fn step_test() {
     let rng2 = Pcg64::seed_from_u64(7566);
     let e = ErEnsembleC::<EmptyNode, Pcg64>::new(500, 2.7, rng);
     let degree_dist: Vec<usize> = e.graph().container_iter().map(|c| c.degree()).collect();
-    let mut config = ConfigurationModel::<EmptyNode, Pcg64>::from_vec(degree_dist, rng2);
+    let mut config = ConfigurationModel::<EmptyNode, Pcg64>::from_vec_unchecked(degree_dist, rng2);
     let mut config_change = config.clone();
     config.sort_adj();
 

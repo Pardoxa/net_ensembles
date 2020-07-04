@@ -14,7 +14,7 @@ pub fn bench_randomization(c: &mut Criterion, seed: u64, n: usize, conectivity: 
 
     let degree: Vec<_> = er.graph().container_iter().map(|c| c.degree()).collect();
 
-    let mut model: ConfigurationModel::<EmptyNode, _> = ConfigurationModel::from_vec(degree, rng);
+    let mut model: ConfigurationModel::<EmptyNode, _> = ConfigurationModel::from_vec_unchecked(degree, rng);
 
     let name = format!("randomize_Configuration_ER_{}", n);
     c.bench_function(&name, |b| {
