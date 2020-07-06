@@ -69,6 +69,29 @@ where T: Node,
         Self::from_vec_unchecked(generic_graph.degree_vec(), rng)
     }
 
+    /// # create ConfigurationModel from a generic graph and clones underlying Data
+    /// * `degree_vec` will be extracted from `generic_graph`
+    /// * Data will be cloned from the `generic_graph`
+    /// * returns `ConfigurationModel` model
+    /// * `model.graph()` will have the same topology as `generic_graph`
+    /// after this creation. This will of cause change, if you call `randomize`
+    /// or do markov steps
+    pub fn clone_from_generic_graph<A, G>(generic_graph: &GenericGraph<T, A>, rng: R) -> Self
+    where T: Clone,
+        A: AdjContainer<T>
+    {
+        let graph = Graph::from(generic_graph);
+        let mut res = Self{
+            graph,
+            degree_vec: generic_graph.degree_vec(),
+            rng,
+            random_edge_halfs: Vec::new(),
+            random_edge_halfs_backup: Vec::new(),
+        };
+        res.init_edge_halfs();
+        res
+    }
+
     /// # create configuration model from a degree vector
     /// * drawn graphs will consist of `degree_vec.len()` vertices, where 
     /// a vertex *i* will have degree `degree_vec[i]`
