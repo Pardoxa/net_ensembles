@@ -2,6 +2,7 @@
 
 # README.md
 * bump version number in `Usage`
+* Compil with minimal compiler version
 
 # CHANGELOG.md
 * everything documented? Version number correct?

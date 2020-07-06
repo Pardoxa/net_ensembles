@@ -1,6 +1,8 @@
 # Rust library for random graph ensembles
 [![Crate](https://img.shields.io/crates/v/net_ensembles.svg)](https://crates.io/crates/net_ensembles)
 [![Rust unit tests - master](https://github.com/Pardoxa/net_ensembles/workflows/Rust%20unit%20tests%20-%20master/badge.svg?branch=master)](https://github.com/Pardoxa/net_ensembles)
+[![Docs](https://docs.rs/net_ensembles/badge.svg)](https://docs.rs/net_ensembles/)
+![Minimum rustc version](https://img.shields.io/badge/rustc-1.38+-lightgray.svg)
 
 Implements simple sampling and monte carlo (or rather markov-) steps,
 that can be used to create a markov chain.
