@@ -323,6 +323,23 @@ where T: Node,
         )
     }
 
+    /// # get degree vector
+    /// * returns vector of length `self.vertex_count()`
+    /// where each entry corresponds to the degree of the vertex with the respective index
+    pub fn degree_vec(&self) -> Vec<usize>
+    {
+        let mut degree_vec = Vec::with_capacity(self.vertex_count());
+        degree_vec.extend(
+            self
+                .vertices
+                .iter()
+                .map(|c| c.degree())
+        );
+        degree_vec
+    }
+
+    
+
     /// # returns `Iterator`
     ///
     /// * the iterator will iterate over the vertices in depth first search order,

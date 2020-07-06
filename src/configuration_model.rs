@@ -25,7 +25,10 @@ where T: Node
 impl<T, R> ConfigurationModel<T, R>
 where T: Node,
 {
-    /// Get the degree vector of the vertices
+    /// Get reference to the degree vector of the vertices,
+    /// faster than `self.graph().degree_vec()`,
+    /// since the former has to construct the vector, while the latter just 
+    /// returns a reference to an existing vector
     pub fn degree_vec(&self) -> &Vec<usize>
     {
         &self.degree_vec
@@ -62,13 +65,7 @@ where T: Node,
     where T1: Node,
         A1: AdjContainer<T1>
     {
-        let mut degree_vec = Vec::with_capacity(generic_graph.vertex_count());
-        degree_vec.extend(
-            generic_graph
-            .container_iter()
-            .map(|c| c.degree())
-        );
-        Self::from_vec_unchecked(degree_vec, rng)
+        Self::from_vec_unchecked(generic_graph.degree_vec(), rng)
     }
 
     /// # create configuration model from a degree vector
@@ -176,6 +173,24 @@ where T: Node,
         self.init_edge_halfs();
         self.randomize();
         new_degree_vec
+    }
+
+    /// # Use the degree vector of a generic graph
+    /// * asserts, that generic_graph and self have the same number of vertices
+    /// * uses the current degree vec of generic graph as new degree vec
+    /// * similar to `self.swap_degree_vec_unchecked(generic_graph.degree_vec)`
+    /// but does not create new vector and as such does not return old degree vector
+    /// If you need the old degree vector, you can use `self.degree_vec.clone()` before calling this method
+    pub fn degree_vec_from_generic_graph<T1, A1>(&mut self, generic_graph: &GenericGraph<T1, A1>)
+    where T1: Node,
+        A1: AdjContainer<T1>
+    {
+        assert_eq!(self.degree_vec.len(), generic_graph.vertices.len());
+        for i in 0..self.degree_vec.len(){
+            self.degree_vec[i] = generic_graph.vertices[i].degree();
+        }
+        self.init_edge_halfs();
+        self.randomize();
     }
 
     /// # Sort adjecency lists
@@ -446,6 +461,30 @@ mod testing {
         let degree_vec = vec![1,2,3];
         
         assert!(ConfigurationModel::<EmptyNode, _>::from_vec(degree_vec, rng).is_none());
+    }
+
+    #[test]
+    fn assert_degree_vec() {
+        let mut rng = Pcg64::seed_from_u64(12);
+        let mut sw: SwEnsemble<EmptyNode, _> = SwEnsemble::new(1000, 0.1, Pcg64::from_rng(&mut rng).unwrap());
+
+        
+        let mut ensemble: ConfigurationModel<EmptyNode, _> 
+                = ConfigurationModel::from_generic_graph(sw.graph(), Pcg64::from_rng(&mut rng).unwrap());
+        for i in 0..5 {
+            if i != 0 {
+                sw.randomize();
+                ensemble.degree_vec_from_generic_graph(sw.graph());
+            }
+            for j in 0..5 {
+                if j != 0 {
+                    ensemble.randomize();
+                }
+                assert_eq!(&ensemble.graph().degree_vec(), ensemble.degree_vec());
+            }
+        
+        }
+        
     }
 
     #[test]

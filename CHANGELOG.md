@@ -8,6 +8,7 @@
 
 ### GenericGraph
 * adding member `bfs_filtered` 
+* adding member `degree_vec`
 
 ### Graph
 * adding `From<&GenericGraph>`
