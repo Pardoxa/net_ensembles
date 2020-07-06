@@ -16,8 +16,11 @@ fn step_test() {
 
     for i in 0..=200 {
         let steps = config_change.m_steps(i);
-        println!("{:?}", steps);
-        config_change.undo_steps_quiet(steps);
+        if i % 2 == 0{
+            config_change.undo_steps_quiet(steps);
+        } else {
+            config_change.undo_steps(steps);
+        }
 
         config_change.sort_adj();
         equal_graphs(&config.graph(), &config_change.graph());

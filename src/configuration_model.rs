@@ -364,7 +364,18 @@ pub enum ConfigurationModelStep {
 
 }
 
-impl<T, R> MarkovChain<ConfigurationModelStep, Option<()>> for ConfigurationModel<T, R>
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+/// Result of undoing a step via Markov Chain method of ConfigurationModel
+pub enum UndoStepErrorCM {
+    /// Could not add edge (usize, usize), because of GraphError
+    UnableToAddEdge((usize, usize), GraphErrors),
+    /// Could not remove edge (usize, usize), because of GraphError
+    UnableToRemoveEdge((usize, usize), GraphErrors)
+
+}
+
+impl<T, R> MarkovChain<ConfigurationModelStep, Result<(), UndoStepErrorCM>> for ConfigurationModel<T, R>
     where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
@@ -425,19 +436,55 @@ impl<T, R> MarkovChain<ConfigurationModelStep, Option<()>> for ConfigurationMode
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
-    /// * **panics** if you try to undo an impossible step. This most likely means you undid the steps in the wrong order
-    fn undo_step(&mut self, step: ConfigurationModelStep) -> Option<()> {
+    /// # Error
+    /// If an error is encountered, this will revert the graph to the state, before trying to undo
+    /// the step. The returned Error gives a hint for why this did not succeed.
+    fn undo_step(&mut self, step: ConfigurationModelStep) -> Result<(), UndoStepErrorCM> {
         let (edge1, edge2) = match step {
-            ConfigurationModelStep::Error => return None,
+            ConfigurationModelStep::Error => return Ok(()),
             ConfigurationModelStep::Added(edge1, edge2) => (edge1, edge2)
         };
-        self.graph.add_edge(edge2.0, edge2.1);
-        self.graph.add_edge(edge1.0, edge1.1).unwrap();
-        self.graph.remove_edge(edge1.1, edge2.1).unwrap();
-        self.graph.remove_edge(edge1.0, edge2.0).unwrap();
+        
+        match self.graph.add_edge(edge2.0, edge2.1) {
+            Err(error) => return Err(UndoStepErrorCM::UnableToAddEdge(edge2, error)),
+            Ok(..) => {
+                match self.graph.add_edge(edge1.0, edge1.1) {
+                    Err(error) => {
+                        self.graph.remove_edge(edge2.0, edge2.1).unwrap();
+                        return Err(UndoStepErrorCM::UnableToAddEdge(edge1, error))
+                    },
+                    Ok(..) => {
+                        match self.graph.remove_edge(edge1.1, edge2.1){
+                            Err(error) => {
+                                self.graph.remove_edge(edge2.0, edge2.1).unwrap();
+                                self.graph.remove_edge(edge1.0, edge1.1).unwrap();
+                                return Err(UndoStepErrorCM::UnableToRemoveEdge((edge1.1, edge2.1), error))
+                            },
+                            Ok(..) =>{
+                                match self.graph.remove_edge(edge1.0, edge2.0)
+                                {
+                                    Err(error) => {
+                                        self.graph.remove_edge(edge2.0, edge2.1).unwrap();
+                                        self.graph.remove_edge(edge1.0, edge1.1).unwrap();
+                                        self.graph.add_edge(edge1.1, edge2.1).unwrap();
+                                        return Err(UndoStepErrorCM::UnableToRemoveEdge((edge1.0, edge2.0), error))
+                                    },
+                                    Ok(..) => Ok(())
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
     }
 
+    /// # Undo a markcov step
+    /// * adds removed edge and removes added edge, or does nothing
+    /// * as long as you know, that you undo the steps in the correct order,
+    ///  this is the prefered method as this more efficent
+    /// * **panics** if an Error is encountered
     fn undo_step_quiet(&mut self, step: ConfigurationModelStep) {
         let (edge1, edge2) = match step {
             ConfigurationModelStep::Error => return,

@@ -3,6 +3,10 @@ use crate::IterWrapper;
 use crate::sw::SwChangeState;
 use crate::traits::SerdeStateConform;
 use crate::GenericGraph;
+
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
+
 /// What every node should be able to do
 pub trait Node
 where Self: Clone + SerdeStateConform {
@@ -14,6 +18,7 @@ where Self: Clone + SerdeStateConform {
 
 /// Error messages
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum GraphErrors{
     /// ### somehow, the existing of the edge is a problem
     /// Did you try to add an edge, which is already present?
