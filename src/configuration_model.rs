@@ -1,3 +1,5 @@
+//! Contains Configuration Model 
+//!
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
@@ -41,10 +43,9 @@ where T: Node,
 {
     /// # create configuration model from a constant degree
     /// * drawn graphs will consist of `degree_vec.len()` vertices, where 
-    /// a vertex i will have degree `degree_vec[i]`
-    /// * size: number of nodes in the resulting graphs
-    /// # Note
-    /// * None if resulting degree vector is invalid
+    /// a vertex *i* will have degree `degree_vec[i]`
+    /// * `size`: number of nodes in the resulting graphs
+    /// * returns `None` if resulting degree vector is invalid
     pub fn from_const(constant: usize, size: usize, rng: R) -> Option<Self>
     {
         if constant >= size - 1 || size * constant % 2 != 0 {
@@ -60,7 +61,7 @@ where T: Node,
     }
 
     /// # create ConfigurationModel from a generic graph
-    /// * same as from_vec_unchecked, but creates degree vector from a generic graph
+    /// * same as [`from_vec_unchecked`](#method.from_vec_unchecked), but creates degree vector from a generic graph
     pub fn from_generic_graph<T1, A1>(generic_graph: &GenericGraph<T1, A1>, rng: R) -> Self
     where T1: Node,
         A1: AdjContainer<T1>
@@ -70,9 +71,8 @@ where T: Node,
 
     /// # create configuration model from a degree vector
     /// * drawn graphs will consist of `degree_vec.len()` vertices, where 
-    /// a vertex i will have degree `degree_vec[i]`
-    /// # Note
-    /// * None if degree vector is invalid
+    /// a vertex *i* will have degree `degree_vec[i]`
+    /// * returns `None` if degree vector is invalid
     pub fn from_vec(degree_vec: Vec<usize>, rng: R) -> Option<Self>
     {
         if Self::degree_vec_is_valid(&degree_vec){
@@ -84,8 +84,8 @@ where T: Node,
     }
 
     /// # create configuration model from a degree vector
-    /// * same as Self::from_vec, but it does not check if the 
-    /// degree_vec is valid - that is on you now
+    /// * same as [`from_vec`](#method.from_vec), but it does not check if the 
+    /// `degree_vec` is valid - that is on you now
     pub fn from_vec_unchecked(degree_vec: Vec<usize>, rng: R) -> Self
     {
         let graph = Graph::<T>::new(degree_vec.len());
@@ -102,9 +102,9 @@ where T: Node,
     }
 
     /// # check if a vector is a vaild degree distribution
-    /// * sum needs to be even
-    /// * len has to be greater than 1
-    /// * no entry can request a degree larger than len-2
+    /// * sum of `degree_vec` needs to be even
+    /// * `degree_vec.len()` has to be greater than `1`
+    /// * no entry can request a degree larger than `degree_vec.len()-2`
     pub fn degree_vec_is_valid(degree_vec: &Vec<usize>) -> bool
     {
         if degree_vec.len() <= 1 {
@@ -124,11 +124,8 @@ where T: Node,
     }
 
     /// # asserts, that a vector is a vaild degree distribution
-    /// * sum needs to be even
-    /// * len has to be greater than 1
-    /// * no entry can request a degree larger than len-2
-    /// # Usecase
-    /// * intended for quick debugging to see, why the dirtibution is invalid
+    /// * similar to [`degree_vec_is_valid`](#method.degree_vec_is_valid), but asserts instead
+    /// * intended for debugging: see why the `degree_vec` is invalid
     pub fn assert_degree_vec_valid(degree_vec: &Vec<usize>){
         assert!(
             degree_vec.len() > 1,
@@ -154,7 +151,7 @@ where T: Node,
     /// **Note** `new_degree_vec.len()` has to be of the same length as `self.degree_vec.len()`
     /// will **panic** otherwise
     /// * **panics** if new_degree_vec is invalid
-    /// * returns old degree vec
+    /// * returns previous `degree_vec`
     pub fn swap_degree_vec(&mut self, new_degree_vec: Vec<usize>) -> Vec<usize>
     {
         Self::assert_degree_vec_valid(&new_degree_vec);
@@ -162,8 +159,8 @@ where T: Node,
     }
 
     /// # Swaps the degree_vec for a new one and draws a new network accordingly
-    /// * same as swap_degree_vec but does not assert, that the degree vector is valid, appart from the 
-    /// length
+    /// * same as [`swap_degree_vec`](#method.swap_degree_vec) but does not assert, that the degree vector is valid 
+    /// * **panics** if `self.degree_vec.len() != new_degree_vec.len()` (the only thing still checked for, as that check is really really cheap)
     pub fn swap_degree_vec_unchecked(&mut self, mut new_degree_vec: Vec<usize>) -> Vec<usize>
     {
         assert_eq!(self.degree_vec.len(), new_degree_vec.len(),
@@ -176,11 +173,10 @@ where T: Node,
     }
 
     /// # Use the degree vector of a generic graph
-    /// * asserts, that generic_graph and self have the same number of vertices
-    /// * uses the current degree vec of generic graph as new degree vec
-    /// * similar to `self.swap_degree_vec_unchecked(generic_graph.degree_vec)`
-    /// but does not create new vector and as such does not return old degree vector
-    /// If you need the old degree vector, you can use `self.degree_vec.clone()` before calling this method
+    /// * asserts, that `generic_graph` and `self.graph()` have the same number of vertices
+    /// * similar to `self.swap_degree_vec_unchecked(generic_graph.degree_vec())`
+    /// but does not create new vector and as such does not return old degree vector. 
+    /// If you need the old degree vector, you can use `self.degree_vec().clone()` before calling this method
     pub fn degree_vec_from_generic_graph<T1, A1>(&mut self, generic_graph: &GenericGraph<T1, A1>)
     where T1: Node,
         A1: AdjContainer<T1>
@@ -204,6 +200,7 @@ where T: Node,
         self.graph.sort_adj();
     }
 
+    /// initialize or update the edge halfs vectors for later usage
     fn init_edge_halfs(&mut self)
     {
         self.random_edge_halfs_backup.clear();
@@ -247,14 +244,10 @@ impl<T, R> HasRng<R> for ConfigurationModel<T, R>
     where   T: Node,
             R: rand::Rng,
 {
-    /// # Access RNG
-    /// If, for some reason, you want access to the internal random number generator: Here you go
     fn rng(&mut self) -> &mut R {
         &mut self.rng
     }
 
-    /// # Swap random number generator
-    /// * returns old internal rng
     fn swap_rng(&mut self, mut rng: R) -> R {
         std::mem::swap(&mut self.rng, &mut rng);
         rng
@@ -361,13 +354,17 @@ where T: Node,
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+/// Markov step of configuration model
 pub enum ConfigurationModelStep {
+    /// step did not succeed
     Error,
+    /// * Step did succeed and can be undone using this
+    /// * contains the newly added edges, which is enough information to know which edges were removed
     Added((usize, usize), (usize, usize)),
 
 }
 
-impl<T, R> MarkovChain<ConfigurationModelStep, ()> for ConfigurationModel<T, R>
+impl<T, R> MarkovChain<ConfigurationModelStep, Option<()>> for ConfigurationModel<T, R>
     where   T: Node + SerdeStateConform,
             R: rand::Rng,
 {
@@ -378,10 +375,10 @@ impl<T, R> MarkovChain<ConfigurationModelStep, ()> for ConfigurationModel<T, R>
     /// # How it works
     /// * it draws two distinct vertices, weighted with the Vertex degree
     /// * then for each vertex a random edge is drawn from the respective adjacency list.
-    ///  let these edges be edge1 = (n, j) and edge2 = (k, l). These edges are removed and 
-    /// the edges (n, k) and (j, l) are added. 
+    ///  let these edges be *edge1 = (n, j)* and *edge2 = (k, l)*. These edges are removed and 
+    /// the edges *(n, k)* and *(j, l)* are added. 
     /// * If the above would result in an invalid topology,
-    /// nothing is added or removed and ConfigurationModelStep::Error is returned
+    /// nothing is added or removed and `ConfigurationModelStep::Error` is returned
     fn m_step(&mut self) -> ConfigurationModelStep {
         let mut vertex_list = Vec::with_capacity(2);
         // draw two vertices that are not connected
@@ -429,7 +426,19 @@ impl<T, R> MarkovChain<ConfigurationModelStep, ()> for ConfigurationModel<T, R>
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
     /// * **panics** if you try to undo an impossible step. This most likely means you undid the steps in the wrong order
-    fn undo_step(&mut self, step: ConfigurationModelStep) -> () {
+    fn undo_step(&mut self, step: ConfigurationModelStep) -> Option<()> {
+        let (edge1, edge2) = match step {
+            ConfigurationModelStep::Error => return None,
+            ConfigurationModelStep::Added(edge1, edge2) => (edge1, edge2)
+        };
+        self.graph.add_edge(edge2.0, edge2.1);
+        self.graph.add_edge(edge1.0, edge1.1).unwrap();
+        self.graph.remove_edge(edge1.1, edge2.1).unwrap();
+        self.graph.remove_edge(edge1.0, edge2.0).unwrap();
+
+    }
+
+    fn undo_step_quiet(&mut self, step: ConfigurationModelStep) {
         let (edge1, edge2) = match step {
             ConfigurationModelStep::Error => return,
             ConfigurationModelStep::Added(edge1, edge2) => (edge1, edge2)
@@ -438,11 +447,6 @@ impl<T, R> MarkovChain<ConfigurationModelStep, ()> for ConfigurationModel<T, R>
         self.graph.add_edge(edge1.0, edge1.1).unwrap();
         self.graph.remove_edge(edge1.1, edge2.1).unwrap();
         self.graph.remove_edge(edge1.0, edge2.0).unwrap();
-
-    }
-
-    fn undo_step_quiet(&mut self, step: ConfigurationModelStep) {
-        self.undo_step(step)
     }
 
 }
