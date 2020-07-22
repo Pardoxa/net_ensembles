@@ -212,17 +212,6 @@ where T: Node,
         self.randomize();
     }
 
-    /// # Sort adjecency lists
-    /// If you depend on the order of the adjecency lists, you can sort them
-    /// # Performance
-    /// * internally uses [pattern-defeating quicksort](https://github.com/orlp/pdqsort)
-    /// as long as that is the standard
-    /// * sorts an adjecency list with length `d` in worst-case: `O(d log(d))`
-    /// * is called for each adjecency list, i.e., `self.vertex_count()` times
-    pub fn sort_adj(&mut self) {
-        self.graph.sort_adj();
-    }
-
     /// initialize or update the edge halfs vectors for later usage
     fn init_edge_halfs(&mut self)
     {
@@ -311,6 +300,17 @@ where   T: Node,
 
     fn graph(&self) -> &Graph<T> {
         self.borrow()
+    }
+
+    /// # Sort adjecency lists
+    /// If you depend on the order of the adjecency lists, you can sort them
+    /// # Performance
+    /// * internally uses [pattern-defeating quicksort](https://github.com/orlp/pdqsort)
+    /// as long as that is the standard
+    /// * sorts an adjecency list with length `d` in worst-case: `O(d log(d))`
+    /// * is called for each adjecency list, i.e., `self.vertex_count()` times
+    fn sort_adj(&mut self) {
+        self.graph.sort_adj();
     }
 }
 

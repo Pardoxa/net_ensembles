@@ -64,6 +64,10 @@ where   T: Node + SerdeStateConform,
     fn graph(&self) -> &Graph<T> {
         self.borrow()
     }
+
+    fn sort_adj(&mut self) {
+        self.ba_graph.sort_adj();
+    }
 }
 
 impl<T, R> BAensemble<T, R>

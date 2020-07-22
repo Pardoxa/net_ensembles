@@ -26,6 +26,9 @@ pub trait WithGraph<T, G> {
     /// * returns reference to the underlying topology aka, the `GenericGraph`
     /// * use this to call functions regarding the topology
     fn graph(&self) -> &G;
+
+    /// * sorts Adjecaency List
+    fn sort_adj(&mut self);
 }
 
 ///  Collection mut Graph iterators

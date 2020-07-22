@@ -21,6 +21,10 @@
 ### Ensemble
 * adding Barabási-Albert ensemble - work in progress
 * adding ConfigurationModel - work in progress
+* moved `sort_adj`to `WithGraph`trait
+
+### traits
+* WithGraph now has `sort_adj()` member
 
 
 ## v0.3.0 &rarr; v0.4.0

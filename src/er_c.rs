@@ -287,17 +287,6 @@ where T: Node + SerdeStateConform,
     fn graph_mut(&mut self) -> &mut Graph<T> {
         &mut self.graph
     }
-
-    /// # Sort adjecency lists
-    /// If you depend on the order of the adjecency lists, you can sort them
-    /// # Performance
-    /// * internally uses [pattern-defeating quicksort](https://github.com/orlp/pdqsort)
-    /// as long as that is the standard
-    /// * sorts an adjecency list with length `d` in worst-case: `O(d log(d))`
-    /// * is called for each adjecency list, i.e., `self.vertex_count()` times
-    pub fn sort_adj(&mut self) {
-        self.graph_mut().sort_adj();
-    }
 }
 
 impl<T, R> GraphIteratorsMut<T, Graph<T>, NodeContainer<T>> for ErEnsembleC<T, R>
@@ -336,6 +325,17 @@ where   T: Node + SerdeStateConform,
 
     fn graph(&self) -> &Graph<T> {
         self.borrow()
+    }
+
+    /// # Sort adjecency lists
+    /// If you depend on the order of the adjecency lists, you can sort them
+    /// # Performance
+    /// * internally uses [pattern-defeating quicksort](https://github.com/orlp/pdqsort)
+    /// as long as that is the standard
+    /// * sorts an adjecency list with length `d` in worst-case: `O(d log(d))`
+    /// * is called for each adjecency list, i.e., `self.vertex_count()` times
+    fn sort_adj(&mut self) {
+        self.graph_mut().sort_adj();
     }
 }
 
