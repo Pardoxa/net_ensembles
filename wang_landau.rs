@@ -29,7 +29,7 @@ pub enum WangLandauErrors{
     InvalidLogFThreshold,
     /// Still in the process of gathering statistics
     /// Not enough to make an estimate
-    NotEnoughStatitsics,
+    NotEnoughStatistics,
     /// Still Gathering Statistics, this is only an estimate!
     EstimatedStatistic(Vec<f64>)
 }
@@ -113,7 +113,7 @@ impl<R, E, S, Res> WangLandauAdaptive<R, E, S, Res>
                 .collect();
             if hist.iter().any(|&val| val == 0)
             {
-                Err(WangLandauErrors::NotEnoughStatitsics)
+                Err(WangLandauErrors::NotEnoughStatistics)
             } else{
                 let estimate: Vec<_> = self.good_step_hist
                     .iter()
