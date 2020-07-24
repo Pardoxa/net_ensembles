@@ -35,7 +35,7 @@ impl Ord for ProbIndex{
 impl ProbIndex{
     fn new(prob: f64, index: usize) -> Self
     {
-        assert!(prob.is_finite());
+        debug_assert!(prob.is_finite());
         Self{
             index,
             diff: (0.5 - prob).copysign(-1.0)
@@ -65,6 +65,22 @@ impl WangLandauMode{
     }
 }
 
+/// # Adaptive WangLandau 1/t
+/// * **please cite** 
+/// > Yannick Feld and Alexander K. Hartmann,
+/// > “Large-deviations of the basin stability of power grids,”
+/// > *Chaos*&nbsp;**29**:113113&nbsp;(2019), DOI&nbsp;[10.1063/1.5121415](https://dx.doi.org/10.1063/1.5121415)
+///
+/// as this adaptive approach was first used and described in this paper. Also cite the following
+/// * The 1/t Wang Landau approach comes from this paper
+/// > R. E. Belardinelli and V. D. Pereyra,
+/// > Fast algorithm to calculate density of states,”
+/// > Phys.&nbsp;Rev.&nbsp;E&nbsp;**75**: 046701 (2007), DOI&nbsp;[10.1103/PhysRevE.75.046701](https://doi.org/10.1103/PhysRevE.75.046701)
+/// 
+/// * The original Wang Landau algorithim comes from this paper
+/// > F. Wang and D. P. Landau,
+/// > “Efficient, multiple-range random walk algorithm to calculate the density of states,” 
+/// > Phys.&nbsp;Rev.&nbsp;Lett.&nbsp;**86**, 2050–2053 (2001), DOI&nbsp;[10.1103/PhysRevLett.86.2050](https://doi.org/10.1103/PhysRevLett.86.2050)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WangLandauAdaptive<R, E, S, Res, Hist, T>
 {
@@ -87,7 +103,8 @@ pub struct WangLandauAdaptive<R, E, S, Res, Hist, T>
     log_density: Vec<f64>,
     old_energy: T,
     old_bin: usize,
-    mode: WangLandauMode
+    mode: WangLandauMode,
+    check_refine_every: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,6 +122,9 @@ pub enum WangLandauErrors{
     /// bestof has to be at least 1 and at most the number of distinct steps tried,
     /// i.e., max_step - min_step + 1
     InvalidBestof,
+
+    /// check refine has to be at least 1
+    CheckRefineEvery0
 }
 
 impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
@@ -230,11 +250,78 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
 impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T> 
 where R: Rng,
     E: MarkovChain<S, Res>,
-    Hist: Histogram
+    Hist: Histogram + HistogramVal<T>
 {
     fn log_f_1_t(&self) -> f64 
     {
         self.hist().bin_count() as f64 / self.step_count as f64
+    }
+
+    fn reset_statistics(&mut self)
+    {
+        self.best_of_steps.clear();
+        self.counter = 0;
+    }
+
+    fn adjust_bestof(&mut self){
+        self.best_of_steps.clear();
+        self.generate_bestof();
+    }
+
+    fn generate_bestof(&mut self)
+    {
+        let statistics = self.create_statistics().unwrap();
+        let mut heap: BinaryHeap<_> = statistics.into_iter()
+            .enumerate()
+            .map(|(index, prob)|
+                {
+                    ProbIndex::new(prob, index)
+                }
+            ).collect();
+        while self.best_of_steps.len() < self.best_of_count
+        {
+            let index = heap.pop().unwrap().index;
+            let step_size = index + self.min_step;
+            self.best_of_steps.push(step_size);
+        }
+    }
+
+    fn get_stepsize(&mut self) -> usize {
+        match self.trial_list.get(self.counter) {
+            None => {
+                if self.best_of_steps.is_empty(){
+                    self.generate_bestof();
+                }
+                *self.best_of_steps.choose(&mut self.rng).unwrap()
+            },
+            Some(step_size) => *step_size,
+        }
+    }
+
+    fn check_refine(&mut self)
+    {
+        match self.mode{
+            WangLandauMode::Refine1T => {
+                self.log_f = self.log_f_1_t();
+                let adjust = 2000.max(4 * self.check_refine_every);
+                if self.step_count % adjust == 0 {
+                    self.adjust_bestof();
+                }
+                return;
+            },
+            WangLandauMode::RefineOriginal => {
+                if self.step_count % self.check_refine_every == 0 && !self.histogram.any_bin_zero() {
+                    let ref_1_t = self.log_f_1_t();
+                    self.log_f *= 0.5;
+                    if self.log_f < ref_1_t {
+                        self.log_f = ref_1_t;
+                        self.mode = WangLandauMode::Refine1T;
+                    } else {
+                        self.reset_statistics();
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -257,7 +344,8 @@ where R: Rng,
         trial_step_min: usize, 
         trial_step_max: usize,
         best_of_count: usize,
-        histogram: Hist
+        histogram: Hist,
+        check_refine_every: usize
     ) -> Result<Self, WangLandauErrors>
     {
         if trial_step_max < trial_step_min
@@ -267,6 +355,8 @@ where R: Rng,
         else if !log_f_theshold.is_finite() || log_f_theshold.is_sign_negative() 
         {
             return Err(WangLandauErrors::InvalidLogFThreshold);
+        }else if check_refine_every == 0 {
+            return Err(WangLandauErrors::CheckRefineEvery0)
         }
 
         let distinct_step_count = trial_step_max - trial_step_min + 1;
@@ -310,38 +400,21 @@ where R: Rng,
                 mode: WangLandauMode::RefineOriginal,
                 old_bin: usize::MAX,
                 best_of_count,
-                best_of_steps: Vec::with_capacity(best_of_count)
+                best_of_steps: Vec::with_capacity(best_of_count),
+                check_refine_every
             }
         )
     }
 
-    fn generate_bestof(&mut self)
+    pub fn wang_landau_convergence<F, G>(
+        &mut self,
+        energy_fn: F,
+        valid_ensemble: G
+    )where F: Fn(&mut E) -> T + Copy,
+        G: Fn(&E) -> bool + Copy,
     {
-        let statistics = self.create_statistics().unwrap();
-        let mut heap: BinaryHeap<_> = statistics.into_iter()
-            .enumerate()
-            .map(|(index, prob)|
-                {
-                    ProbIndex::new(prob, index)
-                }
-            ).collect();
-        while self.best_of_steps.len() < self.best_of_count
-        {
-            let index = heap.pop().unwrap().index;
-            let step_size = index + self.min_step;
-            self.best_of_steps.push(step_size);
-        }
-    }
-
-    fn get_stepsize(&mut self) -> usize {
-        match self.trial_list.get(self.counter) {
-            None => {
-                if self.best_of_steps.is_empty(){
-                    self.generate_bestof();
-                }
-                *self.best_of_steps.choose(&mut self.rng).unwrap()
-            },
-            Some(step_size) => *step_size,
+        while self.log_f > self.log_f_theshold{
+            self.wang_landau_step(energy_fn, valid_ensemble);
         }
     }
 
@@ -352,24 +425,22 @@ where R: Rng,
     )where F: Fn(&mut E) -> T,
         G: Fn(&E) -> bool,
     {
+        self.step_count += 1;
         let step_size = self.get_stepsize();
 
         let steps = self.ensemble.m_steps(step_size);
         
         if !valid_ensemble(&self.ensemble)
         {
-            if self.is_gathering_statistics(){
-                self.rejected_step_hist[step_size - self.min_step] += 1;
-                self.counter += 1;
-            }
+            self.rejected_step_hist[step_size - self.min_step] += 1;
+            self.counter += 1;
+            
             self.histogram.count_index(self.old_bin).unwrap();
             self.ensemble.undo_steps_quiet(steps);
             return;
         }
         
-        if self.mode.is_mode_1_t() {
-            self.log_f = self.log_f_1_t();
-        }
+        self.check_refine();
         
         let current_energy = energy_fn(&mut self.ensemble);
         let current_bin = match self.histogram.get_bin_index(&current_energy)
@@ -377,10 +448,10 @@ where R: Rng,
             Ok(index) => index,
             _  => {
                 // invalid step
-                if self.is_gathering_statistics(){
-                    self.rejected_step_hist[step_size - self.min_step] += 1;
-                    self.counter += 1;
-                }
+                
+                self.rejected_step_hist[step_size - self.min_step] += 1;
+                self.counter += 1;
+                
                 self.histogram.count_index(self.old_bin).unwrap();
                 self.log_density[self.old_bin] += self.log_f;
                 self.ensemble.undo_steps_quiet(steps);
@@ -391,20 +462,18 @@ where R: Rng,
 
         if self.rng.gen::<f64>() > accept_prob {
             // reject step
-            if self.is_gathering_statistics(){
-                self.rejected_step_hist[step_size - self.min_step] += 1;
-                self.counter += 1;
-            }
+            self.rejected_step_hist[step_size - self.min_step] += 1;
+            self.counter += 1;
+
             self.histogram.count_index(self.old_bin).unwrap();
             self.log_density[self.old_bin] += self.log_f;
             self.ensemble.undo_steps_quiet(steps);
             return;
         } else {
             // reject step
-            if self.is_gathering_statistics(){
-                self.accepted_step_hist[step_size - self.min_step] += 1;
-                self.counter += 1;
-            }
+            self.accepted_step_hist[step_size - self.min_step] += 1;
+            self.counter += 1;
+            
             self.old_energy = current_energy;
             self.old_bin = current_bin;
             self.histogram.count_index(current_bin).unwrap();
