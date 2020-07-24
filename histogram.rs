@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use std::borrow::*;
 
 /// # Use this has a histogram
 /// * anything that implements `Histogram` should also implement the trait `HistogramVal`
@@ -14,6 +15,14 @@ pub trait Histogram {
     }
     /// reset the histogram to zero
     fn reset(&mut self);
+
+    /// check if any bin was not hit yet
+    fn any_bin_zero(&self) -> bool
+    {
+        self.hist()
+            .iter()
+            .any(|&val| val == 0)
+    }
 }
 
 /// Possible Errors of the traits `Histogram` and `HistogramVal`
@@ -32,9 +41,9 @@ pub enum HistErrors{
 
 pub trait HistogramVal<T>: Histogram{
     /// convert val to the respective histogram index
-    fn get_bin_index(&self, val: T) -> Result<usize, HistErrors>;
+    fn get_bin_index<V: Borrow<T>>(&self, val: V) -> Result<usize, HistErrors>;
     /// count val. Some(index), if inside of hist, None if val is invalid
-    fn count(&mut self, val: T) -> Result<usize, HistErrors>
+    fn count_val<V: Borrow<T>>(&mut self, val: V) -> Result<usize, HistErrors>
     {
         let id = self.get_bin_index(val)?;
         self.count_index(id)
@@ -46,9 +55,9 @@ pub trait HistogramVal<T>: Histogram{
     /// * **Note** that the last border is exclusive
     fn borders_clone(&self) -> Vec<T>;
     /// does a value correspond to a valid bin?
-    fn is_inside(&self, val: T) -> bool;
+    fn is_inside<V: Borrow<T>>(&self, val: V) -> bool;
     /// opposite of `is_inside`
-    fn not_inside(&self, val: T) -> bool;
+    fn not_inside<V: Borrow<T>>(&self, val: V) -> bool;
     /// get the left most border (inclusive)
     fn get_left(&self) -> T;
     /// get the right most border (exclusive)
@@ -159,25 +168,26 @@ impl HistogramVal<f64> for HistogramF64{
         self.bin_borders[self.bin_borders.len() - 1]
     }
 
-    fn is_inside(&self, val: f64) -> bool {
-        val >= self.bin_borders[0] 
-            && val < self.bin_borders[self.bin_borders.len() - 1]
+    fn is_inside<V: Borrow<f64>>(&self, val: V) -> bool {
+        *val.borrow() >= self.bin_borders[0] 
+            && *val.borrow() < self.bin_borders[self.bin_borders.len() - 1]
     }
 
-    fn not_inside(&self, val: f64) -> bool {
-        !val.is_finite() 
-            || val < self.bin_borders[0] 
-            || val >= self.bin_borders[self.bin_borders.len() - 1]
+    fn not_inside<V: Borrow<f64>>(&self, val: V) -> bool {
+        !(*val.borrow()).is_finite() 
+            || *val.borrow() < self.bin_borders[0] 
+            || *val.borrow() >= self.bin_borders[self.bin_borders.len() - 1]
     }
 
 
-    fn get_bin_index(&self, val: f64) -> Result<usize, HistErrors>
+    fn get_bin_index<V: Borrow<f64>>(&self, val: V) -> Result<usize, HistErrors>
     {
+        let val = val.borrow();
         if self.is_inside(val)
         {
             let search_res = self.bin_borders.binary_search_by(
                 |v|
-                v.partial_cmp(&val).expect("Should never be NaN")
+                v.partial_cmp(val).expect("Should never be NaN")
             );
             match search_res
             {
@@ -251,25 +261,28 @@ impl HistogramVal<usize> for HistogramUsize{
     }
 
     #[inline]
-    fn is_inside(&self, val: usize) -> bool {
+    fn is_inside<V: Borrow<usize>>(&self, val: V) -> bool {
+        let val = *val.borrow();
         val >= self.get_left()
             && val < self.get_right()
     }
 
     #[inline]
-    fn not_inside(&self, val: usize) -> bool {
+    fn not_inside<V: Borrow<usize>>(&self, val: V) -> bool {
+        let val = *val.borrow();
         val < self.get_left()
             || val >= self.get_right()
     }
 
-  /// None if not inside Hist covered zone
-    fn get_bin_index(&self, val: usize) -> Result<usize, HistErrors>
+    /// None if not inside Hist covered zone
+    fn get_bin_index<V: Borrow<usize>>(&self, val: V) -> Result<usize, HistErrors>
     {
+        let val = val.borrow();
         if self.not_inside(val)
         {
             return Err(HistErrors::OutsideHist);
         }
-        match self.bin_borders.binary_search(&val)
+        match self.bin_borders.binary_search(val.borrow())
         {
             Result::Ok(index) => {
                 Ok(index)
@@ -369,7 +382,8 @@ impl HistogramVal<usize> for HistogramFast
         }
     }
 
-    fn get_bin_index(&self, val: usize) -> Result<usize, HistErrors> {
+    fn get_bin_index<V: Borrow<usize>>(&self, val: V) -> Result<usize, HistErrors> {
+        let val = *val.borrow();
         if val < self.right{
             match val.checked_sub(self.left) {
                 None => Err(HistErrors::OutsideHist),
@@ -384,15 +398,17 @@ impl HistogramVal<usize> for HistogramFast
         (self.left..=self.right).collect()
     }
 
-    fn is_inside(&self, val: usize) -> bool {
+    fn is_inside<V: Borrow<usize>>(&self, val: V) -> bool {
+        let val = *val.borrow();
         val >= self.left && val < self.right
     }
 
-    fn not_inside(&self, val: usize) -> bool {
+    fn not_inside<V: Borrow<usize>>(&self, val: V) -> bool {
+        let val = *val.borrow();
         val >= self.right || val < self.left
     }
 
-    fn count(&mut self, val: usize) -> Result<usize, HistErrors> {
+    fn count_val<V: Borrow<usize>>(&mut self, val: V) -> Result<usize, HistErrors> {
         let index = self.get_bin_index(val)?;
         self.hist[index] += 1;
         Ok(index)
