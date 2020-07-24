@@ -1,10 +1,14 @@
 use serde::{Serialize, Deserialize};
 
+/// # Use this has a histogram
+/// * anything that implements `Histogram` should also implement the trait `HistogramVal`
 pub trait Histogram {
-    /// count val. Some(index), if inside of hist, None if val is invalid
+    /// # `self.hist[index] += 1`, `Err()` if `index` out of bounds
     fn count_index(&mut self, index: usize) -> Result<usize, HistErrors>;
+    /// # the created histogram
     fn hist(&self) -> &Vec<usize>;
-    fn len(&self) -> usize
+    /// # How many bins the histogram contains
+    fn bin_count(&self) -> usize
     {
         self.hist().len()
     }
@@ -12,6 +16,7 @@ pub trait Histogram {
     fn reset(&mut self);
 }
 
+/// Possible Errors of the traits `Histogram` and `HistogramVal`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HistErrors{
     /// A histogram without any bins does not make sense!
@@ -26,6 +31,7 @@ pub enum HistErrors{
 }
 
 pub trait HistogramVal<T>: Histogram{
+    /// convert val to the respective histogram index
     fn get_bin_index(&self, val: T) -> Result<usize, HistErrors>;
     /// count val. Some(index), if inside of hist, None if val is invalid
     fn count(&mut self, val: T) -> Result<usize, HistErrors>
@@ -33,11 +39,23 @@ pub trait HistogramVal<T>: Histogram{
         let id = self.get_bin_index(val)?;
         self.count_index(id)
     }
-    fn borders(&self) -> Vec<T>;
+    /// # binning borders
+    /// * the borders used to bin the values
+    /// * any val which fullfills `self.border[i] <= val < self.border[i + 1]` 
+    /// will get index `i`.
+    /// * **Note** that the last border is exclusive
+    fn borders_clone(&self) -> Vec<T>;
+    /// does a value correspond to a valid bin?
     fn is_inside(&self, val: T) -> bool;
+    /// opposite of `is_inside`
     fn not_inside(&self, val: T) -> bool;
+    /// get the left most border (inclusive)
     fn get_left(&self) -> T;
+    /// get the right most border (exclusive)
     fn get_right(&self) -> T;
+    /// # calculates some sort of absolute distance to the nearest valid bin
+    /// * any invalid numbers (like NAN or INFINITY) should have the highest distance possible
+    /// * if a value corresponds to a valid bin, the distance should be zero
     fn distance(&self, val: T) -> T;
 }
 
@@ -48,10 +66,18 @@ pub struct HistogramGeneric<T>
     hist: Vec<usize>,
 }
 
+impl<T> HistogramGeneric<T>{
+    /// similar to `self.borders_clone` but does not allocate memory
+    pub fn borders(&self) -> &Vec<T>
+    {
+        &self.bin_borders
+    }
+}
+
 impl<T> Histogram for HistogramGeneric<T>
 {
     #[inline]
-    fn len(&self) -> usize {
+    fn bin_count(&self) -> usize {
         self.hist.len()
     }
 
@@ -61,7 +87,7 @@ impl<T> Histogram for HistogramGeneric<T>
     }
 
     fn count_index(&mut self, index: usize) -> Result<usize, HistErrors> {
-        if index < self.len()
+        if index < self.bin_count()
         {
             self.hist[index] += 1;
             Ok(index)
@@ -71,7 +97,7 @@ impl<T> Histogram for HistogramGeneric<T>
     }
 
     fn reset(&mut self) {
-        for i in 0..self.len() {
+        for i in 0..self.bin_count() {
             self.hist[i] = 0;
         }
     }
@@ -167,11 +193,13 @@ impl HistogramVal<f64> for HistogramF64{
         } 
     }
 
-    fn borders(&self) -> Vec<f64> {
+    fn borders_clone(&self) -> Vec<f64> {
         self.bin_borders.clone()
     }
 }
 
+/// # Note: Consider using `HistogramFast` if possible, as it is faster.
+/// * `HistogramFast`only works, if every number should correspond to a bin
 pub type HistogramUsize = HistogramGeneric<usize>;
 
 impl HistogramUsize{
@@ -252,7 +280,7 @@ impl HistogramVal<usize> for HistogramUsize{
         }
     }
 
-    fn borders(&self) -> Vec<usize> {
+    fn borders_clone(&self) -> Vec<usize> {
         self.bin_borders.clone()
     }
 }
@@ -308,12 +336,12 @@ impl Histogram for HistogramFast {
     }
 
     #[inline]
-    fn len(&self) -> usize {
+    fn bin_count(&self) -> usize {
         self.hist.len()
     }
 
     fn reset(&mut self) {
-        for i in 0..self.len(){
+        for i in 0..self.bin_count(){
             self.hist[i] = 0;
         }
     }
@@ -352,7 +380,7 @@ impl HistogramVal<usize> for HistogramFast
         }
     }
 
-    fn borders(&self) -> Vec<usize> {
+    fn borders_clone(&self) -> Vec<usize> {
         (self.left..=self.right).collect()
     }
 
