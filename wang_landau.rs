@@ -94,6 +94,8 @@ pub struct WangLandauAdaptive<R, E, S, Res, Hist, T>
     step_res_marker: PhantomData<Res>,
     accepted_step_hist: Vec<usize>,
     rejected_step_hist: Vec<usize>,
+    total_steps_rejected: usize,
+    total_steps_accepted: usize,
     min_step: usize,
     counter: usize,
     log_f: f64,
@@ -284,7 +286,39 @@ where R: Rng,
     fn reset_statistics(&mut self)
     {
         self.best_of_steps.clear();
+
+        self.total_steps_accepted += self.accepted_step_hist.iter().sum::<usize>();
+        self.accepted_step_hist
+            .iter_mut()
+            .for_each(|entry| *entry = 0);
+
+        self.total_steps_rejected += self.rejected_step_hist.iter().sum::<usize>();
+        self.rejected_step_hist
+            .iter_mut()
+            .for_each(|entry| *entry = 0);
+
         self.counter = 0;
+    }
+
+    /// # total_steps_accepted / total_steps 
+    pub fn fraction_accepted_total(&self) -> f64 {
+        let total_steps = self.total_steps_accepted + self.total_steps_rejected;
+        if total_steps == 0 {
+            f64::NAN
+        } else {
+            self.total_steps_accepted as f64 / total_steps as f64
+        }
+    }
+
+    /// # Fraction of steps accepted since the statistics were reset the last time
+    pub fn fraction_accepted_current(&self) -> f64 {
+        let accepted: usize = self.accepted_step_hist.iter().sum();
+        let total = accepted + self.rejected_step_hist.iter().sum::<usize>();
+        if total == 0 {
+            f64::NAN
+        } else {
+            accepted as f64 / total as f64
+        }
     }
 
     fn adjust_bestof(&mut self){
@@ -436,7 +470,9 @@ where R: Rng,
                 old_bin: None,
                 best_of_count,
                 best_of_steps: Vec::with_capacity(best_of_count),
-                check_refine_every
+                check_refine_every,
+                total_steps_accepted: 0,
+                total_steps_rejected: 0
             }
         )
     }
@@ -576,13 +612,9 @@ where R: Rng,
                 }
             },
             _  => {
-                // invalid step
+                // invalid step -> reject
                 self.count_rejected(step_size);
-                
-                self.histogram.count_index(old_bin).unwrap();
-                self.log_density[old_bin] += self.log_f;
                 self.ensemble.undo_steps_quiet(steps);
-                return;
             }
         };
         
