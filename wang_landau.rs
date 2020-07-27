@@ -172,22 +172,25 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
         &self.log_density
     }
 
-    /// how many steps were performed until now?
+    /// # Counter
+    /// how many wang Landau steps were performed until now?
     #[inline]
     pub fn get_step_count(&self) -> usize
     {
         self.step_count
     }
 
-    /// Is the simulation in the process of gathering statistics,
+    /// Is the simulation in the process of rebuilding the statistics,
     /// i.e., is it currently trying many differnt step sizes?
     #[inline]
-    pub fn is_gathering_statistics(&self) -> bool
+    pub fn is_rebuilding_statistics(&self) -> bool
     {
         self.counter < self.trial_list.len()
     }
 
-    /// returns value between 0 and 1.0
+    /// # Tracks progress
+    /// * tracks progress until `self.is_rebuilding_statistics` becomes false
+    /// * returned value is always `0 <= val <= 1.0`
     pub fn fraction_of_statistics_gathered(&self) -> f64
     {
         let frac = self.counter as f64 / self.trial_list.len() as f64;
@@ -205,8 +208,8 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
     }
 
     /// # returns current histogram
-    /// * histogram will be reset multiple times during the simulation
-    /// * plese refere to the [papers](struct.WangLandauAdaptive.html#adaptive-wanglandau-1t)
+    /// * **Note**: histogram will be reset multiple times during the simulation
+    /// * please refere to the [papers](struct.WangLandauAdaptive.html#adaptive-wanglandau-1t)
     pub fn hist(&self) -> &Hist
     {
         &self.histogram
@@ -237,7 +240,7 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
             ).collect();
             estimate
         };
-        if self.is_gathering_statistics() {
+        if self.is_rebuilding_statistics() {
             
             if self.statistic_bin_not_hit()
             {
@@ -254,21 +257,28 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
     }
 
     /// # Energy of last valid step
-    // 
-    pub fn get_old_energy(&self) -> Option<T>
-    where T: Clone
+    /// * Energy of the last current step.
+    /// * this should always be equal to the current energy
+    /// * `None` if none of the `self.init*` members was called yet
+    pub fn get_old_energy(&self) -> &Option<T>
     {
-        self.old_energy.clone()
+        &self.old_energy
     }
 
 
     /// **panics** if index is invalid
-    pub fn metropolis_acception_prob(&self, old_bin: usize, new_bin: usize) -> f64
+    fn metropolis_acception_prob(&self, old_bin: usize, new_bin: usize) -> f64
     {
         1.0f64.min(
             (self.log_density[old_bin] - self.log_density[new_bin])
                 .exp()
         )
+    }
+
+    /// # Checks wang landau threshold
+    /// * `log_f <= log_f_theshold`
+    pub fn is_converged(&self) -> bool {
+        self.log_f <= self.log_f_theshold
     }
     
 }
@@ -311,6 +321,7 @@ where R: Rng,
     }
 
     /// # Fraction of steps accepted since the statistics were reset the last time
+    /// * (steps accepted since last reset) / (steps since last reset)
     pub fn fraction_accepted_current(&self) -> f64 {
         let accepted: usize = self.accepted_step_hist.iter().sum();
         let total = accepted + self.rejected_step_hist.iter().sum::<usize>();
@@ -401,7 +412,17 @@ where R: Rng,
     T: Clone
 {
    
-    /// # important:
+    /// # New WangLandauAdaptive
+    /// * `log_f_theshold` - theshold for the simulation
+    /// * `ensemble` ensemble used for the simulation
+    /// * `rng` - random number generator used
+    /// * `samples_per_trial` - how often a specific step_size should be tried before
+    /// estimating the fraction of accepted steps resulting from the stepsize
+    /// * `trial_step_min` and `trial_step_max`: The step sizes tried are: [trial_step_min, trial_step_min + 1, ..., trial_step_max]
+    /// * `best_of_count`: After estimating, use the best `best_of_count` found
+    /// * `histogram`: How your energy will be binned etc
+    /// * `check_refine_every`: how often to check if log_f can be refined?
+    /// # Important
     /// * **You need to call on of the  `self.init*` members before starting the Wang Landau simulation!
     /// * **Err** if `trial_step_max < trial_step_min`
     /// * **Err** if `log_f_theshold <= 0.0`
@@ -551,6 +572,20 @@ where R: Rng,
         }
     }
 
+    /// # Find a valid starting Point
+    /// * if the ensemble is already at a valid starting point,
+    /// the ensemble is left unchanged (as long as your energy calculation does not change the ensemble)
+    /// * alternates between greedy and interval heuristik
+    /// * I recommend using this heuristik, if you do not know which one to use
+    /// # Parameter
+    /// * `energy_fn` function calculating the "energy" of the system
+    /// or rather the Parameter of which you wish to obtain the probability distribution.
+    ///  has to be the same function as used for the wang landau simulation later
+    /// * `valid_ensemble` - Called before calculating the energy.
+    /// if there are any states reachable by markov steps, for which the calculation of the 
+    /// energy function does not work/panics/is invalid, then you can filter them out with this
+    /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
+    /// will always be rejected 
     pub fn init_mixed_heuristik<F, G>
     (
         &mut self,
@@ -564,10 +599,9 @@ where R: Rng,
         if self.histogram.is_inside(self.old_energy_clone()){
             self.end_init();
             return;
-        }
+        }    
         
-        
-        let mut old_dist = f64::NAN;
+        let mut old_dist = f64::INFINITY;
         let mut old_dist_interval = usize::MAX;
         let mut counter = 0u8;
         let dist_interval = |h: &Hist, val: T| h.interval_distance_overlap(val, 3);
@@ -608,6 +642,20 @@ where R: Rng,
         self.end_init();
     }
 
+    /// # Find a valid starting Point
+    /// * if the ensemble is already at a valid starting point,
+    /// the ensemble is left unchanged (as long as your energy calculation does not change the ensemble)
+    /// * Uses overlapping intervals. Accepts a step, if the resulting ensemble is in the same interval as before,
+    /// or it is in an interval closer to the target interval
+    /// # Parameter
+    /// * `energy_fn` function calculating the "energy" of the system
+    /// or rather the Parameter of which you wish to obtain the probability distribution.
+    ///  has to be the same function as used for the wang landau simulation later
+    /// * `valid_ensemble` - Called before calculating the energy.
+    /// if there are any states reachable by markov steps, for which the calculation of the 
+    /// energy function does not work/panics/is invalid, then you can filter them out with this
+    /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
+    /// will always be rejected 
     pub fn init_interval_heuristik<F, G>(
         &mut self,
         energy_fn: F,
@@ -635,6 +683,20 @@ where R: Rng,
         self.end_init();
     }
 
+    /// # Find a valid starting Point
+    /// * if the ensemble is already at a valid starting point,
+    /// the ensemble is left unchanged (as long as your energy calculation does not change the ensemble)
+    /// * Uses a greedy heuristik. Performs markov steps. If that brought us closer to the target interval,
+    /// the step is accepted. Otherwise it is rejected
+    /// # Parameter
+    /// * `energy_fn` function calculating the "energy" of the system
+    /// or rather the Parameter of which you wish to obtain the probability distribution.
+    ///  has to be the same function as used for the wang landau simulation later
+    /// * `valid_ensemble` - Called before calculating the energy.
+    /// if there are any states reachable by markov steps, for which the calculation of the 
+    /// energy function does not work/panics/is invalid, then you can filter them out with this
+    /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
+    /// will always be rejected 
     pub fn init_greedy_heuristic<F, G>(
         &mut self,
         energy_fn: F,
@@ -657,6 +719,25 @@ where R: Rng,
 
     }
 
+    /// # Wang Landau
+    /// * calls `self.wang_landau_step(energy_fn, valid_ensemble)` until `self.is_converged` 
+    /// or `condition(&self)` is false
+    pub fn wang_landau_while<F, G, W>(
+        &mut self,
+        energy_fn: F,
+        valid_ensemble: G,
+        mut condition: W
+    ) where F: Fn(&mut E) -> T + Copy,
+        G: Fn(&E) -> bool + Copy,
+        W: FnMut(&Self) -> bool,
+    {
+        while !self.is_converged() && condition(&self) {
+            self.wang_landau_step(energy_fn, valid_ensemble);
+        }
+    }
+
+    /// # Wang Landau
+    /// * calls `self.wang_landau_step(energy_fn, valid_ensemble)` until `self.is_converged` 
     pub fn wang_landau_convergence<F, G>(
         &mut self,
         energy_fn: F,
@@ -664,11 +745,24 @@ where R: Rng,
     )where F: Fn(&mut E) -> T + Copy,
         G: Fn(&E) -> bool + Copy,
     {
-        while self.log_f > self.log_f_theshold{
+        while !self.is_converged() {
             self.wang_landau_step(energy_fn, valid_ensemble);
         }
     }
 
+    /// # Wang Landau Step
+    /// * performs a single Wang Landau step
+    /// # Parameter
+    /// * `energy_fn` function calculating the "energy" of the system
+    /// or rather the Parameter of which you wish to obtain the probability distribution
+    /// * `valid_ensemble` - Called before calculating the energy.
+    /// if there are any states reachable by markov steps, for which the calculation of the 
+    /// energy function does not work/panics/is invalid, then you can filter them out with this
+    /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
+    /// will always be rejected
+    /// # Important
+    /// * You have to call one of the `self.init*` functions before calling this one - 
+    /// **will panic otherwise**
     pub fn wang_landau_step<F, G>(
         &mut self,
         energy_fn: F,
