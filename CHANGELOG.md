@@ -25,6 +25,7 @@
 
 ### traits
 * WithGraph now has `sort_adj()` member
+* MarkovChain now has member `m_steps_quiet()`
 
 
 ## v0.3.0 &rarr; v0.4.0

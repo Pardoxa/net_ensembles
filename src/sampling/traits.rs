@@ -22,12 +22,22 @@ pub trait MarkovChain<S, Res> {
     /// * result `Vec<S>` can be used to undo the steps with `self.undo_steps(result)`
     fn m_steps(&mut self, count: usize) -> Vec<S> {
         let mut vec = Vec::with_capacity(count);
-        for _ in 0..count {
-            vec.push(
-                self.m_step()
-            );
-        }
+        vec.extend((0..count)
+            .map(|_| self.m_step())
+        );
         vec
+    }
+
+    /// # Markov steps without return
+    /// * use this to perform multiple markov steps at once
+    /// * only use this if you **know** that you do **not** want to undo the steps
+    /// * you cannot undo this steps, but therefore it does not need to allocate a vector 
+    /// for undoing steps
+    fn m_steps_quiet(&mut self, count: usize)
+    {
+        for _ in 0..count {
+            self.m_step();
+        }
     }
 
     /// # Undo markov steps
