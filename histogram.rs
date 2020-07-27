@@ -65,7 +65,7 @@ pub trait HistogramVal<T>: Histogram{
     /// # calculates some sort of absolute distance to the nearest valid bin
     /// * any invalid numbers (like NAN or INFINITY) should have the highest distance possible
     /// * if a value corresponds to a valid bin, the distance should be zero
-    fn distance(&self, val: T) -> T;
+    fn distance(&self, val: T) -> f64;
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -238,15 +238,16 @@ impl HistogramUsize{
 
 impl HistogramVal<usize> for HistogramUsize{
 
-    fn distance(&self, val: usize) -> usize {
+    fn distance(&self, val: usize) -> f64 {
         if self.not_inside(val) {
-            if val < self.get_left() {
+            let dist = if val < self.get_left() {
                 self.get_left() - 1
             } else {
                 val - self.get_right() + 1
-            }
+            };
+            dist as f64
         } else {
-            0
+            0.0
         }
     }
 
@@ -370,15 +371,16 @@ impl HistogramVal<usize> for HistogramFast
         self.right
     }
 
-    fn distance(&self, val: usize) -> usize {
+    fn distance(&self, val: usize) -> f64 {
         if self.not_inside(val) {
-            if val < self.get_left() {
+            let dist = if val < self.get_left() {
                 self.get_left() - 1
             } else {
                 val - self.get_right() + 1
-            }
+            };
+            dist as f64
         } else {
-            0
+            0.0
         }
     }
 

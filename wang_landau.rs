@@ -101,8 +101,8 @@ pub struct WangLandauAdaptive<R, E, S, Res, Hist, T>
     step_count: usize,
     histogram: Hist,
     log_density: Vec<f64>,
-    old_energy: T,
-    old_bin: usize,
+    old_energy: Option<T>,
+    old_bin: Option<usize>,
     mode: WangLandauMode,
     check_refine_every: usize,
 }
@@ -124,7 +124,10 @@ pub enum WangLandauErrors{
     InvalidBestof,
 
     /// check refine has to be at least 1
-    CheckRefineEvery0
+    CheckRefineEvery0,
+
+    /// you have to call one of the
+    NotInitialized
 }
 
 impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
@@ -156,6 +159,17 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
         self.log_f
     }
 
+    /// # Current (non normalized) estimate of ln(P(E))
+    /// * i.e., of the natural logarithm of the 
+    /// probability density function
+    /// for the requested interval
+    /// * this is what we are doing the simulations for
+    #[inline]
+    pub fn log_density(&self) -> &Vec<f64>
+    {
+        &self.log_density
+    }
+
     /// how many steps were performed until now?
     #[inline]
     pub fn get_step_count(&self) -> usize
@@ -182,12 +196,15 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
         }
     }
 
-    /// access to current state of your ensemble
+    /// access the current state of your ensemble
     pub fn ensemble(&self) -> &E
     {
         &self.ensemble
     }
 
+    /// # returns current histogram
+    /// * histogram will be reset multiple times during the simulation
+    /// * plese refere to the [papers](struct.WangLandauAdaptive.html#adaptive-wanglandau-1t)
     pub fn hist(&self) -> &Hist
     {
         &self.histogram
@@ -200,7 +217,11 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
             .any(|(a,b )| a+b == 0)
     }
 
-    pub fn create_statistics(&self) -> Result<Vec<f64>, WangLandauErrors>
+    /// # Estimate accept/reject statistics
+    /// * contains list of estimated probabilities for accepting a step of corresponding step size
+    /// * list[i] corresponds to step size `i + self.min_step`
+    /// * O(trial_step_max - trial_step_min)
+    pub fn estimate_statistics(&self) -> Result<Vec<f64>, WangLandauErrors>
     {
         let calc_estimate = || {
             let estimate: Vec<_> = self.accepted_step_hist
@@ -230,9 +251,12 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
         }
     }
 
-    pub fn get_old_energy(&self) -> &T
+    /// # Energy of last valid step
+    // 
+    pub fn get_old_energy(&self) -> Option<T>
+    where T: Clone
     {
-        &self.old_energy
+        self.old_energy.clone()
     }
 
 
@@ -270,7 +294,7 @@ where R: Rng,
 
     fn generate_bestof(&mut self)
     {
-        let statistics = self.create_statistics().unwrap();
+        let statistics = self.estimate_statistics().unwrap();
         let mut heap: BinaryHeap<_> = statistics.into_iter()
             .enumerate()
             .map(|(index, prob)|
@@ -296,6 +320,16 @@ where R: Rng,
             },
             Some(step_size) => *step_size,
         }
+    }
+
+    fn count_accepted(&mut self, size: usize){
+        self.accepted_step_hist[size - self.min_step] += 1;
+        self.counter += 1;
+    }
+
+    fn count_rejected(&mut self, size: usize){
+        self.rejected_step_hist[size - self.min_step] += 1;
+        self.counter += 1;
     }
 
     fn check_refine(&mut self)
@@ -330,10 +364,11 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
 where R: Rng,
     E: MarkovChain<S, Res>,
     Hist: Histogram + HistogramVal<T>,
-    T: Default
+    T: Clone
 {
    
     /// # important:
+    /// * **You need to call on of the  `self.init*` members before starting the Wang Landau simulation!
     /// * **Err** if `trial_step_max < trial_step_min`
     /// * **Err** if `log_f_theshold <= 0.0`
     pub fn new(
@@ -396,14 +431,85 @@ where R: Rng,
                 step_count: 0,
                 histogram,
                 log_density,
-                old_energy: T::default(),
+                old_energy: None,
                 mode: WangLandauMode::RefineOriginal,
-                old_bin: usize::MAX,
+                old_bin: None,
                 best_of_count,
                 best_of_steps: Vec::with_capacity(best_of_count),
                 check_refine_every
             }
         )
+    }
+
+
+    /// ensures a valid ensemble
+    fn init<F, G>(
+        &mut self,
+        energy_fn: F,
+        valid_ensemble: G,
+    ) where F: Fn(&mut E) -> T + Copy,
+        G: Fn(&E) -> bool + Copy,
+    {
+        if valid_ensemble(&self.ensemble){
+            self.old_energy = Some(energy_fn(&mut self.ensemble));
+        } else {
+            loop {
+                let step_size = self.min_step;
+                self.ensemble.m_steps_quiet(step_size);
+                if valid_ensemble(&self.ensemble) {
+                    self.count_accepted(step_size);
+                    self.old_energy = Some(energy_fn(&mut self.ensemble));
+                    break;
+                } else {
+                    self.count_rejected(step_size);
+                }
+            }
+        }
+        
+    }
+
+    pub fn init_greedy_heuristic<F, G>(
+        &mut self,
+        energy_fn: F,
+        valid_ensemble: G,
+    ) where F: Fn(&mut E) -> T + Copy,
+        G: Fn(&E) -> bool + Copy,
+    {
+        self.init(energy_fn, valid_ensemble);
+        let mut old_distance = self.histogram
+            .distance(
+                self.old_energy
+                    .iter()
+                    .cloned()
+                    .next()
+                    .unwrap()
+                );
+        while old_distance != 0.0 {
+            let size = self.get_stepsize();
+            let steps = self.ensemble.m_steps(size);
+            if valid_ensemble(&self.ensemble) {
+                let energy = energy_fn(&mut self.ensemble);
+                let distance = self.histogram.distance(energy.clone());
+                if distance < old_distance {
+                    self.old_energy = Some(energy);
+                    old_distance = distance;
+                    self.count_accepted(size);
+                } else {
+                    self.count_rejected(size);
+                }
+            }else {
+                self.count_rejected(size);
+                self.ensemble.undo_steps_quiet(steps);
+            }
+        }
+        self.reset_statistics();
+        self.old_bin = self.histogram
+            .get_bin_index( self.old_energy
+                    .as_ref()
+                    .unwrap()
+            ).ok();
+        assert!(self.old_bin.is_some(), "Error in greedy heuristic - old bin invalid");
+
     }
 
     pub fn wang_landau_convergence<F, G>(
@@ -425,17 +531,25 @@ where R: Rng,
     )where F: Fn(&mut E) -> T,
         G: Fn(&E) -> bool,
     {
+        let old_bin = self.old_bin.expect(
+            "Error - self.old_bin invalid - Did you forget to call one of the `self.init*` members for initialization?"
+        );
+        debug_assert!(
+            self.old_energy.is_some(),
+            "Error - self.old_energy invalid - Did you forget to call one of the `self.init*` members for initialization?"
+        );
+
         self.step_count += 1;
         let step_size = self.get_stepsize();
+
 
         let steps = self.ensemble.m_steps(step_size);
         
         if !valid_ensemble(&self.ensemble)
         {
-            self.rejected_step_hist[step_size - self.min_step] += 1;
-            self.counter += 1;
+            self.count_rejected(step_size);
             
-            self.histogram.count_index(self.old_bin).unwrap();
+            self.histogram.count_index(old_bin).unwrap();
             self.ensemble.undo_steps_quiet(steps);
             return;
         }
@@ -443,42 +557,36 @@ where R: Rng,
         self.check_refine();
         
         let current_energy = energy_fn(&mut self.ensemble);
-        let current_bin = match self.histogram.get_bin_index(&current_energy)
+        
+        match self.histogram.get_bin_index(&current_energy)
         {
-            Ok(index) => index,
+            Ok(current_bin) => {
+                let accept_prob = self.metropolis_acception_prob(old_bin, current_bin);
+
+                if self.rng.gen::<f64>() > accept_prob {
+                    // reject step
+                    self.count_rejected(step_size);
+                    self.ensemble.undo_steps_quiet(steps);
+                } else {
+                    // reject step
+                    self.count_accepted(step_size);
+                    
+                    self.old_energy = Some(current_energy);
+                    self.old_bin = Some(current_bin);
+                }
+            },
             _  => {
                 // invalid step
+                self.count_rejected(step_size);
                 
-                self.rejected_step_hist[step_size - self.min_step] += 1;
-                self.counter += 1;
-                
-                self.histogram.count_index(self.old_bin).unwrap();
-                self.log_density[self.old_bin] += self.log_f;
+                self.histogram.count_index(old_bin).unwrap();
+                self.log_density[old_bin] += self.log_f;
                 self.ensemble.undo_steps_quiet(steps);
                 return;
             }
         };
-        let accept_prob = self.metropolis_acception_prob(self.old_bin, current_bin);
-
-        if self.rng.gen::<f64>() > accept_prob {
-            // reject step
-            self.rejected_step_hist[step_size - self.min_step] += 1;
-            self.counter += 1;
-
-            self.histogram.count_index(self.old_bin).unwrap();
-            self.log_density[self.old_bin] += self.log_f;
-            self.ensemble.undo_steps_quiet(steps);
-            return;
-        } else {
-            // reject step
-            self.accepted_step_hist[step_size - self.min_step] += 1;
-            self.counter += 1;
-            
-            self.old_energy = current_energy;
-            self.old_bin = current_bin;
-            self.histogram.count_index(current_bin).unwrap();
-            self.log_density[current_bin] += self.log_f;
-            return;
-        }
+        
+        self.histogram.count_index(self.old_bin.unwrap()).unwrap();
+        self.log_density[self.old_bin.unwrap()] += self.log_f;
     }
 }
