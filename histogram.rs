@@ -68,6 +68,11 @@ pub trait HistogramVal<T>: Histogram{
     fn distance(&self, val: T) -> f64;
 }
 
+pub trait HistogramIntervalDistance<T>: HistogramVal<T> {
+    /// overlap has to be bigger 0
+    fn interval_distance_overlap(&self, val: T, overlap: usize) -> usize;
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HistogramGeneric<T>
 {
@@ -142,6 +147,11 @@ impl HistogramF64 {
             }
         )
     }
+
+    pub fn interval_length(&self) -> f64
+    {
+        self.get_right() - self.get_left()
+    }
 }
 
 impl HistogramVal<f64> for HistogramF64{
@@ -205,6 +215,29 @@ impl HistogramVal<f64> for HistogramF64{
 
     fn borders_clone(&self) -> Vec<f64> {
         self.bin_borders.clone()
+    }
+}
+
+impl HistogramIntervalDistance<f64> for HistogramF64 {
+    fn interval_distance_overlap(&self, val: f64, overlap: usize) -> usize {
+        debug_assert!(overlap > 0);
+        debug_assert!(self.interval_length() > 0.0);
+        debug_assert!(val.is_finite());
+        if self.not_inside(val) {
+            let num_bins_overlap = self.bin_count() / overlap;
+            let dist = 
+            if val < self.get_left() { 
+                let tmp = self.get_left() - val;
+                (tmp / self.interval_length()).floor()
+            } else {
+                let tmp = val - self.get_right();
+                (tmp / self.interval_length()).ceil()
+            };
+            let int_dist = dist as usize;
+            1 + int_dist / num_bins_overlap
+        } else {
+            0
+        }
     }
 }
 
@@ -296,6 +329,24 @@ impl HistogramVal<usize> for HistogramUsize{
 
     fn borders_clone(&self) -> Vec<usize> {
         self.bin_borders.clone()
+    }
+}
+
+impl HistogramIntervalDistance<usize> for HistogramUsize {
+    fn interval_distance_overlap(&self, val: usize, overlap: usize) -> usize {
+        debug_assert!(overlap > 0);
+        if self.not_inside(val) {
+            let num_bins_overlap = 1usize.max(self.bin_count() / overlap);
+            let dist = 
+            if val < self.get_left() { 
+                self.get_left() - val
+            } else {
+                val - self.get_right()
+            };
+            1 + dist / num_bins_overlap
+        } else {
+            0
+        }
     }
 }
 
@@ -414,6 +465,24 @@ impl HistogramVal<usize> for HistogramFast
         let index = self.get_bin_index(val)?;
         self.hist[index] += 1;
         Ok(index)
+    }
+}
+
+impl HistogramIntervalDistance<usize> for HistogramFast {
+    fn interval_distance_overlap(&self, val: usize, overlap: usize) -> usize {
+        debug_assert!(overlap > 0);
+        if self.not_inside(val) {
+            let num_bins_overlap = 1usize.max(self.bin_count() / overlap);
+            let dist = 
+            if val < self.left { 
+                self.left - val
+            } else {
+                val - self.right
+            };
+            1 + dist / num_bins_overlap
+        } else {
+            0
+        }
     }
 }
 

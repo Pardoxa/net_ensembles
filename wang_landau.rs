@@ -501,7 +501,138 @@ where R: Rng,
                 }
             }
         }
+    }
+
+    fn end_init(&mut self)
+    {
+        self.reset_statistics();
+        self.old_bin = self.histogram
+            .get_bin_index( self.old_energy
+                    .as_ref()
+                    .unwrap()
+            ).ok();
+        assert!(self.old_bin.is_some(), "Error in heuristic - old bin invalid");
+    }
+
+    fn old_energy_clone(&self) -> T {
+        self.old_energy
+        .iter()
+        .cloned()
+        .next()
+        .unwrap()
+    }
+
+    fn greedy_helper<F, G, H, J>(
+        &mut self,
+        old_distance: &mut J,
+        energy_fn: F,
+        valid_ensemble: G,
+        distance_fn: H
+    )   where F: Fn(&mut E) -> T + Copy,
+            G: Fn(&E) -> bool + Copy,
+            H: Fn(&Hist, T) -> J,
+            J: PartialOrd
+    {
+        let size = self.get_stepsize();
+        let steps = self.ensemble.m_steps(size);
+        if valid_ensemble(&self.ensemble) {
+            let energy = energy_fn(&mut self.ensemble);
+            let distance = distance_fn(&self.histogram, energy.clone());
+            if distance <= *old_distance {
+                self.old_energy = Some(energy);
+                *old_distance = distance;
+                self.count_accepted(size);
+            } else {
+                self.count_rejected(size);
+            }
+        } else {
+            self.count_rejected(size);
+            self.ensemble.undo_steps_quiet(steps);
+        }
+    }
+
+    pub fn init_mixed_heuristik<F, G>
+    (
+        &mut self,
+        energy_fn: F,
+        valid_ensemble: G,
+    )   where F: Fn(&mut E) -> T + Copy,
+        G: Fn(&E) -> bool + Copy,
+        Hist: HistogramIntervalDistance<T>
+    {
+        self.init(energy_fn, valid_ensemble);
+        if self.histogram.is_inside(self.old_energy_clone()){
+            self.end_init();
+            return;
+        }
         
+        
+        let mut old_dist = f64::NAN;
+        let mut old_dist_interval = usize::MAX;
+        let mut counter = 0u8;
+        let dist_interval = |h: &Hist, val: T| h.interval_distance_overlap(val, 3);
+        loop {
+            let current_energy = self.old_energy_clone();
+            match counter {
+                0 => {
+                    old_dist_interval = dist_interval(&self.histogram, current_energy);
+                }, 
+                180 => {
+                    old_dist = self.histogram.distance(current_energy);
+                },
+                _ => ()
+            };
+            if counter < 180 {
+                self.greedy_helper(
+                    &mut old_dist_interval,
+                    energy_fn,
+                    valid_ensemble,
+                    dist_interval
+                );
+                if old_dist_interval == 0 {
+                    break;
+                }
+            } else {
+                self.greedy_helper(
+                    &mut old_dist,
+                    energy_fn,
+                    valid_ensemble,
+                    Hist::distance
+                );
+                if old_dist == 0.0 {
+                    break;
+                }
+            }
+            counter = counter.wrapping_add(1);
+        }
+        self.end_init();
+    }
+
+    pub fn init_interval_heuristik<F, G>(
+        &mut self,
+        energy_fn: F,
+        valid_ensemble: G,
+    ) where F: Fn(&mut E) -> T + Copy,
+        G: Fn(&E) -> bool + Copy,
+        Hist: HistogramIntervalDistance<T>
+    {
+        self.init(energy_fn, valid_ensemble);
+        let mut old_dist = self.histogram
+            .interval_distance_overlap(
+                self.old_energy_clone(),
+                3
+            );
+        
+        let dist = |h: &Hist, val: T| h.interval_distance_overlap(val, 3);
+        while old_dist != 0 {
+            self.greedy_helper(
+                &mut old_dist,
+                energy_fn,
+                valid_ensemble,
+                dist
+            );
+        }
+        self.end_init();
     }
 
     pub fn init_greedy_heuristic<F, G>(
@@ -513,38 +644,16 @@ where R: Rng,
     {
         self.init(energy_fn, valid_ensemble);
         let mut old_distance = self.histogram
-            .distance(
-                self.old_energy
-                    .iter()
-                    .cloned()
-                    .next()
-                    .unwrap()
-                );
+            .distance(self.old_energy_clone());
         while old_distance != 0.0 {
-            let size = self.get_stepsize();
-            let steps = self.ensemble.m_steps(size);
-            if valid_ensemble(&self.ensemble) {
-                let energy = energy_fn(&mut self.ensemble);
-                let distance = self.histogram.distance(energy.clone());
-                if distance < old_distance {
-                    self.old_energy = Some(energy);
-                    old_distance = distance;
-                    self.count_accepted(size);
-                } else {
-                    self.count_rejected(size);
-                }
-            }else {
-                self.count_rejected(size);
-                self.ensemble.undo_steps_quiet(steps);
-            }
+            self.greedy_helper(
+                &mut old_distance,
+                energy_fn,
+                valid_ensemble,
+                Hist::distance
+            );
         }
-        self.reset_statistics();
-        self.old_bin = self.histogram
-            .get_bin_index( self.old_energy
-                    .as_ref()
-                    .unwrap()
-            ).ok();
-        assert!(self.old_bin.is_some(), "Error in greedy heuristic - old bin invalid");
+        self.end_init();
 
     }
 
