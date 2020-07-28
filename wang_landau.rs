@@ -41,6 +41,11 @@ impl ProbIndex{
             diff: (0.5 - prob).copysign(-1.0)
         }
     }
+
+    fn is_best_of(&self, threshold: f64) -> bool
+    {
+        self.diff >= -threshold
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -88,7 +93,8 @@ pub struct WangLandauAdaptive<R, E, S, Res, Hist, T>
     samples_per_trial: usize,
     trial_list: Vec<usize>,
     best_of_steps: Vec<usize>,
-    best_of_count: usize,
+    min_best_of_count: usize,
+    best_of_threshold: f64,
     ensemble: E,
     step_marker: PhantomData::<S>,
     step_res_marker: PhantomData<Res>,
@@ -340,14 +346,24 @@ where R: Rng,
     fn generate_bestof(&mut self)
     {
         let statistics = self.estimate_statistics().unwrap();
-        let mut heap: BinaryHeap<_> = statistics.into_iter()
+        let mut heap = BinaryHeap::with_capacity(statistics.len());
+        heap.extend(statistics.into_iter()
             .enumerate()
             .map(|(index, prob)|
                 {
                     ProbIndex::new(prob, index)
                 }
-            ).collect();
-        while self.best_of_steps.len() < self.best_of_count
+            )
+        );
+        while heap.peek()
+            .filter(|&p_i| p_i.is_best_of(self.best_of_threshold))
+            .is_some()
+        {
+            let index = heap.pop().unwrap().index;
+            let step_size = index + self.min_step;
+            self.best_of_steps.push(step_size);
+        }
+        while self.best_of_steps.len() < self.min_best_of_count
         {
             let index = heap.pop().unwrap().index;
             let step_size = index + self.min_step;
@@ -419,7 +435,8 @@ where R: Rng,
     /// * `samples_per_trial` - how often a specific step_size should be tried before
     /// estimating the fraction of accepted steps resulting from the stepsize
     /// * `trial_step_min` and `trial_step_max`: The step sizes tried are: [trial_step_min, trial_step_min + 1, ..., trial_step_max]
-    /// * `best_of_count`: After estimating, use the best `best_of_count` found
+    /// * `min_best_of_count`: After estimating, use at least the best `min_best_of_count` step sizes found
+    /// * `best_of_threshold`: After estimating, use all steps for which abs(acceptance_rate -0.5) <= best_of_threshold holds true
     /// * `histogram`: How your energy will be binned etc
     /// * `check_refine_every`: how often to check if log_f can be refined?
     /// # Important
@@ -433,7 +450,8 @@ where R: Rng,
         samples_per_trial: usize, 
         trial_step_min: usize, 
         trial_step_max: usize,
-        best_of_count: usize,
+        min_best_of_count: usize,
+        mut best_of_threshold: f64,
         histogram: Hist,
         check_refine_every: usize
     ) -> Result<Self, WangLandauErrors>
@@ -448,10 +466,13 @@ where R: Rng,
         }else if check_refine_every == 0 {
             return Err(WangLandauErrors::CheckRefineEvery0)
         }
+        if !best_of_threshold.is_finite(){
+            best_of_threshold = 0.0;
+        }
 
         let distinct_step_count = trial_step_max - trial_step_min + 1;
 
-        if best_of_count > distinct_step_count {
+        if min_best_of_count > distinct_step_count {
             return Err(WangLandauErrors::InvalidBestof);
         }
 
@@ -489,11 +510,12 @@ where R: Rng,
                 old_energy: None,
                 mode: WangLandauMode::RefineOriginal,
                 old_bin: None,
-                best_of_count,
-                best_of_steps: Vec::with_capacity(best_of_count),
+                min_best_of_count,
+                best_of_steps: Vec::with_capacity(min_best_of_count),
                 check_refine_every,
                 total_steps_accepted: 0,
-                total_steps_rejected: 0
+                total_steps_rejected: 0,
+                best_of_threshold,
             }
         )
     }
