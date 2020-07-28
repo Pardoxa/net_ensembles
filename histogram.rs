@@ -425,7 +425,7 @@ impl HistogramVal<usize> for HistogramFast
     fn distance(&self, val: usize) -> f64 {
         if self.not_inside(val) {
             let dist = if val < self.get_left() {
-                self.get_left() - 1
+                self.get_left() - val
             } else {
                 val - self.get_right() + 1
             };

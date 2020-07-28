@@ -3,7 +3,7 @@ use net_ensembles::{rand::{Rng, seq::*}, *};
 use std::{marker::PhantomData, iter::*};
 use crate::wang_landau::*;
 use std::{collections::*, cmp::*};
-
+use num_traits::{Bounded, ops::wrapping::*, identities::*};
 
 struct ProbIndex{
     index: usize,
@@ -87,7 +87,7 @@ impl WangLandauMode{
 /// > “Efficient, multiple-range random walk algorithm to calculate the density of states,” 
 /// > Phys.&nbsp;Rev.&nbsp;Lett.&nbsp;**86**, 2050–2053 (2001), DOI&nbsp;[10.1103/PhysRevLett.86.2050](https://doi.org/10.1103/PhysRevLett.86.2050)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WangLandauAdaptive<R, E, S, Res, Hist, T>
+pub struct WangLandauAdaptive<Hist, R, E, S, Res, T>
 {
     rng: R,
     samples_per_trial: usize,
@@ -138,7 +138,7 @@ pub enum WangLandauErrors{
     NotInitialized
 }
 
-impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
+impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
 {
     /// returns currently set threshold
     #[inline]
@@ -289,7 +289,7 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T>
     
 }
 
-impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T> 
+impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T> 
 where R: Rng,
     E: MarkovChain<S, Res>,
     Hist: Histogram + HistogramVal<T>
@@ -355,19 +355,15 @@ where R: Rng,
                 }
             )
         );
-        while heap.peek()
-            .filter(|&p_i| p_i.is_best_of(self.best_of_threshold))
-            .is_some()
-        {
-            let index = heap.pop().unwrap().index;
-            let step_size = index + self.min_step;
-            self.best_of_steps.push(step_size);
-        }
-        while self.best_of_steps.len() < self.min_best_of_count
-        {
-            let index = heap.pop().unwrap().index;
-            let step_size = index + self.min_step;
-            self.best_of_steps.push(step_size);
+        while let Some(p_i) = heap.pop() {
+            if p_i.is_best_of(self.best_of_threshold) 
+                || self.best_of_steps.len() < self.min_best_of_count
+            {
+                let step_size = p_i.index + self.min_step;
+                self.best_of_steps.push(step_size);
+            } else {
+                break;
+            }
         }
     }
 
@@ -421,7 +417,7 @@ where R: Rng,
 }
 
 
-impl<R, E, S, Res, Hist, T> WangLandauAdaptive<R, E, S, Res, Hist, T> 
+impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T> 
 where R: Rng,
     E: MarkovChain<S, Res>,
     Hist: Histogram + HistogramVal<T>,
@@ -597,7 +593,10 @@ where R: Rng,
     /// # Find a valid starting Point
     /// * if the ensemble is already at a valid starting point,
     /// the ensemble is left unchanged (as long as your energy calculation does not change the ensemble)
-    /// * alternates between greedy and interval heuristik
+    /// * `overlap` - see trait HistogramIntervalDistance. 
+    /// Should be greater than 0 and smaller than the number of bins in your histogram. E.g. `overlap = 3` if you have 200 bins
+    /// * `mid` - should be something like `128u8`, `0i8` or `0i16`. It is very unlikely that using a type with more than 16 bit makes sense for mid
+    /// * alternates between greedy and interval heuristik everytime a wrapping counter passes `mid` or `U::min_value()`
     /// * I recommend using this heuristik, if you do not know which one to use
     /// # Parameter
     /// * `energy_fn` function calculating the "energy" of the system
@@ -608,15 +607,19 @@ where R: Rng,
     /// energy function does not work/panics/is invalid, then you can filter them out with this
     /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
     /// will always be rejected 
-    pub fn init_mixed_heuristik<F, G>
+    pub fn init_mixed_heuristik<F, G, U>
     (
         &mut self,
+        overlap: usize,
+        mid: U,
         energy_fn: F,
         valid_ensemble: G,
     )   where F: Fn(&mut E) -> T + Copy,
         G: Fn(&E) -> bool + Copy,
-        Hist: HistogramIntervalDistance<T>
+        Hist: HistogramIntervalDistance<T>,
+        U: One + Bounded + WrappingAdd + Eq + PartialOrd
     {
+        let overlap = overlap.max(1);
         self.init(energy_fn, valid_ensemble);
         if self.histogram.is_inside(self.old_energy_clone()){
             self.end_init();
@@ -625,30 +628,18 @@ where R: Rng,
         
         let mut old_dist = f64::INFINITY;
         let mut old_dist_interval = usize::MAX;
-        let mut counter = 0u8;
-        let dist_interval = |h: &Hist, val: T| h.interval_distance_overlap(val, 3);
+        let mut counter: U = U::min_value();
+        let min_val = U::min_value();
+        let one = U::one();
+        let dist_interval = |h: &Hist, val: T| h.interval_distance_overlap(val, overlap);
         loop {
             let current_energy = self.old_energy_clone();
-            match counter {
-                0 => {
-                    old_dist_interval = dist_interval(&self.histogram, current_energy);
-                }, 
-                180 => {
-                    old_dist = self.histogram.distance(current_energy);
-                },
-                _ => ()
-            };
-            if counter < 180 {
-                self.greedy_helper(
-                    &mut old_dist_interval,
-                    energy_fn,
-                    valid_ensemble,
-                    dist_interval
-                );
-                if old_dist_interval == 0 {
-                    break;
-                }
-            } else {
+            if counter == min_val {
+                old_dist = self.histogram.distance(current_energy);
+            }else if counter == mid {
+                old_dist_interval = dist_interval(&self.histogram, current_energy);
+            }
+            if counter < mid {
                 self.greedy_helper(
                     &mut old_dist,
                     energy_fn,
@@ -658,8 +649,18 @@ where R: Rng,
                 if old_dist == 0.0 {
                     break;
                 }
+            } else {
+                self.greedy_helper(
+                    &mut old_dist_interval,
+                    energy_fn,
+                    valid_ensemble,
+                    dist_interval
+                );
+                if old_dist_interval == 0 {
+                    break;
+                }
             }
-            counter = counter.wrapping_add(1);
+            counter = counter.wrapping_add(&one);
         }
         self.end_init();
     }
@@ -680,12 +681,14 @@ where R: Rng,
     /// will always be rejected 
     pub fn init_interval_heuristik<F, G>(
         &mut self,
+        overlap: usize,
         energy_fn: F,
         valid_ensemble: G,
     ) where F: Fn(&mut E) -> T + Copy,
         G: Fn(&E) -> bool + Copy,
         Hist: HistogramIntervalDistance<T>
     {
+        let overlap = overlap.max(1);
         self.init(energy_fn, valid_ensemble);
         let mut old_dist = self.histogram
             .interval_distance_overlap(
@@ -693,7 +696,7 @@ where R: Rng,
                 3
             );
         
-        let dist = |h: &Hist, val: T| h.interval_distance_overlap(val, 3);
+        let dist = |h: &Hist, val: T| h.interval_distance_overlap(val, overlap);
         while old_dist != 0 {
             self.greedy_helper(
                 &mut old_dist,
@@ -845,5 +848,49 @@ where R: Rng,
         
         self.histogram.count_index(self.old_bin.unwrap()).unwrap();
         self.log_density[self.old_bin.unwrap()] += self.log_f;
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand_pcg::Pcg64;
+    use net_ensembles::rand::SeedableRng;
+    #[test]
+    fn wl_creation() {
+        let mut rng = Pcg64::seed_from_u64(2239790);
+        let ensemble: ErEnsembleC<EmptyNode, _> = ErEnsembleC::new(
+            100,
+            3.01,
+            Pcg64::from_rng(&mut rng).unwrap()
+        );
+        let histogram = HistogramFast::new_inclusive(50, 100).unwrap();
+        let mut wl= WangLandauAdaptive::new(
+            0.00075,
+            ensemble,
+            Pcg64::from_rng(&mut rng).unwrap(),
+            30,
+            5,
+            50,
+            7,
+            0.075,
+            histogram,
+            1000
+        ).unwrap();
+
+        wl.init_mixed_heuristik(
+            3,
+            6400i16,
+            |e|  {
+                e.graph().q_core(3).unwrap()
+            },
+            |_| true
+        );
+
+        wl.wang_landau_convergence(
+            |e| e.graph().q_core(3).unwrap(),
+        |_| true
+        );
     }
 }
