@@ -522,24 +522,28 @@ where R: Rng,
         &mut self,
         energy_fn: F,
         valid_ensemble: G,
-    ) where F: Fn(&mut E) -> T + Copy,
+    ) where F: Fn(&mut E) -> Option<T> + Copy,
         G: Fn(&E) -> bool + Copy,
     {
         if valid_ensemble(&self.ensemble){
-            self.old_energy = Some(energy_fn(&mut self.ensemble));
-        } else {
-            loop {
-                let step_size = self.min_step;
-                self.ensemble.m_steps_quiet(step_size);
-                if valid_ensemble(&self.ensemble) {
-                    self.count_accepted(step_size);
-                    self.old_energy = Some(energy_fn(&mut self.ensemble));
-                    break;
-                } else {
-                    self.count_rejected(step_size);
-                }
+            self.old_energy = energy_fn(&mut self.ensemble);
+            if self.old_energy.is_some(){
+                return;
             }
         }
+        loop {
+            let step_size = self.min_step;
+            self.ensemble.m_steps_quiet(step_size);
+            if valid_ensemble(&self.ensemble) {
+                self.old_energy = energy_fn(&mut self.ensemble);
+                if self.old_energy.is_some(){
+                    self.count_accepted(step_size);
+                    break;
+                }
+            }
+            self.count_rejected(step_size);
+        }
+        
     }
 
     fn end_init(&mut self)
@@ -567,7 +571,7 @@ where R: Rng,
         energy_fn: F,
         valid_ensemble: G,
         distance_fn: H
-    )   where F: Fn(&mut E) -> T + Copy,
+    )   where F: Fn(&mut E) -> Option<T> + Copy,
             G: Fn(&E) -> bool + Copy,
             H: Fn(&Hist, T) -> J,
             J: PartialOrd
@@ -575,19 +579,22 @@ where R: Rng,
         let size = self.get_stepsize();
         let steps = self.ensemble.m_steps(size);
         if valid_ensemble(&self.ensemble) {
-            let energy = energy_fn(&mut self.ensemble);
-            let distance = distance_fn(&self.histogram, energy.clone());
-            if distance <= *old_distance {
-                self.old_energy = Some(energy);
-                *old_distance = distance;
-                self.count_accepted(size);
-            } else {
-                self.count_rejected(size);
+            if let Some(energy) = energy_fn(&mut self.ensemble) {
+                let distance = distance_fn(&self.histogram, energy.clone());
+                if distance <= *old_distance {
+                    self.old_energy = Some(energy);
+                    *old_distance = distance;
+                    self.count_accepted(size);
+                } else {
+                    self.count_rejected(size);
+                }
+                return
             }
-        } else {
-            self.count_rejected(size);
-            self.ensemble.undo_steps_quiet(steps);
         }
+
+        self.count_rejected(size);
+        self.ensemble.undo_steps_quiet(steps);
+        
     }
 
     /// # Find a valid starting Point
@@ -614,7 +621,7 @@ where R: Rng,
         mid: U,
         energy_fn: F,
         valid_ensemble: G,
-    )   where F: Fn(&mut E) -> T + Copy,
+    )   where F: Fn(&mut E) -> Option<T> + Copy,
         G: Fn(&E) -> bool + Copy,
         Hist: HistogramIntervalDistance<T>,
         U: One + Bounded + WrappingAdd + Eq + PartialOrd
@@ -684,7 +691,7 @@ where R: Rng,
         overlap: usize,
         energy_fn: F,
         valid_ensemble: G,
-    ) where F: Fn(&mut E) -> T + Copy,
+    ) where F: Fn(&mut E) -> Option<T> + Copy,
         G: Fn(&E) -> bool + Copy,
         Hist: HistogramIntervalDistance<T>
     {
@@ -726,7 +733,7 @@ where R: Rng,
         &mut self,
         energy_fn: F,
         valid_ensemble: G,
-    ) where F: Fn(&mut E) -> T + Copy,
+    ) where F: Fn(&mut E) -> Option<T> + Copy,
         G: Fn(&E) -> bool + Copy,
     {
         self.init(energy_fn, valid_ensemble);
@@ -752,7 +759,7 @@ where R: Rng,
         energy_fn: F,
         valid_ensemble: G,
         mut condition: W
-    ) where F: Fn(&mut E) -> T + Copy,
+    ) where F: Fn(&mut E) -> Option<T> + Copy,
         G: Fn(&E) -> bool + Copy,
         W: FnMut(&Self) -> bool,
     {
@@ -767,7 +774,7 @@ where R: Rng,
         &mut self,
         energy_fn: F,
         valid_ensemble: G
-    )where F: Fn(&mut E) -> T + Copy,
+    )where F: Fn(&mut E) -> Option<T> + Copy,
         G: Fn(&E) -> bool + Copy,
     {
         while !self.is_converged() {
@@ -792,7 +799,7 @@ where R: Rng,
         &mut self,
         energy_fn: F,
         valid_ensemble: G
-    )where F: Fn(&mut E) -> T,
+    )where F: Fn(&mut E) -> Option<T>,
         G: Fn(&E) -> bool,
     {
         let old_bin = self.old_bin.expect(
@@ -820,7 +827,15 @@ where R: Rng,
         
         self.check_refine();
         
-        let current_energy = energy_fn(&mut self.ensemble);
+        let current_energy = match energy_fn(&mut self.ensemble){
+            Some(energy) => energy,
+            None => {
+                self.count_rejected(step_size);
+                self.histogram.count_index(old_bin).unwrap();
+                self.ensemble.undo_steps_quiet(steps);
+                return;
+            }
+        };
         
         match self.histogram.get_bin_index(&current_energy)
         {
@@ -883,13 +898,13 @@ mod tests {
             3,
             6400i16,
             |e|  {
-                e.graph().q_core(3).unwrap()
+                e.graph().q_core(3)
             },
             |_| true
         );
 
         wl.wang_landau_convergence(
-            |e| e.graph().q_core(3).unwrap(),
+            |e| e.graph().q_core(3),
         |_| true
         );
     }
