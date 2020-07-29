@@ -518,28 +518,25 @@ where R: Rng,
 
 
     /// ensures a valid ensemble
-    fn init<F, G>(
+    fn init<F>(
         &mut self,
-        energy_fn: F,
-        valid_ensemble: G,
-    ) where F: Fn(&mut E) -> Option<T> + Copy,
-        G: Fn(&E) -> bool + Copy,
+        energy_fn: F
+    ) where F: Fn(&mut E) -> Option<T> + Copy
     {
-        if valid_ensemble(&self.ensemble){
-            self.old_energy = energy_fn(&mut self.ensemble);
-            if self.old_energy.is_some(){
-                return;
-            }
+        
+        self.old_energy = energy_fn(&mut self.ensemble);
+        if self.old_energy.is_some(){
+            return;
         }
+        
         loop {
-            let step_size = self.min_step;
+            let step_size = self.get_stepsize();
             self.ensemble.m_steps_quiet(step_size);
-            if valid_ensemble(&self.ensemble) {
-                self.old_energy = energy_fn(&mut self.ensemble);
-                if self.old_energy.is_some(){
-                    self.count_accepted(step_size);
-                    break;
-                }
+            self.old_energy = energy_fn(&mut self.ensemble);
+
+            if self.old_energy.is_some(){
+                self.count_accepted(step_size);
+                return
             }
             self.count_rejected(step_size);
         }
@@ -550,9 +547,8 @@ where R: Rng,
     {
         self.reset_statistics();
         self.old_bin = self.histogram
-            .get_bin_index( self.old_energy
-                    .as_ref()
-                    .unwrap()
+            .get_bin_index( 
+                self.old_energy_clone()
             ).ok();
         assert!(self.old_bin.is_some(), "Error in heuristic - old bin invalid");
     }
@@ -565,30 +561,26 @@ where R: Rng,
         .unwrap()
     }
 
-    fn greedy_helper<F, G, H, J>(
+    fn greedy_helper<F, H, J>(
         &mut self,
         old_distance: &mut J,
         energy_fn: F,
-        valid_ensemble: G,
         distance_fn: H
     )   where F: Fn(&mut E) -> Option<T> + Copy,
-            G: Fn(&E) -> bool + Copy,
             H: Fn(&Hist, T) -> J,
             J: PartialOrd
     {
         let size = self.get_stepsize();
         let steps = self.ensemble.m_steps(size);
-        if valid_ensemble(&self.ensemble) {
-            if let Some(energy) = energy_fn(&mut self.ensemble) {
-                let distance = distance_fn(&self.histogram, energy.clone());
-                if distance <= *old_distance {
-                    self.old_energy = Some(energy);
-                    *old_distance = distance;
-                    self.count_accepted(size);
-                } else {
-                    self.count_rejected(size);
-                }
-                return
+
+        
+        if let Some(energy) = energy_fn(&mut self.ensemble) {
+            let distance = distance_fn(&self.histogram, energy.clone());
+            if distance <= *old_distance {
+                self.old_energy = Some(energy);
+                *old_distance = distance;
+                self.count_accepted(size);
+                return;
             }
         }
 
@@ -609,25 +601,20 @@ where R: Rng,
     /// * `energy_fn` function calculating the "energy" of the system
     /// or rather the Parameter of which you wish to obtain the probability distribution.
     ///  has to be the same function as used for the wang landau simulation later
-    /// * `valid_ensemble` - Called before calculating the energy.
-    /// if there are any states reachable by markov steps, for which the calculation of the 
-    /// energy function does not work/panics/is invalid, then you can filter them out with this
-    /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
+    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None` 
     /// will always be rejected 
-    pub fn init_mixed_heuristik<F, G, U>
+    pub fn init_mixed_heuristik<F, U>
     (
         &mut self,
         overlap: usize,
         mid: U,
         energy_fn: F,
-        valid_ensemble: G,
     )   where F: Fn(&mut E) -> Option<T> + Copy,
-        G: Fn(&E) -> bool + Copy,
         Hist: HistogramIntervalDistance<T>,
         U: One + Bounded + WrappingAdd + Eq + PartialOrd
     {
         let overlap = overlap.max(1);
-        self.init(energy_fn, valid_ensemble);
+        self.init(energy_fn);
         if self.histogram.is_inside(self.old_energy_clone()){
             self.end_init();
             return;
@@ -650,7 +637,6 @@ where R: Rng,
                 self.greedy_helper(
                     &mut old_dist,
                     energy_fn,
-                    valid_ensemble,
                     Hist::distance
                 );
                 if old_dist == 0.0 {
@@ -660,7 +646,6 @@ where R: Rng,
                 self.greedy_helper(
                     &mut old_dist_interval,
                     energy_fn,
-                    valid_ensemble,
                     dist_interval
                 );
                 if old_dist_interval == 0 {
@@ -686,17 +671,15 @@ where R: Rng,
     /// energy function does not work/panics/is invalid, then you can filter them out with this
     /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
     /// will always be rejected 
-    pub fn init_interval_heuristik<F, G>(
+    pub fn init_interval_heuristik<F>(
         &mut self,
         overlap: usize,
         energy_fn: F,
-        valid_ensemble: G,
     ) where F: Fn(&mut E) -> Option<T> + Copy,
-        G: Fn(&E) -> bool + Copy,
         Hist: HistogramIntervalDistance<T>
     {
         let overlap = overlap.max(1);
-        self.init(energy_fn, valid_ensemble);
+        self.init(energy_fn);
         let mut old_dist = self.histogram
             .interval_distance_overlap(
                 self.old_energy_clone(),
@@ -708,7 +691,6 @@ where R: Rng,
             self.greedy_helper(
                 &mut old_dist,
                 energy_fn,
-                valid_ensemble,
                 dist
             );
         }
@@ -729,21 +711,18 @@ where R: Rng,
     /// energy function does not work/panics/is invalid, then you can filter them out with this
     /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
     /// will always be rejected 
-    pub fn init_greedy_heuristic<F, G>(
+    pub fn init_greedy_heuristic<F>(
         &mut self,
         energy_fn: F,
-        valid_ensemble: G,
     ) where F: Fn(&mut E) -> Option<T> + Copy,
-        G: Fn(&E) -> bool + Copy,
     {
-        self.init(energy_fn, valid_ensemble);
+        self.init(energy_fn);
         let mut old_distance = self.histogram
             .distance(self.old_energy_clone());
         while old_distance != 0.0 {
             self.greedy_helper(
                 &mut old_distance,
                 energy_fn,
-                valid_ensemble,
                 Hist::distance
             );
         }
@@ -754,31 +733,27 @@ where R: Rng,
     /// # Wang Landau
     /// * calls `self.wang_landau_step(energy_fn, valid_ensemble)` until `self.is_converged` 
     /// or `condition(&self)` is false
-    pub fn wang_landau_while<F, G, W>(
+    pub fn wang_landau_while<F, W>(
         &mut self,
         energy_fn: F,
-        valid_ensemble: G,
         mut condition: W
     ) where F: Fn(&mut E) -> Option<T> + Copy,
-        G: Fn(&E) -> bool + Copy,
         W: FnMut(&Self) -> bool,
     {
         while !self.is_converged() && condition(&self) {
-            self.wang_landau_step(energy_fn, valid_ensemble);
+            self.wang_landau_step(energy_fn);
         }
     }
 
     /// # Wang Landau
     /// * calls `self.wang_landau_step(energy_fn, valid_ensemble)` until `self.is_converged` 
-    pub fn wang_landau_convergence<F, G>(
+    pub fn wang_landau_convergence<F>(
         &mut self,
         energy_fn: F,
-        valid_ensemble: G
     )where F: Fn(&mut E) -> Option<T> + Copy,
-        G: Fn(&E) -> bool + Copy,
     {
         while !self.is_converged() {
-            self.wang_landau_step(energy_fn, valid_ensemble);
+            self.wang_landau_step(energy_fn);
         }
     }
 
@@ -795,12 +770,10 @@ where R: Rng,
     /// # Important
     /// * You have to call one of the `self.init*` functions before calling this one - 
     /// **will panic otherwise**
-    pub fn wang_landau_step<F, G>(
+    pub fn wang_landau_step<F>(
         &mut self,
         energy_fn: F,
-        valid_ensemble: G
-    )where F: Fn(&mut E) -> Option<T>,
-        G: Fn(&E) -> bool,
+    )where F: Fn(&mut E) -> Option<T>
     {
         let old_bin = self.old_bin.expect(
             "Error - self.old_bin invalid - Did you forget to call one of the `self.init*` members for initialization?"
@@ -815,15 +788,6 @@ where R: Rng,
 
 
         let steps = self.ensemble.m_steps(step_size);
-        
-        if !valid_ensemble(&self.ensemble)
-        {
-            self.count_rejected(step_size);
-            
-            self.histogram.count_index(old_bin).unwrap();
-            self.ensemble.undo_steps_quiet(steps);
-            return;
-        }
         
         self.check_refine();
         
@@ -899,13 +863,11 @@ mod tests {
             6400i16,
             |e|  {
                 e.graph().q_core(3)
-            },
-            |_| true
+            }
         );
 
         wl.wang_landau_convergence(
-            |e| e.graph().q_core(3),
-        |_| true
+            |e| e.graph().q_core(3)
         );
     }
 }
