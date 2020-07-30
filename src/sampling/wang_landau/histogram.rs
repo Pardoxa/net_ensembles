@@ -595,6 +595,10 @@ mod tests{
         }
         assert!(hist.not_inside(left - T::one()));
         assert!(hist.not_inside(right + T::one()));
+        assert_eq!(hist.distance(left - T::one()), 1.0);
+        assert_eq!(hist.distance(right + T::one()), 1.0);
+        assert_eq!(hist.interval_distance_overlap(right + T::one(), 2), 1);
+        assert_eq!(hist.interval_distance_overlap(left - T::one(), 2), 1);
     }
 
     #[test]
