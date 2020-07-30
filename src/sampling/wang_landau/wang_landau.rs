@@ -339,11 +339,19 @@ where R: Rng,
 
     /// # total_steps_accepted / total_steps 
     pub fn fraction_accepted_total(&self) -> f64 {
-        let total_steps = self.total_steps_accepted + self.total_steps_rejected;
+        let total_acc = self.total_steps_accepted 
+            + self.accepted_step_hist
+                .iter()
+                .sum::<usize>();
+        let total_steps = total_acc + self.total_steps_rejected 
+            + self.rejected_step_hist
+                .iter()
+                .sum::<usize>();
+
         if total_steps == 0 {
             f64::NAN
         } else {
-            self.total_steps_accepted as f64 / total_steps as f64
+            total_acc as f64 / total_steps as f64
         }
     }
 
