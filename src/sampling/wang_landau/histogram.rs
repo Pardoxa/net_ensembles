@@ -1,4 +1,4 @@
-
+use num_traits::{int::*, ops::{checked::*, saturating::*}, cast::*, identities::*};
 use std::borrow::*;
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -37,8 +37,16 @@ pub enum HistErrors{
     IntervalWidthZero,
 
     /// Invalid value
-    OutsideHist
+    OutsideHist,
 
+    /// Underflow occured
+    Underflow,
+
+    /// Overflow occured,
+    Overflow,
+
+    /// Error while casting to usize
+    UsizeCastError,
 }
 
 /// * trait used for mapping values of arbitrary type `T` to bins
@@ -364,43 +372,81 @@ impl HistogramIntervalDistance<usize> for HistogramUsize {
 }
 
 
-/// # Faster version of HistogramUsize
+/// # Faster version of HistogramGeneric for Integers
 /// provided the bins should be: (left, left +1, ..., right - 1)
 /// then you should use this version!
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct HistogramFast {
-    left: usize, 
-    right: usize,
+pub struct HistogramFast<T> {
+    left: T, 
+    right: T,
     hist: Vec<usize>,
 }
 
-impl HistogramFast{
+impl<T> HistogramFast<T> 
+    where T: PrimInt + CheckedSub + ToPrimitive + CheckedAdd + One 
+{
     /// # Create a new interval
     /// * Err if `left >= right`
     /// * left is inclusive, right is exclusive
-    pub fn new(left: usize, right: usize) -> Result<Self, HistErrors>
+    pub fn new(left: T, right: T) -> Result<Self, HistErrors>
     {
         if left >= right {
             Err(HistErrors::OutsideHist)
         } else {
+            let size = match right.checked_sub(&left){
+                None => return Err(HistErrors::Underflow),
+                Some(res) => res
+            };
+            let size = match size.to_usize() {
+                None => return Err(HistErrors::UsizeCastError),
+                Some(res) => res,
+            };
+
             Ok(
                 Self{
                     left,
                     right,
-                    hist: vec![0; right - left],
+                    hist: vec![0; size],
                 }
             )
         }
     }
     /// same as `self.new`but right is inclusive
-    pub fn new_inclusive(left: usize, right: usize) -> Result<Self, HistErrors>
+    pub fn new_inclusive(left: T, right: T) -> Result<Self, HistErrors>
     {
-        Self::new(left, right + 1)
+        let right = match right.checked_add(&T::one()){
+            None => return Err(HistErrors::Overflow),
+            Some(res) => res,
+        };
+        Self::new(left, right)
     }
 }
+/// alias for `HistogramFast<usize>`
+pub type HistogramFastUsize = HistogramFast<usize>;
+/// alias for `HistogramFast<u64>`
+pub type HistogramFastU64 = HistogramFast<u64>;
+/// alias for `HistogramFast<u32>`
+pub type HistogramFastU32 = HistogramFast<u32>;
+/// alias for `HistogramFast<u16>`
+pub type HistogramFastU16 = HistogramFast<u16>;
+/// alias for `HistogramFast<u8>`
+pub type HistogramFastU8 = HistogramFast<u8>;
 
-impl Histogram for HistogramFast {
+/// alias for `HistogramFast<isize>`
+pub type HistogramFastIsize = HistogramFast<isize>;
+/// alias for `HistogramFast<i64>`
+pub type HistogramFastI64 = HistogramFast<i64>;
+/// alias for `HistogramFast<i32>`
+pub type HistogramFastI32 = HistogramFast<i32>;
+/// alias for `HistogramFast<i16>`
+pub type HistogramFastI16 = HistogramFast<i16>;
+/// alias for `HistogramFastiu8>`
+pub type HistogramFastI8 = HistogramFast<i8>;
+
+
+impl<T> Histogram for HistogramFast<T> 
+{
 
     fn count_index(&mut self, index: usize) -> Result<usize, HistErrors> {
         match self.hist.get_mut(index) {
@@ -429,64 +475,71 @@ impl Histogram for HistogramFast {
     }
 }
 
-impl HistogramVal<usize> for HistogramFast
+impl<T> HistogramVal<T> for HistogramFast<T>
+where T: PartialOrd + CheckedSub + One + Saturating + NumCast + Copy,
+    std::ops::RangeInclusive<T>: Iterator<Item=T>
 {
-    fn get_left(&self) -> usize {
+    fn get_left(&self) -> T {
         self.left
     }
 
-    fn get_right(&self) -> usize {
+    fn get_right(&self) -> T {
         self.right
     }
 
-    fn distance(&self, val: usize) -> f64 {
+    fn distance(&self, val: T) -> f64 {
         if self.not_inside(val) {
             let dist = if val < self.get_left() {
                 self.get_left() - val
             } else {
-                val - self.get_right() + 1
+                val.saturating_sub(self.right)
+                    .saturating_add(T::one())
             };
-            dist as f64
+            dist.to_f64()
+                .unwrap_or(f64::INFINITY)
         } else {
             0.0
         }
     }
 
-    fn get_bin_index<V: Borrow<usize>>(&self, val: V) -> Result<usize, HistErrors> {
+    fn get_bin_index<V: Borrow<T>>(&self, val: V) -> Result<usize, HistErrors> {
         let val = *val.borrow();
         if val < self.right{
-            match val.checked_sub(self.left) {
+            match val.checked_sub(&self.left) {
                 None => Err(HistErrors::OutsideHist),
-                Some(index) => Ok(index)
+                Some(index) => Ok(index.to_usize().unwrap())
             }
         } else {
             Err(HistErrors::OutsideHist)
         }
     }
 
-    fn borders_clone(&self) -> Vec<usize> {
+    fn borders_clone(&self) -> Vec<T> {
         (self.left..=self.right).collect()
     }
 
-    fn is_inside<V: Borrow<usize>>(&self, val: V) -> bool {
+    fn is_inside<V: Borrow<T>>(&self, val: V) -> bool {
         let val = *val.borrow();
         val >= self.left && val < self.right
     }
 
-    fn not_inside<V: Borrow<usize>>(&self, val: V) -> bool {
+    fn not_inside<V: Borrow<T>>(&self, val: V) -> bool {
         let val = *val.borrow();
         val >= self.right || val < self.left
     }
 
-    fn count_val<V: Borrow<usize>>(&mut self, val: V) -> Result<usize, HistErrors> {
+    fn count_val<V: Borrow<T>>(&mut self, val: V) -> Result<usize, HistErrors> {
         let index = self.get_bin_index(val)?;
         self.hist[index] += 1;
         Ok(index)
     }
 }
 
-impl HistogramIntervalDistance<usize> for HistogramFast {
-    fn interval_distance_overlap(&self, val: usize, overlap: usize) -> usize {
+impl<T> HistogramIntervalDistance<T> for HistogramFast<T> 
+where Self: HistogramVal<T>,
+    T: PartialOrd + std::ops::Sub<Output=T> + NumCast + Copy
+{
+    fn interval_distance_overlap(&self, val: T, overlap: usize) -> usize {
         debug_assert!(overlap > 0);
         if self.not_inside(val) {
             let num_bins_overlap = 1usize.max(self.bin_count() / overlap);
@@ -496,7 +549,7 @@ impl HistogramIntervalDistance<usize> for HistogramFast {
             } else {
                 val - self.right
             };
-            1 + dist / num_bins_overlap
+            1 + dist.to_usize().unwrap() / num_bins_overlap
         } else {
             0
         }
