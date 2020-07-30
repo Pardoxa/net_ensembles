@@ -65,7 +65,7 @@ pub trait HistogramVal<T>: Histogram{
     /// * any val which fullfills `self.border[i] <= val < self.border[i + 1]` 
     /// will get index `i`.
     /// * **Note** that the last border is exclusive
-    fn borders_clone(&self) -> Vec<T>;
+    fn borders_clone(&self) -> Result<Vec<T>, HistErrors>;
     /// does a value correspond to a valid bin?
     fn is_inside<V: Borrow<T>>(&self, val: V) -> bool;
     /// opposite of `is_inside`
@@ -234,8 +234,8 @@ impl HistogramVal<f64> for HistogramF64{
         } 
     }
 
-    fn borders_clone(&self) -> Vec<f64> {
-        self.bin_borders.clone()
+    fn borders_clone(&self) -> Result<Vec<f64>, HistErrors> {
+        Ok(self.bin_borders.clone())
     }
 }
 
@@ -348,8 +348,8 @@ impl HistogramVal<usize> for HistogramUsize{
         }
     }
 
-    fn borders_clone(&self) -> Vec<usize> {
-        self.bin_borders.clone()
+    fn borders_clone(&self) -> Result<Vec<usize>, HistErrors> {
+        Ok(self.bin_borders.clone())
     }
 }
 
@@ -387,11 +387,22 @@ impl<T> HistogramFast<T>
     where T: PrimInt + CheckedSub + ToPrimitive + CheckedAdd + One 
 {
     /// # Create a new interval
-    /// * Err if `left >= right`
-    /// * left is inclusive, right is exclusive
+    /// * same as `Self::new_inclusive(left, right - 1)` though with checks
     pub fn new(left: T, right: T) -> Result<Self, HistErrors>
     {
-        if left >= right {
+        let right = match right.checked_sub(&T::one()){
+            Some(res) => res,
+            None => return Err(HistErrors::Underflow),
+        };
+        Self::new_inclusive(left, right)
+    }
+
+    /// # Create new histogram with inclusive borders
+    /// * Err if `left > right`
+    /// * left is inclusive, right is exclusive
+    pub fn new_inclusive(left: T, right: T) -> Result<Self, HistErrors>
+    {
+        if left > right {
             Err(HistErrors::OutsideHist)
         } else {
             let size = match right.checked_sub(&left){
@@ -400,7 +411,7 @@ impl<T> HistogramFast<T>
             };
             let size = match size.to_usize() {
                 None => return Err(HistErrors::UsizeCastError),
-                Some(res) => res,
+                Some(res) => res + 1,
             };
 
             Ok(
@@ -411,15 +422,6 @@ impl<T> HistogramFast<T>
                 }
             )
         }
-    }
-    /// same as `self.new`but right is inclusive
-    pub fn new_inclusive(left: T, right: T) -> Result<Self, HistErrors>
-    {
-        let right = match right.checked_add(&T::one()){
-            None => return Err(HistErrors::Overflow),
-            Some(res) => res,
-        };
-        Self::new(left, right)
     }
 }
 /// alias for `HistogramFast<usize>`
@@ -476,13 +478,15 @@ impl<T> Histogram for HistogramFast<T>
 }
 
 impl<T> HistogramVal<T> for HistogramFast<T>
-where T: PartialOrd + CheckedSub + One + Saturating + NumCast + Copy,
+where T: PartialOrd + CheckedSub + CheckedAdd + One + Saturating + NumCast + Copy,
     std::ops::RangeInclusive<T>: Iterator<Item=T>
 {
+    #[inline]
     fn get_left(&self) -> T {
         self.left
     }
 
+    #[inline]
     fn get_right(&self) -> T {
         self.right
     }
@@ -493,7 +497,6 @@ where T: PartialOrd + CheckedSub + One + Saturating + NumCast + Copy,
                 self.get_left() - val
             } else {
                 val.saturating_sub(self.right)
-                    .saturating_add(T::one())
             };
             dist.to_f64()
                 .unwrap_or(f64::INFINITY)
@@ -504,7 +507,7 @@ where T: PartialOrd + CheckedSub + One + Saturating + NumCast + Copy,
 
     fn get_bin_index<V: Borrow<T>>(&self, val: V) -> Result<usize, HistErrors> {
         let val = *val.borrow();
-        if val < self.right{
+        if val <= self.right{
             match val.checked_sub(&self.left) {
                 None => Err(HistErrors::OutsideHist),
                 Some(index) => Ok(index.to_usize().unwrap())
@@ -514,20 +517,27 @@ where T: PartialOrd + CheckedSub + One + Saturating + NumCast + Copy,
         }
     }
 
-    fn borders_clone(&self) -> Vec<T> {
-        (self.left..=self.right).collect()
+    /// * returns `Err(Overflow)` if right border is `T::MAX`
+    /// * returns borders otherwise
+    fn borders_clone(&self) -> Result<Vec<T>, HistErrors> {
+        let right = self.right.checked_add(&T::one())
+            .ok_or(HistErrors::Overflow)?;
+        Ok((self.left..=right).collect())
     }
 
+    #[inline]
     fn is_inside<V: Borrow<T>>(&self, val: V) -> bool {
         let val = *val.borrow();
-        val >= self.left && val < self.right
+        val >= self.left && val <= self.right
     }
 
+    #[inline]
     fn not_inside<V: Borrow<T>>(&self, val: V) -> bool {
         let val = *val.borrow();
-        val >= self.right || val < self.left
+        val > self.right || val < self.left
     }
 
+    #[inline]
     fn count_val<V: Borrow<T>>(&mut self, val: V) -> Result<usize, HistErrors> {
         let index = self.get_bin_index(val)?;
         self.hist[index] += 1;
@@ -584,21 +594,28 @@ mod tests{
     where T: PrimInt + num_traits::Bounded + PartialOrd + CheckedSub + One + Saturating + NumCast + Copy,
     std::ops::RangeInclusive<T>: Iterator<Item=T>
     {
-        let hist = HistogramFast::<T>::new_inclusive(left, right).unwrap();
+        let mut hist = HistogramFast::<T>::new_inclusive(left, right).unwrap();
         assert!(hist.not_inside(T::max_value()));
         assert!(hist.not_inside(T::min_value()));
         for (id, i) in (left..=right).enumerate() {
             assert!(hist.is_inside(i));
+            assert_eq!(hist.is_inside(i), !hist.not_inside(i));
             assert!(hist.get_bin_index(i).unwrap() == id);
             assert_eq!(hist.distance(i), 0.0);
             assert_eq!(hist.interval_distance_overlap(i, 2), 0);
+            hist.count_val(i).unwrap();
         }
-        assert!(hist.not_inside(left - T::one()));
-        assert!(hist.not_inside(right + T::one()));
-        assert_eq!(hist.distance(left - T::one()), 1.0);
-        assert_eq!(hist.distance(right + T::one()), 1.0);
-        assert_eq!(hist.interval_distance_overlap(right + T::one(), 2), 1);
-        assert_eq!(hist.interval_distance_overlap(left - T::one(), 2), 1);
+        let lm1 = left - T::one();
+        let rp1 = right + T::one();
+        assert!(hist.not_inside(lm1));
+        assert!(hist.not_inside(rp1));
+        assert_eq!(hist.is_inside(lm1), !hist.not_inside(lm1));
+        assert_eq!(hist.is_inside(rp1), !hist.not_inside(rp1));
+        assert_eq!(hist.distance(lm1), 1.0);
+        assert_eq!(hist.distance(rp1), 1.0);
+        assert_eq!(hist.interval_distance_overlap(rp1, 1), 1);
+        assert_eq!(hist.interval_distance_overlap(lm1, 1), 1);
+        assert_eq!(hist.borders_clone().unwrap().len() - 1, hist.bin_count());
     }
 
     #[test]
@@ -606,6 +623,8 @@ mod tests{
     {
         hist_test(20usize, 31usize);
         hist_test(-23isize, 31isize);
+        hist_test(-23i16, 31);
+        hist_test(1u8, 3u8);
     }
 
 }
