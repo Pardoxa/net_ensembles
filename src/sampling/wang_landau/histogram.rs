@@ -580,5 +580,28 @@ mod tests{
 
         }
     }
+    fn hist_test<T>(left: T, right: T)
+    where T: PrimInt + num_traits::Bounded + PartialOrd + CheckedSub + One + Saturating + NumCast + Copy,
+    std::ops::RangeInclusive<T>: Iterator<Item=T>
+    {
+        let hist = HistogramFast::<T>::new_inclusive(left, right).unwrap();
+        assert!(hist.not_inside(T::max_value()));
+        assert!(hist.not_inside(T::min_value()));
+        for (id, i) in (left..=right).enumerate() {
+            assert!(hist.is_inside(i));
+            assert!(hist.get_bin_index(i).unwrap() == id);
+            assert_eq!(hist.distance(i), 0.0);
+            assert_eq!(hist.interval_distance_overlap(i, 2), 0);
+        }
+        assert!(hist.not_inside(left - T::one()));
+        assert!(hist.not_inside(right + T::one()));
+    }
+
+    #[test]
+    fn hist_fast()
+    {
+        hist_test(20usize, 31usize);
+        hist_test(-23isize, 31isize);
+    }
 
 }
