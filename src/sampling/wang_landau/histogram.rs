@@ -1,6 +1,7 @@
-use serde::{Serialize, Deserialize};
-use std::borrow::*;
 
+use std::borrow::*;
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
 /// # Use this has a histogram
 /// * anything that implements `Histogram` should also implement the trait `HistogramVal`
 pub trait Histogram {
@@ -26,7 +27,8 @@ pub trait Histogram {
 }
 
 /// Possible Errors of the traits `Histogram` and `HistogramVal`
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum HistErrors{
     /// A histogram without any bins does not make sense!
     NoBins,
@@ -39,6 +41,8 @@ pub enum HistErrors{
 
 }
 
+/// * trait used for mapping values of arbitrary type `T` to bins
+/// * used to create a histogram
 pub trait HistogramVal<T>: Histogram{
     /// convert val to the respective histogram index
     fn get_bin_index<V: Borrow<T>>(&self, val: V) -> Result<usize, HistErrors>;
@@ -68,12 +72,19 @@ pub trait HistogramVal<T>: Histogram{
     fn distance(&self, val: T) -> f64;
 }
 
+/// Distance metric for how far a value is from a valid interval
 pub trait HistogramIntervalDistance<T>: HistogramVal<T> {
-    /// overlap has to be bigger 0
+    /// # Distance metric for how far a value is from a valid interval
+    /// * partitions in more intervals, checks which bin interval a bin corresponds to 
+    /// and returns distance of said interval to the target interval
+    /// * used for heuristiks
+    /// * overlap has to be bigger 0
     fn interval_distance_overlap(&self, val: T, overlap: usize) -> usize;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Generic Histogram struct
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct HistogramGeneric<T>
 {
     bin_borders: Vec<T>,
@@ -117,6 +128,7 @@ impl<T> Histogram for HistogramGeneric<T>
     }
 }
 
+/// Histogram for binning `f64` values
 pub type HistogramF64 = HistogramGeneric<f64>;
 
 impl HistogramF64 {
@@ -148,6 +160,7 @@ impl HistogramF64 {
         )
     }
 
+    /// Returns the length of the interval
     pub fn interval_length(&self) -> f64
     {
         self.get_right() - self.get_left()
@@ -354,7 +367,8 @@ impl HistogramIntervalDistance<usize> for HistogramUsize {
 /// # Faster version of HistogramUsize
 /// provided the bins should be: (left, left +1, ..., right - 1)
 /// then you should use this version!
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct HistogramFast {
     left: usize, 
     right: usize,
@@ -362,6 +376,9 @@ pub struct HistogramFast {
 }
 
 impl HistogramFast{
+    /// # Create a new interval
+    /// * Err if `left >= right`
+    /// * left is inclusive, right is exclusive
     pub fn new(left: usize, right: usize) -> Result<Self, HistErrors>
     {
         if left >= right {
@@ -376,7 +393,7 @@ impl HistogramFast{
             )
         }
     }
-
+    /// same as `self.new`but right is inclusive
     pub fn new_inclusive(left: usize, right: usize) -> Result<Self, HistErrors>
     {
         Self::new(left, right + 1)
@@ -489,7 +506,7 @@ impl HistogramIntervalDistance<usize> for HistogramFast {
 #[cfg(test)]
 mod tests{
     use rand_pcg::Pcg64Mcg;
-    use net_ensembles::rand::{distributions::*};
+    use crate::rand::{distributions::*};
     use super::*;
     #[test]
     fn f64_hist()

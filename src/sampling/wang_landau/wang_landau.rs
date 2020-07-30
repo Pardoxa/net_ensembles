@@ -1,9 +1,11 @@
-use serde::{Serialize, Deserialize};
-use net_ensembles::{rand::{Rng, seq::*}, *};
+use crate::{rand::{Rng, seq::*}, *};
 use std::{marker::PhantomData, iter::*};
-use crate::wang_landau::*;
+use crate::sampling::*;
 use std::{collections::*, cmp::*};
 use num_traits::{Bounded, ops::wrapping::*, identities::*};
+
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
 
 struct ProbIndex{
     index: usize,
@@ -48,13 +50,27 @@ impl ProbIndex{
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+/// Look at the paper
+/// > R. E. Belardinelli and V. D. Pereyra,
+/// > Fast algorithm to calculate density of states,”
+/// > Phys.&nbsp;Rev.&nbsp;E&nbsp;**75**: 046701 (2007), DOI&nbsp;[10.1103/PhysRevE.75.046701](https://doi.org/10.1103/PhysRevE.75.046701)
+/// * This enum is to see, which mode is currently used
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum WangLandauMode {
+    /// * Using original wang landau, i.e., 
+    /// refine every time when every bin in the 
+    /// histogram was hit
+    /// * refine: `log_f *= 0.5;
     RefineOriginal,
+    /// * Use 1/T approach
+    /// * refine each step by: `log_f = bin_count as f64 / step_count as f64`
     Refine1T
 }
 
 impl WangLandauMode{
+    /// * true if self is `RefineOriginal` variant
+    /// * false otherwise
     pub fn is_mode_original(&self) -> bool {
         match self {
             WangLandauMode::RefineOriginal => true,
@@ -62,6 +78,8 @@ impl WangLandauMode{
         }
     }
 
+    /// * true if self is `Refine1T` variant
+    /// * false otherwise
     pub fn is_mode_1_t(&self) -> bool {
         match self {
             WangLandauMode::Refine1T => true,
@@ -86,7 +104,8 @@ impl WangLandauMode{
 /// > F. Wang and D. P. Landau,
 /// > “Efficient, multiple-range random walk algorithm to calculate the density of states,” 
 /// > Phys.&nbsp;Rev.&nbsp;Lett.&nbsp;**86**, 2050–2053 (2001), DOI&nbsp;[10.1103/PhysRevLett.86.2050](https://doi.org/10.1103/PhysRevLett.86.2050)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct WangLandauAdaptive<Hist, R, E, S, Res, T>
 {
     rng: R,
@@ -115,7 +134,9 @@ pub struct WangLandauAdaptive<Hist, R, E, S, Res, T>
     check_refine_every: usize,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// List of possible errors
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum WangLandauErrors{
     /// `trial_step_min <= trial_step_max` has to be true
     InvalidMinMaxTrialSteps,
@@ -598,10 +619,11 @@ where R: Rng,
     /// * alternates between greedy and interval heuristik everytime a wrapping counter passes `mid` or `U::min_value()`
     /// * I recommend using this heuristik, if you do not know which one to use
     /// # Parameter
-    /// * `energy_fn` function calculating the "energy" of the system
+     /// * `energy_fn` function calculating `Some(energy)` of the system
     /// or rather the Parameter of which you wish to obtain the probability distribution.
-    ///  has to be the same function as used for the wang landau simulation later
-    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None` 
+    ///  Has to be the same function as used for the wang landau simulation later.
+    /// If there are any states, for which the calculation is invalid, `None` should be returned
+    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None`
     /// will always be rejected 
     pub fn init_mixed_heuristik<F, U>
     (
@@ -663,13 +685,11 @@ where R: Rng,
     /// * Uses overlapping intervals. Accepts a step, if the resulting ensemble is in the same interval as before,
     /// or it is in an interval closer to the target interval
     /// # Parameter
-    /// * `energy_fn` function calculating the "energy" of the system
+    /// * `energy_fn` function calculating `Some(energy)` of the system
     /// or rather the Parameter of which you wish to obtain the probability distribution.
-    ///  has to be the same function as used for the wang landau simulation later
-    /// * `valid_ensemble` - Called before calculating the energy.
-    /// if there are any states reachable by markov steps, for which the calculation of the 
-    /// energy function does not work/panics/is invalid, then you can filter them out with this
-    /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
+    ///  Has to be the same function as used for the wang landau simulation later.
+    /// If there are any states, for which the calculation is invalid, `None` should be returned
+    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None`
     /// will always be rejected 
     pub fn init_interval_heuristik<F>(
         &mut self,
@@ -703,13 +723,11 @@ where R: Rng,
     /// * Uses a greedy heuristik. Performs markov steps. If that brought us closer to the target interval,
     /// the step is accepted. Otherwise it is rejected
     /// # Parameter
-    /// * `energy_fn` function calculating the "energy" of the system
+    /// * `energy_fn` function calculating `Some(energy)` of the system
     /// or rather the Parameter of which you wish to obtain the probability distribution.
-    ///  has to be the same function as used for the wang landau simulation later
-    /// * `valid_ensemble` - Called before calculating the energy.
-    /// if there are any states reachable by markov steps, for which the calculation of the 
-    /// energy function does not work/panics/is invalid, then you can filter them out with this
-    /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
+    ///  Has to be the same function as used for the wang landau simulation later.
+    /// If there are any states, for which the calculation is invalid, `None` should be returned
+    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None`
     /// will always be rejected 
     pub fn init_greedy_heuristic<F>(
         &mut self,
@@ -731,7 +749,7 @@ where R: Rng,
     }
 
     /// # Wang Landau
-    /// * calls `self.wang_landau_step(energy_fn, valid_ensemble)` until `self.is_converged` 
+    /// * calls `self.wang_landau_step(energy_fn)` until `self.is_converged` 
     /// or `condition(&self)` is false
     pub fn wang_landau_while<F, W>(
         &mut self,
@@ -760,13 +778,11 @@ where R: Rng,
     /// # Wang Landau Step
     /// * performs a single Wang Landau step
     /// # Parameter
-    /// * `energy_fn` function calculating the "energy" of the system
-    /// or rather the Parameter of which you wish to obtain the probability distribution
-    /// * `valid_ensemble` - Called before calculating the energy.
-    /// if there are any states reachable by markov steps, for which the calculation of the 
-    /// energy function does not work/panics/is invalid, then you can filter them out with this
-    /// * steps resulting in ensembles for which `valid_ensemble(&ensemble)` is false
-    /// will always be rejected
+    /// * `energy_fn` function calculating `Some(energy)` of the system
+    /// or rather the Parameter of which you wish to obtain the probability distribution.
+    /// If there are any states, for which the calculation is invalid, `None` should be returned
+    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None`
+    /// will always be rejected 
     /// # Important
     /// * You have to call one of the `self.init*` functions before calling this one - 
     /// **will panic otherwise**
@@ -835,7 +851,7 @@ where R: Rng,
 mod tests {
     use super::*;
     use rand_pcg::Pcg64;
-    use net_ensembles::rand::SeedableRng;
+    use crate::rand::SeedableRng;
     #[test]
     fn wl_creation() {
         let mut rng = Pcg64::seed_from_u64(2239790);
