@@ -1,5 +1,6 @@
-mod histogram;
 mod wang_landau;
+mod helper;
 
-pub use histogram::*;
+
 pub use wang_landau::*;
+pub use helper::*;
