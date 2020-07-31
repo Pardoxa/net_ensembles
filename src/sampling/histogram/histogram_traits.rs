@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 /// * anything that implements `Histogram` should also implement the trait `HistogramVal`
 pub trait Histogram {
     /// # `self.hist[index] += 1`, `Err()` if `index` out of bounds
-    fn count_index(&mut self, index: usize) -> Result<usize, HistErrors>;
+    fn count_index(&mut self, index: usize) -> Result<(), HistErrors>;
     /// # the created histogram
     fn hist(&self) -> &Vec<usize>;
     /// # How many bins the histogram contains
@@ -37,6 +37,7 @@ pub trait HistogramVal<T>: Histogram{
     {
         let id = self.get_bin_index(val)?;
         self.count_index(id)
+            .map(|_| id)
     }
     /// # binning borders
     /// * the borders used to bin the values
@@ -70,7 +71,7 @@ pub trait HistogramIntervalDistance<T> {
 
 
 /// Possible Errors of the traits `Histogram` and `HistogramVal`
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum HistErrors{
     /// A histogram without any bins does not make sense!
@@ -90,4 +91,14 @@ pub enum HistErrors{
 
     /// Error while casting to usize
     UsizeCastError,
+    
+    /// Something went wrong wile casting!
+    CastError,
+
+    /// Could be NAN, INFINITY or similar
+    InvalidVal,
+
+    /// Cannot create requested interval with 
+    /// bins, that all have the same width!
+    ModuloError
 }
