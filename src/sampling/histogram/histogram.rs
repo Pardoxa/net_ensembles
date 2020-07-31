@@ -485,9 +485,9 @@ impl<T> HistogramFast<T>
 }
 /// Histogram for binning `usize`- alias for `HistogramFast<usize>`
 pub type HistUsizeFast = HistogramFast<usize>;
-/// Histogram for binning `u128 - alias for `HistogramFast<u128>`
+/// Histogram for binning `u128` - alias for `HistogramFast<u128>`
 pub type HistU128Fast = HistogramFast<u128>;
-/// Histogram for binning `u64 - alias for `HistogramFast<u64>`
+/// Histogram for binning `u64` - alias for `HistogramFast<u64>`
 pub type HistU64Fast = HistogramFast<u64>;
 /// Histogram for binning `u32` - alias for `HistogramFast<u32>`
 pub type HistU32Fast = HistogramFast<u32>;
