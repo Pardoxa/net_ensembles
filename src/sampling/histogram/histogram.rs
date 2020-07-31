@@ -395,6 +395,9 @@ where T: Ord + Sub<T, Output=T> + Add<T, Output=T> + One + NumCast + Copy
 /// # Histogram for binning `usize` - alias for `HistogramInt<usize>`
 /// * you should use `HistUsizeFast` instead, if your bins are `[left, left+1,..., right]`
 pub type HistUsize = HistogramInt<usize>;
+/// # Histogram for binning `u128` - alias for `HistogramInt<u128>`
+/// * you should use `HistU128Fast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistU128 = HistogramInt<u128>;
 /// # Histogram for binning `u64` - alias for `HistogramInt<u64>`
 /// * you should use `HistU64Fast` instead, if your bins are `[left, left+1,..., right]`
 pub type HistU64 = HistogramInt<u64>;
@@ -411,6 +414,9 @@ pub type HistU8 = HistogramInt<u8>;
 /// # Histogram for binning `isize` - alias for `HistogramInt<isize>`
 /// * you should use `HistIsizeFast` instead, if your bins are `[left, left+1,..., right]`
 pub type HistIsize = HistogramInt<isize>;
+/// # Histogram for binning `i128` - alias for `HistogramInt<i128>`
+/// * you should use `HistI128Fast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistI128 = HistogramInt<i128>;
 /// # Histogram for binning `i64` - alias for `HistogramInt<i64>`
 /// * you should use `HistI64Fast` instead, if your bins are `[left, left+1,..., right]`
 pub type HistI64 = HistogramInt<i64>;
@@ -479,6 +485,8 @@ impl<T> HistogramFast<T>
 }
 /// Histogram for binning `usize`- alias for `HistogramFast<usize>`
 pub type HistUsizeFast = HistogramFast<usize>;
+/// Histogram for binning `u128 - alias for `HistogramFast<u128>`
+pub type HistU128Fast = HistogramFast<u128>;
 /// Histogram for binning `u64 - alias for `HistogramFast<u64>`
 pub type HistU64Fast = HistogramFast<u64>;
 /// Histogram for binning `u32` - alias for `HistogramFast<u32>`
@@ -490,6 +498,8 @@ pub type HistU8Fast = HistogramFast<u8>;
 
 /// Histogram for binning `isize` - alias for `HistogramFast<isize>`
 pub type HistIsizeFast = HistogramFast<isize>;
+/// Histogram for binning `i128` - alias for `HistogramFast<i128>`
+pub type HistI128Fast = HistogramFast<i128>;
 /// Histogram for binning `i64` - alias for `HistogramFast<i64>`
 pub type HistI64Fast = HistogramFast<i64>;
 /// Histogram for binning `i32` - alias for `HistogramFast<i32>`
@@ -719,6 +729,8 @@ mod tests{
         hist_test_fast(-23isize, 31isize);
         hist_test_fast(-23i16, 31);
         hist_test_fast(1u8, 3u8);
+        hist_test_fast(123u128, 300u128);
+        hist_test_fast(-123i128, 300i128);
     }
 
     #[test]
@@ -728,6 +740,8 @@ mod tests{
         hist_test_normal(-23isize, 31isize);
         hist_test_normal(-23i16, 31);
         hist_test_normal(1u8, 3u8);
+        hist_test_normal(123u128, 300u128);
+        hist_test_normal(-123i128, 300i128);
     }
 
     fn hist_test_float<T>(left: T, right: T, bin_count: usize)
