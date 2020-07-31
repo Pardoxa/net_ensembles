@@ -193,7 +193,13 @@ where T: Float + FromPrimitive + Zero + NumCast
     }
 }
 
-/// Generic Histogram struct
+/// Histogram for binning `f32` - alias for `HistogramFloat<f32>`
+pub type HistF32 = HistogramFloat<f32>;
+
+/// Histogram for binning `f64` - alias for `HistogramFloat<f64>`
+pub type HistF64 = HistogramFloat<f64>;
+
+/// # Generic Histogram for integer types
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct HistogramInt<T>
@@ -386,6 +392,38 @@ where T: Ord + Sub<T, Output=T> + Add<T, Output=T> + One + NumCast + Copy
     }
 }
 
+/// # Histogram for binning `usize` - alias for `HistogramInt<usize>`
+/// * you should use `HistUsizeFast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistUsize = HistogramInt<usize>;
+/// # Histogram for binning `u64` - alias for `HistogramInt<u64>`
+/// * you should use `HistU64Fast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistU64 = HistogramInt<u64>;
+/// # Histogram for binning `u32` - alias for `HistogramInt<u32>`
+/// * you should use `HistU32Fast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistU32 = HistogramInt<u32>;
+/// # Histogram for binning `u16` - alias for `HistogramInt<u16>`
+/// * you should use `HistU16Fast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistU16 = HistogramInt<u16>;
+/// # Histogram for binning `u8` - alias for `HistogramInt<u8>`
+/// * you should use `HistU8Fast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistU8 = HistogramInt<u8>;
+
+/// # Histogram for binning `isize` - alias for `HistogramInt<isize>`
+/// * you should use `HistIsizeFast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistIsize = HistogramInt<isize>;
+/// # Histogram for binning `i64` - alias for `HistogramInt<i64>`
+/// * you should use `HistI64Fast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistI64 = HistogramInt<i64>;
+/// # Histogram for binning `i32` - alias for `HistogramInt<i32>`
+/// * you should use `HistI32Fast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistI32 = HistogramInt<i32>;
+/// # Histogram for binning `i16` - alias for `HistogramInt<i16>`
+/// * you should use `HistI16Fast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistI16 = HistogramInt<i16>;
+/// # Histogram for binning `i8` - alias for `HistogramIntiu8>`
+/// * you should use `HistI8Fast` instead, if your bins are `[left, left+1,..., right]`
+pub type HistI8 = HistogramInt<i8>;
+
 
 /// # Faster version of HistogramGeneric for Integers
 /// provided the bins should be: (left, left +1, ..., right - 1)
@@ -439,26 +477,26 @@ impl<T> HistogramFast<T>
         }
     }
 }
-/// alias for `HistogramFast<usize>`
+/// Histogram for binning `usize`- alias for `HistogramFast<usize>`
 pub type HistUsizeFast = HistogramFast<usize>;
-/// alias for `HistogramFast<u64>`
+/// Histogram for binning `u64 - alias for `HistogramFast<u64>`
 pub type HistU64Fast = HistogramFast<u64>;
-/// alias for `HistogramFast<u32>`
+/// Histogram for binning `u32` - alias for `HistogramFast<u32>`
 pub type HistU32Fast = HistogramFast<u32>;
-/// alias for `HistogramFast<u16>`
+/// Histogram for binning `u16` - alias for `HistogramFast<u16>`
 pub type HistU16Fast = HistogramFast<u16>;
-/// alias for `HistogramFast<u8>`
+/// Histogram for binning `u8` - alias for `HistogramFast<u8>`
 pub type HistU8Fast = HistogramFast<u8>;
 
-/// alias for `HistogramFast<isize>`
+/// Histogram for binning `isize` - alias for `HistogramFast<isize>`
 pub type HistIsizeFast = HistogramFast<isize>;
-/// alias for `HistogramFast<i64>`
+/// Histogram for binning `i64` - alias for `HistogramFast<i64>`
 pub type HistI64Fast = HistogramFast<i64>;
-/// alias for `HistogramFast<i32>`
+/// Histogram for binning `i32` - alias for `HistogramFast<i32>`
 pub type HistI32Fast = HistogramFast<i32>;
-/// alias for `HistogramFast<i16>`
+/// Histogram for binning `i16` - alias for `HistogramFast<i16>`
 pub type HistI16Fast = HistogramFast<i16>;
-/// alias for `HistogramFastiu8>`
+/// Histogram for binning `i8` - alias for `HistogramFastiu8>`
 pub type HistI8Fast = HistogramFast<i8>;
 
 
