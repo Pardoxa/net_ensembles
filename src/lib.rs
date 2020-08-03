@@ -15,7 +15,7 @@
 //! [`MeasurableGraphQuantities`](./traits/trait.MeasurableGraphQuantities.html),
 //! therefore, e.g., `ensemble.graph().transitivity()` and `ensemble.transitivity()`
 //! are equivalent
-//! * for **sampling** the ensemble, take a look at [these traits](./sampling/traits/index.html)
+//! * for **sampling** the ensemble, take a look at this [module](sampling/index.html) and [these traits](./sampling/traits/index.html)
 //! # Example 1
 //!
 //! ```
@@ -274,7 +274,7 @@
 //!     };
 //! }
 //! ```
-#![deny(missing_docs, warnings)]
+//#![deny(missing_docs, warnings)]
 pub mod generic_graph;
 pub mod example_nodes;
 pub mod graph;

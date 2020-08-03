@@ -27,30 +27,30 @@ use serde::{Serialize, Deserialize};
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct WangLandauAdaptive<Hist, R, E, S, Res, T>
 {
-    rng: R,
-    samples_per_trial: usize,
-    trial_list: Vec<usize>,
-    best_of_steps: Vec<usize>,
-    min_best_of_count: usize,
-    best_of_threshold: f64,
-    ensemble: E,
-    step_marker: PhantomData::<S>,
-    step_res_marker: PhantomData<Res>,
-    accepted_step_hist: Vec<usize>,
-    rejected_step_hist: Vec<usize>,
+    pub(crate) rng: R,
+    pub(crate) samples_per_trial: usize,
+    pub(crate) trial_list: Vec<usize>,
+    pub(crate) best_of_steps: Vec<usize>,
+    pub(crate) min_best_of_count: usize,
+    pub(crate) best_of_threshold: f64,
+    pub(crate) ensemble: E,
+    pub(crate) step_marker: PhantomData::<S>,
+    pub(crate) step_res_marker: PhantomData<Res>,
+    pub(crate) accepted_step_hist: Vec<usize>,
+    pub(crate) rejected_step_hist: Vec<usize>,
     total_steps_rejected: usize,
     total_steps_accepted: usize,
-    min_step: usize,
+    pub(crate) min_step: usize,
     counter: usize,
     log_f: f64,
     log_f_theshold: f64,
-    step_count: usize,
-    histogram: Hist,
-    log_density: Vec<f64>,
-    old_energy: Option<T>,
-    old_bin: Option<usize>,
+    pub(crate) step_count: usize,
+    pub(crate) histogram: Hist,
+    pub(crate) log_density: Vec<f64>,
+    pub(crate) old_energy: Option<T>,
+    pub(crate) old_bin: Option<usize>,
     mode: WangLandauMode,
-    check_refine_every: usize,
+    pub(crate) check_refine_every: usize,
 }
 
 impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
@@ -107,6 +107,20 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
         self.step_count
     }
 
+    /// # Smallest possible markov step (`m_steps` of MarkovChain trait) tried by wang landau step
+    #[inline]
+    pub fn min_step_size(&self) -> usize
+    {
+        self.min_step
+    }
+
+    /// # Largest possible markov step (`m_steps` of MarkovChain trait) tried by wang landau step
+    #[inline]
+    pub fn max_step_size(&self) -> usize 
+    {
+        self.min_step + self.accepted_step_hist.len() - 1
+    }
+
     /// Is the simulation in the process of rebuilding the statistics,
     /// i.e., is it currently trying many differnt step sizes?
     #[inline]
@@ -156,15 +170,18 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
     pub fn estimate_statistics(&self) -> Result<Vec<f64>, WangLandauErrors>
     {
         let calc_estimate = || {
-            let estimate: Vec<_> = self.accepted_step_hist
-            .iter()
-            .zip(
-                self.rejected_step_hist.iter()
-            ).map(|(&a, &r)|
-                {
-                    a as f64 / (a + r) as f64
-                }
-            ).collect();
+            let mut estimate = Vec::with_capacity(self.accepted_step_hist.len());
+            estimate.extend(
+                self.accepted_step_hist
+                    .iter()
+                    .zip(
+                        self.rejected_step_hist.iter()
+                    ).map(|(&a, &r)|
+                        {
+                            a as f64 / (a + r) as f64
+                        }
+                    )
+            );
             estimate
         };
         if self.is_rebuilding_statistics() {
@@ -663,11 +680,11 @@ where R: Rng,
         &mut self,
         energy_fn: F,
         mut condition: W
-    ) where F: Fn(&mut E) -> Option<T> + Copy,
+    ) where F: Fn(&mut E) -> Option<T>,
         W: FnMut(&Self) -> bool,
     {
         while !self.is_converged() && condition(&self) {
-            self.wang_landau_step(energy_fn);
+            self.wang_landau_step(&energy_fn);
         }
     }
 
@@ -676,10 +693,10 @@ where R: Rng,
     pub fn wang_landau_convergence<F>(
         &mut self,
         energy_fn: F,
-    )where F: Fn(&mut E) -> Option<T> + Copy,
+    )where F: Fn(&mut E) -> Option<T>,
     {
         while !self.is_converged() {
-            self.wang_landau_step(energy_fn);
+            self.wang_landau_step(&energy_fn);
         }
     }
 
@@ -720,6 +737,7 @@ where R: Rng,
             None => {
                 self.count_rejected(step_size);
                 self.histogram.count_index(old_bin).unwrap();
+                self.log_density[old_bin] += self.log_f;
                 self.ensemble.undo_steps_quiet(steps);
                 return;
             }
