@@ -79,8 +79,9 @@ impl<T> Histogram for HistogramFloat<T>
         &self.hist
     }
 
+    #[inline]
     fn count_index(&mut self, index: usize) -> Result<(), HistErrors> {
-        if index < self.bin_count()
+        if index < self.hist.len()
         {
             self.hist[index] += 1;
             Ok(())
@@ -89,10 +90,12 @@ impl<T> Histogram for HistogramFloat<T>
         }
     }
 
+    #[inline]
     fn reset(&mut self) {
-        for i in 0..self.bin_count() {
-            self.hist[i] = 0;
-        }
+        // compiles to memset ^__^
+        self.hist
+            .iter_mut()
+            .for_each(|h| *h = 0);
     }
 }
 
@@ -171,8 +174,9 @@ where T: Float + Zero + NumCast {
 impl<T> HistogramIntervalDistance<T> for HistogramFloat<T> 
 where T: Float + FromPrimitive + Zero + NumCast
 {
-    fn interval_distance_overlap(&self, val: T, overlap: usize) -> usize {
-        debug_assert!(overlap > 0);
+    fn interval_distance_overlap(&self, val: T, mut overlap: usize) -> usize {
+        overlap = 1usize.max(overlap);
+        
         debug_assert!(self.interval_length() > T::zero());
         debug_assert!(val.is_finite());
         if self.not_inside(val) {
@@ -294,8 +298,9 @@ impl<T> Histogram for HistogramInt<T>
         &self.hist
     }
 
+    #[inline]
     fn count_index(&mut self, index: usize) -> Result<(), HistErrors> {
-        if index < self.bin_count()
+        if index < self.hist.len()
         {
             self.hist[index] += 1;
             Ok(())
@@ -304,11 +309,12 @@ impl<T> Histogram for HistogramInt<T>
         }
     }
 
+    #[inline]
     fn reset(&mut self) {
         // compiles down to memset :)
         self.hist
             .iter_mut()
-            .for_each(|val| *val = 0);
+            .for_each(|h| *h = 0);
     }
 }
 
@@ -375,8 +381,8 @@ where T: Ord + Sub<T, Output=T> + Add<T, Output=T> + One + NumCast + Copy
 impl<T> HistogramIntervalDistance<T> for HistogramInt<T> 
 where T: Ord + Sub<T, Output=T> + Add<T, Output=T> + One + NumCast + Copy
 {
-    fn interval_distance_overlap(&self, val: T, overlap: usize) -> usize {
-        debug_assert!(overlap > 0);
+    fn interval_distance_overlap(&self, val: T, mut overlap: usize) -> usize {
+        overlap = overlap.max(1);
         if self.not_inside(val) {
             let num_bins_overlap = 1usize.max(self.bin_count() / overlap);
             let dist = 
@@ -447,6 +453,7 @@ impl<T> HistogramFast<T>
 {
     /// # Create a new interval
     /// * same as `Self::new_inclusive(left, right - 1)` though with checks
+    /// * That makes `left` an inclusive and `right` an exclusive border
     pub fn new(left: T, right: T) -> Result<Self, HistErrors>
     {
         let right = match right.checked_sub(&T::one()){
@@ -457,8 +464,9 @@ impl<T> HistogramFast<T>
     }
 
     /// # Create new histogram with inclusive borders
-    /// * Err if `left > right`
-    /// * left is inclusive, right is exclusive
+    /// * `Err` if `left > right`
+    /// * `left` is inclusive border
+    /// * `right` is inclusive border
     pub fn new_inclusive(left: T, right: T) -> Result<Self, HistErrors>
     {
         if left > right {
@@ -513,6 +521,7 @@ pub type HistI8Fast = HistogramFast<i8>;
 impl<T> Histogram for HistogramFast<T> 
 {
 
+    #[inline]
     fn count_index(&mut self, index: usize) -> Result<(), HistErrors> {
         match self.hist.get_mut(index) {
             None => Err(HistErrors::OutsideHist),
@@ -533,10 +542,12 @@ impl<T> Histogram for HistogramFast<T>
         self.hist.len()
     }
 
+    #[inline]
     fn reset(&mut self) {
-        for i in 0..self.bin_count(){
-            self.hist[i] = 0;
-        }
+        // compiles to memset =)
+        self.hist
+            .iter_mut()
+            .for_each(|h| *h = 0);
     }
 }
 
@@ -580,8 +591,12 @@ where T: PartialOrd + CheckedSub + CheckedAdd + One + Saturating + NumCast + Cop
         }
     }
 
+    /// # Creates a vector containing borders (last border is exclusive)
     /// * returns `Err(Overflow)` if right border is `T::MAX`
-    /// * returns borders otherwise
+    /// * creates and returns borders otherwise
+    /// * Note: even if `Err(Overflow)` is returned, this does not 
+    ///  provide any problems for the rest of the implementation,
+    ///  as the border vector is not used internally for `HistogramFast`
     fn borders_clone(&self) -> Result<Vec<T>, HistErrors> {
         let right = self.right.checked_add(&T::one())
             .ok_or(HistErrors::Overflow)?;
@@ -612,8 +627,8 @@ impl<T> HistogramIntervalDistance<T> for HistogramFast<T>
 where Self: HistogramVal<T>,
     T: PartialOrd + std::ops::Sub<Output=T> + NumCast + Copy
 {
-    fn interval_distance_overlap(&self, val: T, overlap: usize) -> usize {
-        debug_assert!(overlap > 0);
+    fn interval_distance_overlap(&self, val: T, mut overlap: usize) -> usize {
+        overlap = overlap.max(1);
         if self.not_inside(val) {
             let num_bins_overlap = 1usize.max(self.bin_count() / overlap);
             let dist = 

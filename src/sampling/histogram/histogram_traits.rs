@@ -65,7 +65,7 @@ pub trait HistogramIntervalDistance<T> {
     /// * partitions in more intervals, checks which bin interval a bin corresponds to 
     /// and returns distance of said interval to the target interval
     /// * used for heuristiks
-    /// * overlap has to be bigger 0
+    /// * overlap should be bigger 0, otherwise it will be set to 1
     fn interval_distance_overlap(&self, val: T, overlap: usize) -> usize;
 }
 
