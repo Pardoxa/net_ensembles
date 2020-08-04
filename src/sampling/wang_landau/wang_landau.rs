@@ -588,7 +588,7 @@ where R: Rng,
         self.init(energy_fn, step_limit)?;
         if self.histogram.is_inside(self.old_energy_clone()){
             self.end_init();
-            return Err(WangLandauErrors::InitFailed);
+            return Ok(());
         }    
         
         let mut old_dist = f64::INFINITY;
