@@ -1,7 +1,7 @@
 use crate::{rand::{Rng, seq::*}, *};
 use std::{marker::PhantomData, iter::*};
 use crate::sampling::*;
-use std::collections::*;
+use std::{collections::*, convert::*};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -19,8 +19,21 @@ pub enum EntropicErrors {
     /// Still in the process of gathering statistics
     /// Not enough to make an estimate
     NotEnoughStatistics,
+
     /// Still Gathering Statistics, this is only an estimate!
     EstimatedStatistic(Vec<f64>),
+
+    /// Invalid trial step. Is your max_step smaller than your min_step?
+    InvalidMinMaxTrialSteps,
+
+    /// # Posible reasons
+    /// * `log_density.len()` and `histogram.bin_count()` are not equal
+    /// * not all values of `log_density` are finite
+    InvalidLogDensity,
+
+    /// You are trying to have a `min_best_of_count` that is 
+    /// larger than the total steps you try!
+    InvalidBestof,
 }
 
 /// # Entropic sampling made easy
@@ -56,15 +69,14 @@ pub struct EntropicAdaptive<Hist, R, E, S, Res, T>
     adjust_bestof_every: usize,
 }
 
-impl<Hist, R, E, S, Res, T> EntropicAdaptive<Hist, R, E, S, Res, T>
-where Hist: Histogram,
-    R: Rng
+impl<Hist, R, E, S, Res, T> TryFrom<WangLandauAdaptive<Hist, R, E, S, Res, T>>
+    for EntropicAdaptive<Hist, R, E, S, Res, T>
+    where 
+        Hist: Histogram,
+        R: Rng
 {
-    /// # Creatses EntropicAdaptive from a `WangLandauAdaptive` state
-    /// * `WangLandauAdaptive` state needs to be valid, i.e., you must have called one of the `init*` methods
-    /// - this ensures, that the members `old_energy` and `old_bin` are not `None`
-    pub fn from_wl(mut wl: WangLandauAdaptive<Hist, R, E, S, Res, T>) -> Result<Self, EntropicErrors>
-    {
+    type Error = EntropicErrors;
+    fn try_from(mut wl: WangLandauAdaptive<Hist, R, E, S, Res, T>) -> Result<Self, Self::Error> {
         if wl.old_bin.is_none() || wl.old_energy.is_none() {
             return Err(EntropicErrors::InvalidWangLandau);
         }
@@ -104,6 +116,94 @@ where Hist: Histogram,
                 adjust_bestof_every: 10usize.max(4 * wl.check_refine_every),
             }   
         )
+    }
+}
+
+impl<Hist, R, E, S, Res, T> EntropicAdaptive<Hist, R, E, S, Res, T>
+where Hist: Histogram,
+    R: Rng
+{
+    /// tmp
+    #[allow(dead_code, unused_variables, warnings)]
+    pub fn new<F>(
+        energy_fn: F,
+        max_init_iterations: usize,
+        ensemble: E, 
+        mut rng: R, 
+        samples_per_trial: usize, 
+        trial_step_min: usize, 
+        trial_step_max: usize,
+        min_best_of_count: usize,
+        mut best_of_threshold: f64,
+        histogram: Hist,
+        log_density: Vec<f64>,
+        step_goal: usize,
+    ) -> Result<Self, EntropicErrors>
+    where F: Fn(&mut E) -> Option<T>
+    {
+        if trial_step_max < trial_step_min
+        {
+            return Err(EntropicErrors::InvalidMinMaxTrialSteps);
+        } else if log_density.len() != histogram.bin_count() 
+            || !log_density.iter().all(|val| val.is_finite()) {
+            return Err(EntropicErrors::InvalidLogDensity);
+        }
+        if !best_of_threshold.is_finite(){
+            best_of_threshold = 0.0;
+        }
+
+        let distinct_step_count = trial_step_max - trial_step_min + 1;
+
+        if min_best_of_count > distinct_step_count {
+            return Err(EntropicErrors::InvalidBestof);
+        }
+
+        let mut trial_list = Vec::with_capacity(distinct_step_count * samples_per_trial);
+        trial_list.extend (
+            (trial_step_min..=trial_step_max)
+                .flat_map(|s| repeat(s).take(samples_per_trial))
+        );
+        
+        trial_list.shuffle(&mut rng);
+        
+        
+        let accepted_step_hist = vec![0; distinct_step_count];
+        let rejected_step_hist = vec![0; distinct_step_count];
+
+        unimplemented!()
+       // Ok(
+       //     Self{
+       //         rng,
+       //         ensemble,
+       //         accepted_step_hist,
+       //         rejected_step_hist,
+       //         total_steps_accepted: 0,
+       //         total_steps_rejected: 0,
+       //         counter: 0,
+       //         step_count: 0,
+       //         step_goal,
+       //         best_of_steps,
+       //         best_of_threshold,
+       //         adjust_bestof_every: 10usize.min(trial_list.len())
+       //         samples_per_trial,
+       //         trial_list,
+       //         min_best_of_count,
+       //         min_step,
+       //         histogram: histogram,
+       //         log_density,
+       //         step_marker: PhantomData::<S>,
+       //         step_res_marker: PhantomData::<Res>,
+       //     }
+       // )
+    }
+
+
+    /// # Creatses EntropicAdaptive from a `WangLandauAdaptive` state
+    /// * `WangLandauAdaptive` state needs to be valid, i.e., you must have called one of the `init*` methods
+    /// - this ensures, that the members `old_energy` and `old_bin` are not `None`
+    pub fn from_wl(wl: WangLandauAdaptive<Hist, R, E, S, Res, T>) -> Result<Self, EntropicErrors>
+    {
+        wl.try_into()
     }
 
     /// # Current state of the Ensemble

@@ -25,7 +25,10 @@ pub enum WangLandauErrors{
     CheckRefineEvery0,
 
     /// you have to call one of the
-    NotInitialized
+    NotInitialized,
+
+    /// Step limit exceeded without finding valid starting point
+    InitFailed
 }
 
 /// Look at the paper
