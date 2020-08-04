@@ -123,82 +123,7 @@ impl<Hist, R, E, S, Res, T> EntropicAdaptive<Hist, R, E, S, Res, T>
 where Hist: Histogram,
     R: Rng
 {
-    /// tmp
-    #[allow(dead_code, unused_variables, warnings)]
-    pub fn new<F>(
-        energy_fn: F,
-        max_init_iterations: usize,
-        ensemble: E, 
-        mut rng: R, 
-        samples_per_trial: usize, 
-        trial_step_min: usize, 
-        trial_step_max: usize,
-        min_best_of_count: usize,
-        mut best_of_threshold: f64,
-        histogram: Hist,
-        log_density: Vec<f64>,
-        step_goal: usize,
-    ) -> Result<Self, EntropicErrors>
-    where F: Fn(&mut E) -> Option<T>
-    {
-        if trial_step_max < trial_step_min
-        {
-            return Err(EntropicErrors::InvalidMinMaxTrialSteps);
-        } else if log_density.len() != histogram.bin_count() 
-            || !log_density.iter().all(|val| val.is_finite()) {
-            return Err(EntropicErrors::InvalidLogDensity);
-        }
-        if !best_of_threshold.is_finite(){
-            best_of_threshold = 0.0;
-        }
-
-        let distinct_step_count = trial_step_max - trial_step_min + 1;
-
-        if min_best_of_count > distinct_step_count {
-            return Err(EntropicErrors::InvalidBestof);
-        }
-
-        let mut trial_list = Vec::with_capacity(distinct_step_count * samples_per_trial);
-        trial_list.extend (
-            (trial_step_min..=trial_step_max)
-                .flat_map(|s| repeat(s).take(samples_per_trial))
-        );
-        
-        trial_list.shuffle(&mut rng);
-        
-        
-        let accepted_step_hist = vec![0; distinct_step_count];
-        let rejected_step_hist = vec![0; distinct_step_count];
-
-        unimplemented!()
-       // Ok(
-       //     Self{
-       //         rng,
-       //         ensemble,
-       //         accepted_step_hist,
-       //         rejected_step_hist,
-       //         total_steps_accepted: 0,
-       //         total_steps_rejected: 0,
-       //         counter: 0,
-       //         step_count: 0,
-       //         step_goal,
-       //         best_of_steps,
-       //         best_of_threshold,
-       //         adjust_bestof_every: 10usize.min(trial_list.len())
-       //         samples_per_trial,
-       //         trial_list,
-       //         min_best_of_count,
-       //         min_step,
-       //         histogram: histogram,
-       //         log_density,
-       //         step_marker: PhantomData::<S>,
-       //         step_res_marker: PhantomData::<Res>,
-       //     }
-       // )
-    }
-
-
-    /// # Creatses EntropicAdaptive from a `WangLandauAdaptive` state
+    /// # Creates EntropicAdaptive from a `WangLandauAdaptive` state
     /// * `WangLandauAdaptive` state needs to be valid, i.e., you must have called one of the `init*` methods
     /// - this ensures, that the members `old_energy` and `old_bin` are not `None`
     pub fn from_wl(wl: WangLandauAdaptive<Hist, R, E, S, Res, T>) -> Result<Self, EntropicErrors>
@@ -507,6 +432,41 @@ where Hist: Histogram + HistogramVal<T>,
     E: MarkovChain<S, Res>,
     T: Clone,
 {
+
+    /// # Entropic sampling
+    /// * performs `self.entropic_step(energy_fn)` until `condition` is false
+    /// * **Note**: you have access to the current step_count (`self.step_count()`)
+    /// # Parameter
+    /// * `energy_fn` function calculating `Some(energy)` of the system
+    /// or rather the Parameter of which you wish to obtain the probability distribution.
+    /// If there are any states, for which the calculation is invalid, `None` should be returned
+    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None`
+    /// will always be rejected 
+    /// * **Important** `energy_fn`: should be the same as used for Wang Landau, otherwise the results will be wrong!
+    /// * `print_fn`: see below
+    /// # Correlations
+    /// * if you want to measure correlations between "energy" and other measurable quantities,
+    /// use `print_fn`, which will be called after each step - use this function to write to 
+    /// a file or whatever you desire
+    /// * Note: You do not have to recalculate the energy, if you need it in `print_fn`:
+    ///  just call `self.energy()` 
+    /// * you have access to your ensemble with `self.ensemble()`
+    /// * if you do not need it, you can use `|_|{}` as `print_fn`
+    pub fn entropic_sampling_while<F, G, W>(
+        &mut self,
+        energy_fn: F,
+        mut print_fn: G,
+        mut condition: W
+    ) where F: Fn(&mut E) -> Option<T>,
+        G: FnMut(&Self) -> (),
+        W: FnMut(&Self) -> bool
+    {
+        while condition(self) {
+            self.entropic_step(&energy_fn);
+            print_fn(&self);
+        }
+    }
+
     /// # Entropic sampling
     /// * performs `self.entropic_step(energy_fn)` until `self.step_count == self.step_goal`
     /// # Parameter

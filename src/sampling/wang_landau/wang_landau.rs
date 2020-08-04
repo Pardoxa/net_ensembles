@@ -102,7 +102,7 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
     /// # Counter
     /// how many wang Landau steps were performed until now?
     #[inline]
-    pub fn get_step_count(&self) -> usize
+    pub fn step_count(&self) -> usize
     {
         self.step_count
     }
