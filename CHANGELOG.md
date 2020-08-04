@@ -16,7 +16,7 @@
 
 ### minor optimizations
 * ErEnsembleC - `randomize` (and therefore `new`, as that uses randomize) 
-* GenericGraph - `new` roughly twice as fast now, though it was fast t begin with
+* GenericGraph - `new` roughly twice as fast now, though it was fast to begin with
 
 ### Ensemble
 * adding Barabási-Albert ensemble - work in progress
@@ -26,6 +26,12 @@
 ### traits
 * WithGraph now has `sort_adj()` member
 * MarkovChain now has member `m_steps_quiet()`
+* adding traits `Histogram`, `HistogramVal` and `HistogramIntervalDistance`
+
+### module sampling
+* added `WangLandauAdaptive` for performing WangLandau simulation
+* added `EntropicAdaptive` for performing Entropic sampling simulation
+* added Histograms 
 
 
 ## v0.3.0 &rarr; v0.4.0
