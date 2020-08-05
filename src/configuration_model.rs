@@ -76,7 +76,7 @@ where T: Node,
     /// * `model.graph()` will have the same topology as `generic_graph`
     /// after this creation. This will of cause change, if you call `randomize`
     /// or do markov steps
-    pub fn clone_from_generic_graph<A, G>(generic_graph: &GenericGraph<T, A>, rng: R) -> Self
+    pub fn clone_from_generic_graph<A>(generic_graph: &GenericGraph<T, A>, rng: R) -> Self
     where T: Clone,
         A: AdjContainer<T>
     {
