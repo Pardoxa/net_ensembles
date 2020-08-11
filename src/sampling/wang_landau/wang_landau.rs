@@ -467,7 +467,7 @@ where R: Rng,
     fn init<F>(
         &mut self,
         energy_fn: F,
-        step_limit: Option<u128>
+        step_limit: Option<u64>
     ) -> Result<(), WangLandauErrors>
     where F: Fn(&mut E) -> Option<T>
     {
@@ -578,7 +578,7 @@ where R: Rng,
         overlap: usize,
         mid: U,
         energy_fn: F,
-        step_limit: Option<u128>
+        step_limit: Option<u64>
     ) -> Result<(), WangLandauErrors>
     where F: Fn(&mut E) -> Option<T> + Copy,
         Hist: HistogramIntervalDistance<T>,
@@ -654,7 +654,7 @@ where R: Rng,
         &mut self,
         overlap: usize,
         energy_fn: F,
-        step_limit: Option<u128>,
+        step_limit: Option<u64>,
     ) -> Result<(), WangLandauErrors>
     where F: Fn(&mut E) -> Option<T> + Copy,
         Hist: HistogramIntervalDistance<T>
@@ -703,7 +703,7 @@ where R: Rng,
     pub fn init_greedy_heuristic<F>(
         &mut self,
         energy_fn: F,
-        step_limit: Option<u128>,
+        step_limit: Option<u64>,
     ) -> Result<(), WangLandauErrors>
     where F: Fn(&mut E) -> Option<T> + Copy,
     {
