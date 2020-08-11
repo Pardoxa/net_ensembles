@@ -9,7 +9,7 @@ use serde::{Serialize, Deserialize};
 pub enum WangLandauErrors{
     /// `trial_step_min <= trial_step_max` has to be true
     InvalidMinMaxTrialSteps,
-    /// `log_f_theshold`can never be negative or zero!
+    /// `log_f_threshold`can never be negative or zero!
     /// it also cannot be NaN or infinite!
     InvalidLogFThreshold,
     /// Still in the process of gathering statistics

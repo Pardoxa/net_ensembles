@@ -43,7 +43,7 @@ pub struct WangLandauAdaptive<Hist, R, E, S, Res, T>
     pub(crate) min_step: usize,
     counter: usize,
     log_f: f64,
-    log_f_theshold: f64,
+    log_f_threshold: f64,
     pub(crate) step_count: usize,
     pub(crate) histogram: Hist,
     pub(crate) log_density: Vec<f64>,
@@ -57,22 +57,22 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
 {
     /// returns currently set threshold
     #[inline]
-    pub fn log_f_theshold(&self) -> f64
+    pub fn log_f_threshold(&self) -> f64
     {
-        self.log_f_theshold
+        self.log_f_threshold
     }
 
     /// Try to set the threshold. 
-    /// * `log_f_theshold > 0.0` has to be true
-    /// * `log_f_theshold` has to be finite
-    pub fn set_log_f_theshold(&mut self, log_f_theshold: f64) -> Result<f64, WangLandauErrors>
+    /// * `log_f_threshold > 0.0` has to be true
+    /// * `log_f_threshold` has to be finite
+    pub fn set_log_f_threshold(&mut self, log_f_threshold: f64) -> Result<f64, WangLandauErrors>
     {
-        if !log_f_theshold.is_finite() || log_f_theshold.is_sign_negative() {
+        if !log_f_threshold.is_finite() || log_f_threshold.is_sign_negative() {
             return Err(WangLandauErrors::InvalidLogFThreshold);
         }
-        let old_theshold = self.log_f_theshold;
-        self.log_f_theshold = log_f_theshold;
-        Ok(old_theshold)
+        let old_threshold = self.log_f_threshold;
+        self.log_f_threshold = log_f_threshold;
+        Ok(old_threshold)
     }
 
     /// get current value of log_f
@@ -220,9 +220,9 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
     }
 
     /// # Checks wang landau threshold
-    /// * `log_f <= log_f_theshold`
+    /// * `log_f <= log_f_threshold`
     pub fn is_converged(&self) -> bool {
-        self.log_f <= self.log_f_theshold
+        self.log_f <= self.log_f_threshold
     }
     
 }
@@ -371,7 +371,7 @@ where R: Rng,
 {
    
     /// # New WangLandauAdaptive
-    /// * `log_f_theshold` - theshold for the simulation
+    /// * `log_f_threshold` - threshold for the simulation
     /// * `ensemble` ensemble used for the simulation
     /// * `rng` - random number generator used
     /// * `samples_per_trial` - how often a specific step_size should be tried before
@@ -384,9 +384,9 @@ where R: Rng,
     /// # Important
     /// * **You need to call on of the  `self.init*` members before starting the Wang Landau simulation!
     /// * **Err** if `trial_step_max < trial_step_min`
-    /// * **Err** if `log_f_theshold <= 0.0`
+    /// * **Err** if `log_f_threshold <= 0.0`
     pub fn new(
-        log_f_theshold: f64,
+        log_f_threshold: f64,
         ensemble: E, 
         mut rng: R, 
         samples_per_trial: usize, 
@@ -402,7 +402,7 @@ where R: Rng,
         {
             return Err(WangLandauErrors::InvalidMinMaxTrialSteps);
         } 
-        else if !log_f_theshold.is_finite() || log_f_theshold.is_sign_negative() 
+        else if !log_f_threshold.is_finite() || log_f_threshold.is_sign_negative() 
         {
             return Err(WangLandauErrors::InvalidLogFThreshold);
         }else if check_refine_every == 0 {
@@ -445,7 +445,7 @@ where R: Rng,
                 step_marker: PhantomData::<S>,
                 step_res_marker: PhantomData::<Res>,
                 log_f: 1.0,
-                log_f_theshold,
+                log_f_threshold,
                 step_count: 0,
                 histogram,
                 log_density,
