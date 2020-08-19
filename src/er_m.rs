@@ -16,7 +16,8 @@ use std::convert::AsRef;
 use serde::{Serialize, Deserialize};
 
 /// Storing the information about which edges were deleted or added
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ErStepM{
     /// removed edge
     pub(crate) removed: (usize, usize),

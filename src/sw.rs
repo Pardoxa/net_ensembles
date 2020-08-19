@@ -23,7 +23,8 @@ const ROOT_EDGES_PER_VERTEX: usize = 2;
 
 /// # Returned by markov steps
 /// * information about the performed step and possible errors
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum SwChangeState {
     /// ERROR adjecency list invalid?
     InvalidAdjecency,

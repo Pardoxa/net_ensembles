@@ -34,6 +34,11 @@
 * added `EntropicAdaptive` for performing Entropic sampling simulation
 * added Histograms 
 
+### Markov Steps
+* Adding `Serialize + Deserialize` for ErStepC
+* Adding `Clone + Serialize + Deserialize` for ErStepM
+* Adding `Cloone + Serialize + Deserializ` for SwChangeState
+
 
 ## v0.3.0 &rarr; v0.4.0
 ## Major breaking change: `u32 -> usize`

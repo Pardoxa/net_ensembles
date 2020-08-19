@@ -16,6 +16,7 @@ use serde::{Serialize, Deserialize};
 
 /// # Returned by markov steps
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum ErStepC {
     /// nothing was changed
     Nothing,
@@ -340,7 +341,8 @@ where   T: Node + SerdeStateConform,
 }
 
 /// high is exclusive
-fn draw_two_from_range<T: rand::Rng>(rng: &mut T, high: usize) -> (usize, usize){
+#[inline]
+pub(crate) fn draw_two_from_range<T: rand::Rng>(rng: &mut T, high: usize) -> (usize, usize){
     let first = rng.gen_range(0, high);
     let second = rng.gen_range(0, high - 1);
 

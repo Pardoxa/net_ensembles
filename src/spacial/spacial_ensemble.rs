@@ -1,4 +1,5 @@
 use crate::*;
+use er_c::draw_two_from_range;
 use crate::spacial::*;
 use rand::Rng;
 use std::f64::consts::PI;
@@ -51,6 +52,21 @@ impl<T, R> SpacialEnsemble<T, R>
         res.randomize();
         res
     }
+
+    #[inline]
+    fn prob_unchecked(&self, i: usize, j: usize) -> f64
+    {
+        let distance = unsafe{
+            self.graph
+                .vertices
+                .get_unchecked(i)
+                .distance(self.graph.vertices.get_unchecked(j))
+        };
+        let prob = self.f * 
+            (1.0 + self.sqrt_n_pi * distance / self.alpha)
+            .powf(-self.alpha);
+        prob
+    }
 }
 
 
@@ -67,15 +83,7 @@ where   T: Node + SerdeStateConform,
         // iterate over all possible edges once
         for i in 0..self.graph.vertex_count() {
             for j in i+1..self.graph.vertex_count() {
-                let distance = unsafe{
-                    self.graph
-                        .vertices
-                        .get_unchecked(i)
-                        .distance(self.graph.vertices.get_unchecked(j))
-                };
-                let prob = self.f * 
-                    (1.0 + self.sqrt_n_pi * distance / self.alpha)
-                    .powf(-self.alpha);
+                let prob = self.prob_unchecked(i, j);
                 if self.rng.gen::<f64>() <= prob {
                     // in these circumstances equivalent to 
                     // self.graph.add_edge(i, j).unwrap();
@@ -96,6 +104,86 @@ where   T: Node + SerdeStateConform,
                     self.graph.edge_count += 1;
                 }
             }
+        }
+    }
+}
+
+/// # Returned by markov steps
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub enum SpacialStep {
+    /// nothing was changed
+    Nothing,
+    /// an edge was added
+    AddedEdge((usize, usize)),
+    /// an edge was removed
+    RemovedEdge((usize, usize)),
+
+    /// an error occured. Did you try to remove steps in the wrong order?
+    Error,
+}
+
+impl<T, R> MarkovChain<SpacialStep, SpacialStep> for 
+    SpacialEnsemble<T, R>
+where 
+    T: Node,
+    R: Rng,
+{
+    fn m_step(&mut self) -> SpacialStep {
+        let edge = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
+        let prob = self.prob_unchecked(edge.0, edge.1);
+        if self.rng.gen::<f64>() <= prob {
+            let success = self.graph.add_edge(edge.0, edge.1);
+            match success{
+                Ok(_) => SpacialStep::AddedEdge(edge),
+                Err(_) => SpacialStep::Nothing,
+            }
+        } else {
+            let success =  self.graph.remove_edge(edge.0, edge.1);
+            match success {
+                Ok(_)  => SpacialStep::RemovedEdge(edge),
+                Err(_) => SpacialStep::Nothing,
+            }
+        }
+    }
+
+    fn undo_step(&mut self, step: SpacialStep) -> SpacialStep {
+        match step {
+            SpacialStep::AddedEdge(edge) => {
+                let res = self.graph
+                    .remove_edge(edge.0, edge.1);
+                match res {
+                    Ok(_) => SpacialStep::RemovedEdge(edge),
+                    _ => SpacialStep::Error,
+                }
+            },
+            SpacialStep::RemovedEdge(edge) => {
+                let res = self.graph
+                    .add_edge(edge.0, edge.1);
+                match res {
+                    Ok(_) => SpacialStep::AddedEdge(edge),
+                    _ => SpacialStep::Error,
+                }
+            },
+            SpacialStep::Nothing | SpacialStep::Error => step,
+            
+        }
+    }
+
+    fn undo_step_quiet(&mut self, step: SpacialStep) {
+        match step {
+            SpacialStep::AddedEdge(edge) =>
+            {
+                self.graph.remove_edge(edge.0, edge.1)
+                    .expect("tried to remove non existing edge!");
+            },
+            SpacialStep::RemovedEdge(edge) => {
+                self.graph
+                    .add_edge(edge.0, edge.1)
+                    .expect("Tried to add existing edge!");
+            },
+            SpacialStep::Nothing => (),
+            SpacialStep::Error => unreachable!("You tried to undo an error! MarcovChain undo_step_quiet")
         }
     }
 }
