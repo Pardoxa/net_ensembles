@@ -2,11 +2,16 @@ use crate::*;
 use er_c::draw_two_from_range;
 use crate::spacial::*;
 use rand::Rng;
-use std::f64::consts::PI;
+use std::{io::Write,f64::consts::PI};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
+
+/// # Implements a special Ensemble
+///
+/// * You can generate a dot file which includes special information.
+/// * **NOTE** You should use **neato** for that to work 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SpacialEnsemble<T, R> 
@@ -147,6 +152,18 @@ where
         }
     }
 
+    fn m_steps_quiet(&mut self, count: usize) {
+        for _ in 0..count {
+            let (i, j) = draw_two_from_range(&mut self.rng, self.graph.vertex_count());
+            let prob = self.prob_unchecked(i, j);
+            if self.rng.gen::<f64>() <= prob {
+                let _ = self.graph.add_edge(i, j);
+            } else {
+                let _ =  self.graph.remove_edge(i, j);
+            }
+        }
+    }
+
     fn undo_step(&mut self, step: SpacialStep) -> SpacialStep {
         match step {
             SpacialStep::AddedEdge(edge) => {
@@ -170,6 +187,8 @@ where
         }
     }
 
+    /// * panics if `step` is error, or cannot be undone
+    /// The latter means, you are undoing the steps in the wrong order
     fn undo_step_quiet(&mut self, step: SpacialStep) {
         match step {
             SpacialStep::AddedEdge(edge) =>
@@ -185,5 +204,49 @@ where
             SpacialStep::Nothing => (),
             SpacialStep::Error => unreachable!("You tried to undo an error! MarcovChain undo_step_quiet")
         }
+    }
+}
+
+/// You should use **neato** if you want the correct spacial placement of nodes
+impl<T, R> Dot for SpacialEnsemble<T, R>
+where T: Node
+{
+    fn dot_from_indices<F, W, S1, S2>(&self, writer: W, dot_options: S1, mut f: F) -> Result<(), std::io::Error>
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        W: Write,
+        F: FnMut(usize) -> S2 
+    {
+        self.graph.dot_from_indices(
+            writer,
+            dot_options,
+            |index| {
+                format!(
+                    "{}\" pos=\"{:.2},{:.2}!",
+                    f(index).as_ref(),
+                    self.graph.container(index).x * 100.0,
+                    100.0 * self.graph.container(index).y
+                )
+            }
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand_pcg::Pcg64;
+    use rand::SeedableRng;
+    use std::fs::*;
+    #[test]
+    fn spacial_print() {
+        let rng = Pcg64::seed_from_u64(12232);
+        let mut e = SpacialEnsemble::<EmptyNode, _>::new(50, rng, 0.95, 3.0);
+        
+        e.m_steps_quiet(2000);
+        let f = File::create("Spacial.dot")
+            .unwrap();
+        e.dot(f, "").unwrap();
     }
 }

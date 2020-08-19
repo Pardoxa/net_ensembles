@@ -12,7 +12,7 @@ use std::io::Write;
 pub trait DotExtra<T, A>{
 
     /// * create a dot representation
-    /// * you can use the indices and the container `A` (usually stored at for_each
+    /// * you can use the indices and the container `A` (usually stored at each
     ///     index) to create the lables
     fn dot_from_container_index<F, S1, S2, W>(&self, writer: W, dot_options: S1, f: F)
         -> Result<(), std::io::Error>
@@ -152,19 +152,19 @@ pub trait Dot {
     /// * for valid `dot_options` use `dot_options!` macro and take a look at module `dot_constants`
     fn dot_from_indices<F, W, S1, S2>(&self, writer: W, dot_options: S1, f: F)
         -> Result<(), std::io::Error>
-        where
-            S1: AsRef<str>,
-            S2: AsRef<str>,
-            W: Write,
-            F: FnMut(usize) -> S2;
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        W: Write,
+        F: FnMut(usize) -> S2;
 
     /// * same as `self.dot_from_indices` but returns String instead
     fn dot_string_from_indices<F, S1, S2>(&self, dot_options: S1, f: F)
         -> String
-        where
-            S1: AsRef<str>,
-            S2: AsRef<str>,
-            F: FnMut(usize) -> S2
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        F: FnMut(usize) -> S2
     {
         let mut s = Vec::new();
         self.dot_from_indices(
@@ -177,10 +177,13 @@ pub trait Dot {
 
     /// * use index as labels for the nodes
     /// * default implementation uses `dot_from_indices`
-    fn dot_with_indices<S, W>(&self, writer: W, dot_options: S) -> Result<(), std::io::Error>
-        where
-            S: AsRef<str>,
-            W: Write
+    fn dot_with_indices<S, W>(
+        &self, writer: W,
+        dot_options: S
+    ) -> Result<(), std::io::Error>
+    where
+        S: AsRef<str>,
+        W: Write
     {
         self.dot_from_indices(
             writer,

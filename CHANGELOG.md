@@ -23,6 +23,9 @@
 * adding ConfigurationModel - work in progress
 * adding SpacialEnsmeble - work in progress
 * moved `sort_adj`to `WithGraph`trait
+* `ErEnsembleC`: removed `R: Rng` trait bound for struct, added `Dot` trait
+* `ErEnsembleM`: removed `R: Rng` trait bound for struct, added `Dot` trait
+* `SwEnsemble`: removed `R: Rng` trait bound for struct, added `Dot` trait
 
 ### traits
 * WithGraph now has `sort_adj()` member

@@ -10,6 +10,7 @@
 use crate::{traits::*, iter::*, graph::*};
 use std::borrow::Borrow;
 use std::convert::AsRef;
+use std::io::Write;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -65,8 +66,7 @@ impl ErStepC {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ErEnsembleC<T, R>
-where T: Node,
-      R: rand::Rng
+where T: Node
 {
     graph: Graph<T>,
     prob: f64,
@@ -409,5 +409,62 @@ mod testing {
             let (first, second) = draw_two_from_range(&mut rng, i);
             assert!(first != second);
         }
+    }
+}
+
+
+impl<T, R> Dot for ErEnsembleC<T, R>
+where T: Node
+{
+    fn dot_from_indices<F, W, S1, S2>(&self, writer: W, dot_options: S1, f: F)
+        -> Result<(), std::io::Error>
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        W: Write,
+        F: FnMut(usize) -> S2 {
+        self.graph
+            .dot_from_indices(writer, dot_options, f)
+    }
+
+    fn dot<S, W>(&self, writer: W, dot_options: S) -> Result<(), std::io::Error>
+    where
+        S: AsRef<str>,
+        W: Write {
+        self.graph
+            .dot(writer, dot_options)
+    }
+
+    fn dot_string<S>(&self, dot_options: S) -> String
+    where
+        S: AsRef<str> {
+        self.graph.dot_string(dot_options)
+    }
+
+    fn dot_string_from_indices<F, S1, S2>(&self, dot_options: S1, f: F) -> String
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        F: FnMut(usize) -> S2 {
+        self.graph
+            .dot_string_from_indices(dot_options, f)
+    }
+
+    fn dot_string_with_indices<S>(&self, dot_options: S) -> String
+    where
+        S: AsRef<str> {
+        self.graph
+            .dot_string_with_indices(dot_options)
+    }
+
+    fn dot_with_indices<S, W>(
+            &self, writer: W,
+            dot_options: S
+        ) -> Result<(), std::io::Error>
+    where
+        S: AsRef<str>,
+        W: Write {
+        self.graph
+            .dot_with_indices(writer, dot_options)
     }
 }

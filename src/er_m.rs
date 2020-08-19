@@ -11,6 +11,7 @@ use crate::{graph::*, iter::*, traits::*};
 use rand::seq::SliceRandom;
 use std::borrow::Borrow;
 use std::convert::AsRef;
+use std::io::Write;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -84,9 +85,7 @@ impl ErStepM{
 ///
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct ErEnsembleM<T: Node, R: rand::Rng>
-where T: Node,
-      R: rand::Rng
+pub struct ErEnsembleM<T: Node, R>
 {
     graph: Graph<T>,
     m: usize,
@@ -330,5 +329,61 @@ where   T: Node + SerdeStateConform,
     /// * is called for each adjecency list, i.e., `self.vertex_count()` times
     fn sort_adj(&mut self) {
         self.graph_mut().sort_adj();
+    }
+}
+
+impl<T, R> Dot for ErEnsembleM<T, R>
+where T: Node
+{
+    fn dot_from_indices<F, W, S1, S2>(&self, writer: W, dot_options: S1, f: F)
+        -> Result<(), std::io::Error>
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        W: Write,
+        F: FnMut(usize) -> S2 {
+        self.graph
+            .dot_from_indices(writer, dot_options, f)
+    }
+
+    fn dot<S, W>(&self, writer: W, dot_options: S) -> Result<(), std::io::Error>
+    where
+        S: AsRef<str>,
+        W: Write {
+        self.graph
+            .dot(writer, dot_options)
+    }
+
+    fn dot_string<S>(&self, dot_options: S) -> String
+    where
+        S: AsRef<str> {
+        self.graph.dot_string(dot_options)
+    }
+
+    fn dot_string_from_indices<F, S1, S2>(&self, dot_options: S1, f: F) -> String
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        F: FnMut(usize) -> S2 {
+        self.graph
+            .dot_string_from_indices(dot_options, f)
+    }
+
+    fn dot_string_with_indices<S>(&self, dot_options: S) -> String
+    where
+        S: AsRef<str> {
+        self.graph
+            .dot_string_with_indices(dot_options)
+    }
+
+    fn dot_with_indices<S, W>(
+            &self, writer: W,
+            dot_options: S
+        ) -> Result<(), std::io::Error>
+    where
+        S: AsRef<str>,
+        W: Write {
+        self.graph
+            .dot_with_indices(writer, dot_options)
     }
 }

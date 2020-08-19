@@ -14,7 +14,7 @@
 //! > D. J. Watts and S. H. Strogatz, "Collective dynamics on 'small-world' networks,"
 //!   Nature **393**, 440-442 (1998), DOI:&nbsp;[10.1038/30918](https://doi.org/10.1038/30918)
 use crate::{traits::*, sw_graph::*, iter::*};
-use std::borrow::Borrow;
+use std::{borrow::Borrow, io::Write};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -204,9 +204,7 @@ impl SwChangeState {
 ///
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct SwEnsemble<T: Node, R: rand::Rng>
-where T: Node,
-      R: rand::Rng
+pub struct SwEnsemble<T: Node, R>
 {
     graph: SwGraph<T>,
     r_prob: f64,
@@ -579,4 +577,61 @@ mod tests {
     }
 
 
+}
+
+
+impl<T, R> Dot for SwEnsemble<T, R>
+where T: Node
+{
+    fn dot_from_indices<F, W, S1, S2>(&self, writer: W, dot_options: S1, f: F)
+        -> Result<(), std::io::Error>
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        W: Write,
+        F: FnMut(usize) -> S2 {
+        self.graph
+            .dot_from_indices(writer, dot_options, f)
+    }
+
+    fn dot<S, W>(&self, writer: W, dot_options: S) -> Result<(), std::io::Error>
+    where
+        S: AsRef<str>,
+        W: Write {
+        self.graph
+            .dot(writer, dot_options)
+    }
+
+    fn dot_string<S>(&self, dot_options: S) -> String
+    where
+        S: AsRef<str> {
+        self.graph.dot_string(dot_options)
+    }
+
+    fn dot_string_from_indices<F, S1, S2>(&self, dot_options: S1, f: F) -> String
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+        F: FnMut(usize) -> S2 {
+        self.graph
+            .dot_string_from_indices(dot_options, f)
+    }
+
+    fn dot_string_with_indices<S>(&self, dot_options: S) -> String
+    where
+        S: AsRef<str> {
+        self.graph
+            .dot_string_with_indices(dot_options)
+    }
+
+    fn dot_with_indices<S, W>(
+            &self, writer: W,
+            dot_options: S
+        ) -> Result<(), std::io::Error>
+    where
+        S: AsRef<str>,
+        W: Write {
+        self.graph
+            .dot_with_indices(writer, dot_options)
+    }
 }
