@@ -25,7 +25,7 @@ use serde::{Serialize, Deserialize};
 /// > Phys.&nbsp;Rev.&nbsp;Lett.&nbsp;**86**, 2050–2053 (2001), DOI&nbsp;[10.1103/PhysRevLett.86.2050](https://doi.org/10.1103/PhysRevLett.86.2050)
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct WangLandauAdaptive<Hist, R, E, S, Res, T>
+pub struct WangLandauAdaptive<Hist, R, E, S, Res, Energy>
 {
     pub(crate) rng: R,
     pub(crate) samples_per_trial: usize,
@@ -47,25 +47,28 @@ pub struct WangLandauAdaptive<Hist, R, E, S, Res, T>
     pub(crate) step_count: usize,
     pub(crate) histogram: Hist,
     pub(crate) log_density: Vec<f64>,
-    pub(crate) old_energy: Option<T>,
+    pub(crate) old_energy: Option<Energy>,
     pub(crate) old_bin: Option<usize>,
     mode: WangLandauMode,
     pub(crate) check_refine_every: usize,
 }
 
-impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
+
+impl<R, E, S, Res, Hist, T> WangLandau for WangLandauAdaptive<Hist, R, E, S, Res, T>
 {
-    /// returns currently set threshold
-    #[inline]
-    pub fn log_f_threshold(&self) -> f64
+    #[inline(always)]
+    fn log_f(&self) -> f64
+    {
+        self.log_f
+    }
+
+    #[inline(always)]
+    fn log_f_threshold(&self) -> f64
     {
         self.log_f_threshold
     }
 
-    /// Try to set the threshold. 
-    /// * `log_f_threshold > 0.0` has to be true
-    /// * `log_f_threshold` has to be finite
-    pub fn set_log_f_threshold(&mut self, log_f_threshold: f64) -> Result<f64, WangLandauErrors>
+    fn set_log_f_threshold(&mut self, log_f_threshold: f64) -> Result<f64, WangLandauErrors>
     {
         if !log_f_threshold.is_finite() || log_f_threshold.is_sign_negative() {
             return Err(WangLandauErrors::InvalidLogFThreshold);
@@ -75,37 +78,55 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
         Ok(old_threshold)
     }
 
-    /// get current value of log_f
-    #[inline]
-    pub fn log_f(&self) -> f64
-    {
-        self.log_f
-    }
-
-    /// # Current (non normalized) estimate of ln(P(E))
-    /// * i.e., of the natural logarithm of the 
-    /// probability density function
-    /// for the requested interval
-    /// * this is what we are doing the simulations for
-    #[inline]
-    pub fn log_density(&self) -> &Vec<f64>
+    #[inline(always)]
+    fn log_density(&self) -> &Vec<f64>
     {
         &self.log_density
     }
 
-    /// Returns current wang landau mode
-    pub fn mode(&self) -> WangLandauMode
+    #[inline(always)]
+    fn mode(&self) -> WangLandauMode
     {
         self.mode
     }
 
-    /// # Counter
-    /// how many wang Landau steps were performed until now?
-    #[inline]
-    pub fn step_count(&self) -> usize
+    #[inline(always)]
+    fn step_counter(&self) -> usize
     {
         self.step_count
     }
+}
+
+impl<R, E, S, Res, Hist, T> WangLandauEnsemble<E> 
+    for WangLandauAdaptive<Hist, R, E, S, Res, T>
+{
+    #[inline(always)]
+    fn ensemble(&self) -> &E
+    {
+        &self.ensemble
+    }
+}
+
+impl<R, E, S, Res, Hist, Energy> WangLandauEnergy<Energy> 
+    for WangLandauAdaptive<Hist, R, E, S, Res, Energy>
+{
+    #[inline(always)]
+    fn energy(&self) -> Option<&Energy> {
+        self.old_energy.as_ref()
+    }
+}
+
+impl<R, E, S, Res, Hist, Energy> WangLandauHist<Hist>
+    for WangLandauAdaptive<Hist, R, E, S, Res, Energy>
+{
+    #[inline(always)]
+    fn hist(&self) -> &Hist {
+        &self.histogram
+    }
+}
+
+impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
+{
 
     /// # Smallest possible markov step (`m_steps` of MarkovChain trait) tried by wang landau step
     #[inline]
@@ -140,20 +161,6 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
         } else {
             frac
         }
-    }
-
-    /// access the current state of your ensemble
-    pub fn ensemble(&self) -> &E
-    {
-        &self.ensemble
-    }
-
-    /// # returns current histogram
-    /// * **Note**: histogram will be reset multiple times during the simulation
-    /// * please refere to the [papers](struct.WangLandauAdaptive.html#adaptive-wanglandau-1t)
-    pub fn hist(&self) -> &Hist
-    {
-        &self.histogram
     }
 
     fn statistic_bin_not_hit(&self) -> bool
@@ -200,29 +207,14 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
         }
     }
 
-    /// # Energy of last valid step
-    /// * Energy of the last current step.
-    /// * this should always be equal to the current energy
-    /// * `None` if none of the `self.init*` members was called yet
-    pub fn get_old_energy(&self) -> &Option<T>
-    {
-        &self.old_energy
-    }
-
 
     /// **panics** if index is invalid
     fn metropolis_acception_prob(&self, old_bin: usize, new_bin: usize) -> f64
     {
-        1.0f64.min(
-            (self.log_density[old_bin] - self.log_density[new_bin])
-                .exp()
-        )
-    }
-
-    /// # Checks wang landau threshold
-    /// * `log_f <= log_f_threshold`
-    pub fn is_converged(&self) -> bool {
-        self.log_f <= self.log_f_threshold
+        
+        (self.log_density[old_bin] - self.log_density[new_bin])
+            .exp()
+        
     }
     
 }
@@ -232,11 +224,7 @@ where R: Rng,
     E: MarkovChain<S, Res>,
     Hist: Histogram + HistogramVal<T>
 {
-    fn log_f_1_t(&self) -> f64 
-    {
-        self.hist().bin_count() as f64 / self.step_count as f64
-    }
-
+    
     fn reset_statistics(&mut self)
     {
         self.best_of_steps.clear();
@@ -344,7 +332,6 @@ where R: Rng,
                 if self.step_count % adjust == 0 {
                     self.adjust_bestof();
                 }
-                return;
             },
             WangLandauMode::RefineOriginal => {
                 if self.step_count % self.check_refine_every == 0 && !self.histogram.any_bin_zero() {
@@ -356,6 +343,7 @@ where R: Rng,
                     } else {
                         self.reset_statistics();
                     }
+                    self.histogram.reset();
                 }
             }
         }
@@ -405,7 +393,8 @@ where R: Rng,
         else if !log_f_threshold.is_finite() || log_f_threshold.is_sign_negative() 
         {
             return Err(WangLandauErrors::InvalidLogFThreshold);
-        }else if check_refine_every == 0 {
+        }
+        else if check_refine_every == 0 {
             return Err(WangLandauErrors::CheckRefineEvery0)
         }
         if !best_of_threshold.is_finite(){
@@ -521,10 +510,9 @@ where R: Rng,
 
     fn old_energy_clone(&self) -> T {
         self.old_energy
-        .iter()
-        .cloned()
-        .next()
-        .unwrap()
+            .as_ref()
+            .unwrap()
+            .clone()
     }
 
     fn greedy_helper<F, H, J>(
@@ -532,7 +520,7 @@ where R: Rng,
         old_distance: &mut J,
         energy_fn: F,
         distance_fn: H
-    )   where F: Fn(&mut E) -> Option<T> + Copy,
+    )   where F: Fn(&mut E) -> Option<T>,
             H: Fn(&Hist, T) -> J,
             J: PartialOrd
     {
@@ -580,13 +568,19 @@ where R: Rng,
         energy_fn: F,
         step_limit: Option<u64>
     ) -> Result<(), WangLandauErrors>
-    where F: Fn(&mut E) -> Option<T> + Copy,
+    where F: Fn(&mut E) -> Option<T>,
         Hist: HistogramIntervalDistance<T>,
         U: One + Bounded + WrappingAdd + Eq + PartialOrd
     {
         let overlap = overlap.max(1);
-        self.init(energy_fn, step_limit)?;
-        if self.histogram.is_inside(self.old_energy_clone()){
+        self.init(&energy_fn, step_limit)?;
+        if self.histogram
+            .is_inside(
+                self.old_energy
+                    .as_ref()
+                    .unwrap()
+            )
+        {
             self.end_init();
             return Ok(());
         }    
@@ -608,7 +602,7 @@ where R: Rng,
             if counter < mid {
                 self.greedy_helper(
                     &mut old_dist,
-                    energy_fn,
+                    &energy_fn,
                     Hist::distance
                 );
                 if old_dist == 0.0 {
@@ -617,7 +611,7 @@ where R: Rng,
             } else {
                 self.greedy_helper(
                     &mut old_dist_interval,
-                    energy_fn,
+                    &energy_fn,
                     dist_interval
                 );
                 if old_dist_interval == 0 {
@@ -656,15 +650,15 @@ where R: Rng,
         energy_fn: F,
         step_limit: Option<u64>,
     ) -> Result<(), WangLandauErrors>
-    where F: Fn(&mut E) -> Option<T> + Copy,
+    where F: Fn(&mut E) -> Option<T>,
         Hist: HistogramIntervalDistance<T>
     {
         let overlap = overlap.max(1);
-        self.init(energy_fn, step_limit)?;
+        self.init(&energy_fn, step_limit)?;
         let mut old_dist = self.histogram
             .interval_distance_overlap(
                 self.old_energy_clone(),
-                3
+                overlap
             );
         
         let dist = |h: &Hist, val: T| h.interval_distance_overlap(val, overlap);
@@ -672,7 +666,7 @@ where R: Rng,
         while old_dist != 0 {
             self.greedy_helper(
                 &mut old_dist,
-                energy_fn,
+                &energy_fn,
                 dist
             );
             if let Some(limit) = step_limit {
@@ -705,16 +699,16 @@ where R: Rng,
         energy_fn: F,
         step_limit: Option<u64>,
     ) -> Result<(), WangLandauErrors>
-    where F: Fn(&mut E) -> Option<T> + Copy,
+    where F: Fn(&mut E) -> Option<T>,
     {
-        self.init(energy_fn, step_limit)?;
+        self.init(&energy_fn, step_limit)?;
         let mut old_distance = self.histogram
             .distance(self.old_energy_clone());
         let mut step_count = 0;
         while old_distance != 0.0 {
             self.greedy_helper(
                 &mut old_distance,
-                energy_fn,
+                &energy_fn,
                 Hist::distance
             );
             if let Some(limit) = step_limit {
@@ -808,7 +802,7 @@ where R: Rng,
                     self.count_rejected(step_size);
                     self.ensemble.undo_steps_quiet(steps);
                 } else {
-                    // reject step
+                    // accept step
                     self.count_accepted(step_size);
                     
                     self.old_energy = Some(current_energy);

@@ -69,17 +69,17 @@ where T: Float + PartialOrd + FromPrimitive {
 
 impl<T> Histogram for HistogramFloat<T>
 {
-    #[inline]
+    #[inline(always)]
     fn bin_count(&self) -> usize {
         self.hist.len()
     }
 
-    #[inline]
+    #[inline(always)]
     fn hist(&self) -> &Vec<usize> {
         &self.hist
     }
 
-    #[inline]
+    #[inline(always)]
     fn count_index(&mut self, index: usize) -> Result<(), HistErrors> {
         if index < self.hist.len()
         {
