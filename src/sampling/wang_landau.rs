@@ -1,6 +1,6 @@
-mod wang_landau;
+mod wang_landau_adaptive;
 mod helper;
 
 
-pub use wang_landau::*;
+pub use wang_landau_adaptive::*;
 pub use helper::*;
