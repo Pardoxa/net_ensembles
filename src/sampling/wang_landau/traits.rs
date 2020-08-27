@@ -30,6 +30,32 @@ pub trait WangLandau
     /// for the requested interval
     /// * this is what we are doing the simulations for
     fn log_density(&self) -> &Vec<f64>;
+
+    /// # Current (non normalized) estimate of log10(P(E))
+    /// * i.e., of logarithm with base 10 of the 
+    /// probability density function
+    /// for the requested interval
+    /// * this is what we are doing the simulations for
+    fn log_density_base10(&self) -> Vec<f64>{
+        let factor = std::f64::consts::E.log10();
+        self.log_density()
+            .iter()
+            .map(|val| val * factor)
+            .collect()
+    }
+
+    /// # Current (non normalized) estimate of log10(P(E))
+    /// * i.e., of logarithm with arbitrary base of the 
+    /// probability density function
+    /// for the requested interval
+    /// * this is what we are doing the simulations for
+    fn log_density_base(&self, base: f64) -> Vec<f64>{
+        let factor = std::f64::consts::E.log(base);
+        self.log_density()
+            .iter()
+            .map(|val| val * factor)
+            .collect()
+    }
     
     /// # Returns current wang landau mode
     /// * see `WangLandauMode` for an explaination
