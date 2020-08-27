@@ -194,7 +194,7 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
 
     /// Is the simulation in the process of rebuilding the statistics,
     /// i.e., is it currently trying many differnt step sizes?
-    #[inline]
+    #[inline(always)]
     pub fn is_rebuilding_statistics(&self) -> bool
     {
         self.counter < self.trial_list.len()
@@ -330,6 +330,7 @@ where R: Rng,
     fn generate_bestof(&mut self)
     {
         let statistics = self.estimate_statistics().unwrap();
+        
         let mut heap = BinaryHeap::with_capacity(statistics.len());
         heap.extend(statistics.into_iter()
             .enumerate()
@@ -378,8 +379,9 @@ where R: Rng,
         match self.mode{
             WangLandauMode::Refine1T => {
                 self.log_f = self.log_f_1_t();
-                let adjust = 2000.max(4 * self.check_refine_every);
-                if self.step_count % adjust == 0 {
+                let adjust = self.trial_list.len()
+                    .max(self.check_refine_every);
+                if !self.is_rebuilding_statistics() && self.step_count % adjust == 0 {
                     self.adjust_bestof();
                 }
             },
