@@ -120,16 +120,7 @@ impl<Hist, R, E, S, Res, T> TryFrom<WangLandauAdaptive<Hist, R, E, S, Res, T>>
 }
 
 impl<Hist, R, E, S, Res, T> EntropicAdaptive<Hist, R, E, S, Res, T>
-where Hist: Histogram,
-    R: Rng
 {
-    /// # Creates EntropicAdaptive from a `WangLandauAdaptive` state
-    /// * `WangLandauAdaptive` state needs to be valid, i.e., you must have called one of the `init*` methods
-    /// - this ensures, that the members `old_energy` and `old_bin` are not `None`
-    pub fn from_wl(wl: WangLandauAdaptive<Hist, R, E, S, Res, T>) -> Result<Self, EntropicErrors>
-    {
-        wl.try_into()
-    }
 
     /// # Current state of the Ensemble
     #[inline]
@@ -240,6 +231,19 @@ where Hist: Histogram,
     pub fn hist(&self) -> &Hist
     {
         &self.histogram
+    }
+}
+impl<Hist, R, E, S, Res, T> EntropicAdaptive<Hist, R, E, S, Res, T>
+where Hist: Histogram,
+    R: Rng
+{
+
+    /// # Creates EntropicAdaptive from a `WangLandauAdaptive` state
+    /// * `WangLandauAdaptive` state needs to be valid, i.e., you must have called one of the `init*` methods
+    /// - this ensures, that the members `old_energy` and `old_bin` are not `None`
+    pub fn from_wl(wl: WangLandauAdaptive<Hist, R, E, S, Res, T>) -> Result<Self, EntropicErrors>
+    {
+        wl.try_into()
     }
 
     /// calculates the (non normalized) log_density estimate log(P(E)) according to the [paper](#entropic-sampling-made-easy)

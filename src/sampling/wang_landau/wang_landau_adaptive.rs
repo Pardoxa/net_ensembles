@@ -1,5 +1,5 @@
 use crate::{rand::{Rng, seq::*}, *};
-use std::{marker::PhantomData, iter::*};
+use std::{marker::PhantomData, iter::*, io::Write};
 use crate::sampling::*;
 use std::{collections::*, cmp::*};
 use num_traits::{Bounded, ops::wrapping::*, identities::*};
@@ -95,6 +95,38 @@ impl<R, E, S, Res, Hist, T> WangLandau for WangLandauAdaptive<Hist, R, E, S, Res
     {
         self.step_count
     }
+
+    fn write_log<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
+        writeln!(writer,
+            "#Acceptance prob_total: {}\n#Acceptance prob current: {}\n#total_steps: {}\n#log_f: {:e}\n#Current_mode {:?}",
+            self.fraction_accepted_total(),
+            self.fraction_accepted_current(),
+            self.step_counter(),
+            self.log_f(),
+            self.mode
+        )?;
+
+        write!(writer, "#Current acception histogram:")?;
+        for val in self.accepted_step_hist.iter()
+        {
+            write!(writer, " {}", val)?;
+        }
+
+        write!(writer, "\n#Current rejection histogram:")?;
+        for val in self.rejected_step_hist.iter()
+        {
+            write!(writer, " {}", val)?;
+        }
+
+        write!(writer, "\n#Current_Bestof:")?;
+        for val in self.best_of_steps.iter()
+        {
+            write!(writer, " {}", val)?;
+        }
+
+        writeln!(writer, "\n#bestof threshold: {}", self.best_of_threshold)?;
+        writeln!(writer, "#min_bestof_count: {}", self.min_best_of_count)
+    }
 }
 
 impl<R, E, S, Res, Hist, T> WangLandauEnsemble<E> 
@@ -160,6 +192,36 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
             1.0
         } else {
             frac
+        }
+    }
+
+    /// # total_steps_accepted / total_steps 
+    pub fn fraction_accepted_total(&self) -> f64 {
+        let total_acc = self.total_steps_accepted 
+            + self.accepted_step_hist
+                .iter()
+                .sum::<usize>();
+        let total_steps = total_acc + self.total_steps_rejected 
+            + self.rejected_step_hist
+                .iter()
+                .sum::<usize>();
+
+        if total_steps == 0 {
+            f64::NAN
+        } else {
+            total_acc as f64 / total_steps as f64
+        }
+    }
+
+    /// # Fraction of steps accepted since the statistics were reset the last time
+    /// * (steps accepted since last reset) / (steps since last reset)
+    pub fn fraction_accepted_current(&self) -> f64 {
+        let accepted: usize = self.accepted_step_hist.iter().sum();
+        let total = accepted + self.rejected_step_hist.iter().sum::<usize>();
+        if total == 0 {
+            f64::NAN
+        } else {
+            accepted as f64 / total as f64
         }
     }
 
@@ -240,36 +302,6 @@ where R: Rng,
             .for_each(|entry| *entry = 0);
 
         self.counter = 0;
-    }
-
-    /// # total_steps_accepted / total_steps 
-    pub fn fraction_accepted_total(&self) -> f64 {
-        let total_acc = self.total_steps_accepted 
-            + self.accepted_step_hist
-                .iter()
-                .sum::<usize>();
-        let total_steps = total_acc + self.total_steps_rejected 
-            + self.rejected_step_hist
-                .iter()
-                .sum::<usize>();
-
-        if total_steps == 0 {
-            f64::NAN
-        } else {
-            total_acc as f64 / total_steps as f64
-        }
-    }
-
-    /// # Fraction of steps accepted since the statistics were reset the last time
-    /// * (steps accepted since last reset) / (steps since last reset)
-    pub fn fraction_accepted_current(&self) -> f64 {
-        let accepted: usize = self.accepted_step_hist.iter().sum();
-        let total = accepted + self.rejected_step_hist.iter().sum::<usize>();
-        if total == 0 {
-            f64::NAN
-        } else {
-            accepted as f64 / total as f64
-        }
     }
 
     fn adjust_bestof(&mut self){

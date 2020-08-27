@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, io::Write};
 use crate::sampling::*;
 use crate::{rand::Rng, *};
 use num_traits::{Bounded, ops::wrapping::*, identities::*};
@@ -6,6 +6,15 @@ use num_traits::{Bounded, ops::wrapping::*, identities::*};
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
+/// # The 1/t Wang Landau approach comes from this paper
+/// > R. E. Belardinelli and V. D. Pereyra,
+/// > Fast algorithm to calculate density of states,”
+/// > Phys.&nbsp;Rev.&nbsp;E&nbsp;**75**: 046701 (2007), DOI&nbsp;[10.1103/PhysRevE.75.046701](https://doi.org/10.1103/PhysRevE.75.046701)
+/// 
+/// * The original Wang Landau algorithim comes from this paper
+/// > F. Wang and D. P. Landau,
+/// > “Efficient, multiple-range random walk algorithm to calculate the density of states,” 
+/// > Phys.&nbsp;Rev.&nbsp;Lett.&nbsp;**86**, 2050–2053 (2001), DOI&nbsp;[10.1103/PhysRevLett.86.2050](https://doi.org/10.1103/PhysRevLett.86.2050)
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct WangLandau1T<Hist, Rng, Ensemble, S, Res, Energy>{
@@ -61,6 +70,17 @@ impl<Hist, R, E, S, Res, Energy> WangLandau
         &self.log_density
     }
 
+    fn write_log<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
+        writeln!(writer,
+            "#Acceptance prob_total: {}\n#Acceptance prob current: {}\n#total_steps: {}\n#log_f: {:e}\n#Current_mode {:?}",
+            self.fraction_accepted_total(),
+            self.fraction_accepted_current(),
+            self.step_counter(),
+            self.log_f(),
+            self.mode
+        )
+    }
+
     #[inline(always)]
     fn mode(&self) -> WangLandauMode
     {
@@ -101,6 +121,28 @@ impl <Hist, R, E, S, Res, Energy> WangLandauHist<Hist>
         &self.hist   
     }
 }
+
+impl<Hist, R, E, S, Res, Energy> 
+    WangLandau1T<Hist, R, E, S, Res, Energy>
+{
+    fn fraction_accepted_total(&self) -> f64
+    {
+        let sum = self.accepted_steps_total + self.recected_steps_total;
+        self.accepted_steps_total as f64 / sum as f64
+    }
+    
+    fn fraction_accepted_current(&self) -> f64
+    {
+        let total = self.accepted_steps_current + self.recected_steps_current;
+        if total == 0 {
+            f64::NAN
+        } else {
+            self.accepted_steps_current as f64 / total as f64
+        }
+    }
+}
+
+
 
 impl<Hist, R, E, S, Res, Energy> 
     WangLandau1T<Hist, R, E, S, Res, Energy>

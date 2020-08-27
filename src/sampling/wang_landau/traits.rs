@@ -1,5 +1,6 @@
 use crate::sampling::wang_landau::*;
 use crate::sampling::Histogram;
+use std::io::Write;
 /// # Traits for quantities that all Wang Landau simulations have
 /// * see also: `WangLandauHist`
 /// * this trait is for convinience, so that you do not have
@@ -44,7 +45,7 @@ pub trait WangLandau
             .collect()
     }
 
-    /// # Current (non normalized) estimate of log10(P(E))
+    /// # Current (non normalized) estimate of log_base(P(E))
     /// * i.e., of logarithm with arbitrary base of the 
     /// probability density function
     /// for the requested interval
@@ -56,6 +57,10 @@ pub trait WangLandau
             .map(|val| val * factor)
             .collect()
     }
+
+    /// Writes Information about the simulation to a file.
+    /// E.g. How many steps were performed.
+    fn write_log<W: Write>(&self, writer: W) -> Result<(), std::io::Error>;
     
     /// # Returns current wang landau mode
     /// * see `WangLandauMode` for an explaination
