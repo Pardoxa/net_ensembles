@@ -106,6 +106,9 @@ impl<R, E, S, Res, Hist, T> WangLandau for WangLandauAdaptive<Hist, R, E, S, Res
             self.mode
         )?;
 
+        writeln!(writer, "#min_step_size {}", self.min_step_size())?;
+        writeln!(writer, "#max_step_size {}", self.max_step_size())?;
+
         write!(writer, "#Current acception histogram:")?;
         for val in self.accepted_step_hist.iter()
         {
@@ -118,14 +121,29 @@ impl<R, E, S, Res, Hist, T> WangLandau for WangLandauAdaptive<Hist, R, E, S, Res
             write!(writer, " {}", val)?;
         }
 
+        writeln!(writer, "\n#bestof threshold: {}", self.best_of_threshold)?;
+        writeln!(writer, "#min_bestof_count: {}", self.min_best_of_count)?;
         write!(writer, "\n#Current_Bestof:")?;
+
         for val in self.best_of_steps.iter()
         {
             write!(writer, " {}", val)?;
         }
 
-        writeln!(writer, "\n#bestof threshold: {}", self.best_of_threshold)?;
-        writeln!(writer, "#min_bestof_count: {}", self.min_best_of_count)
+        write!(writer, "#current_statistics_estimate:")?;
+        let estimate = self.estimate_statistics();
+        match estimate {
+            Ok(estimate) => {
+                for val in estimate
+                {
+                    write!(writer, " {}", val)?;
+                }
+                writeln!(writer)
+            },
+            _ => {
+                writeln!(writer, " None")
+            }
+        }
     }
 }
 
