@@ -1,3 +1,3 @@
-mod entropic;
+mod entropic_adaptive;
 
-pub use entropic::*;
+pub use entropic_adaptive::*;
