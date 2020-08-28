@@ -200,6 +200,14 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
         self.counter < self.trial_list.len()
     }
 
+    /// Is the simulation has finished the process of rebuilding the statistics,
+    /// i.e., is it currently not trying many differnt step sizes
+    #[inline(always)]
+    pub fn finished_rebuilding_statistics(&self) -> bool
+    {
+        self.counter >= self.trial_list.len()
+    }
+
     /// # Tracks progress
     /// * tracks progress until `self.is_rebuilding_statistics` becomes false
     /// * returned value is always `0 <= val <= 1.0`
@@ -381,7 +389,7 @@ where R: Rng,
                 self.log_f = self.log_f_1_t();
                 let adjust = self.trial_list.len()
                     .max(self.check_refine_every);
-                if !self.is_rebuilding_statistics() && self.step_count % adjust == 0 {
+                if self.step_count % adjust == 0 && self.finished_rebuilding_statistics() {
                     self.adjust_bestof();
                 }
             },
