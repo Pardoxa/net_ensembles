@@ -70,6 +70,24 @@ pub trait HistogramIntervalDistance<T> {
 }
 
 
+
+/// # Your Interval is to large to sample in a resonable amound of time? No problem
+/// In WangLandau or EntropicSampling, you can split your interval
+/// in smaller, overlapping intervals and "glue" them together later on
+pub trait HistogramPartion: Sized
+{
+    /// # partition the interval
+    /// * returns Vector of `n` histograms, that together 
+    /// ## parameter
+    /// * `n` number of resulting intervals
+    /// * `overlap` How much overlap should there be?
+    /// ## To understand `overlap`, we have to look at the formula for the i_th interval in the result vector:
+    /// let `left` be the left border of `self` and `right` be the right border of self
+    /// * left border of interval i = left + i * (right - left) / (n + overlap)
+    /// * right border of interval i = left + (i + overlap) * (right - left) / (n + overlap)
+    fn overlapping_partition(&self, n: usize, overlap: usize) -> Result<Vec<Self>, HistErrors>;
+}
+
 /// Possible Errors of the traits `Histogram` and `HistogramVal`
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]

@@ -67,41 +67,45 @@ impl<T> HistogramFast<T>
 }
 
 
-impl<T> HistogramFast<T> 
-    where T: PrimInt + CheckedSub + ToPrimitive + CheckedAdd + One + FromPrimitive
-        + HasUnsignedVersion + Bounded,
-    T::Unsigned: Bounded + HasUnsignedVersion<LeBytes=T::LeBytes, Unsigned=T::Unsigned> 
-        + WrappingAdd + ToPrimitive + Sub<Output=T::Unsigned> + FromPrimitive + WrappingSub,
+impl<T> HistogramPartion for HistogramFast<T> 
+where T: PrimInt + CheckedSub + ToPrimitive + CheckedAdd + One + FromPrimitive
+    + HasUnsignedVersion + Bounded,
+T::Unsigned: Bounded + HasUnsignedVersion<LeBytes=T::LeBytes, Unsigned=T::Unsigned> 
+    + WrappingAdd + ToPrimitive + Sub<Output=T::Unsigned> + FromPrimitive + WrappingSub,
 {
-    /// 
-    pub fn overlapping_partition(&self, n: usize, overlap: usize) -> Vec<Self>
+    fn overlapping_partition(&self, n: usize, overlap: usize) -> Result<Vec<Self>, HistErrors>
     {
         let mut result = Vec::with_capacity(n);
         let size = self.hist.len() - 1;
         let denominator = n + overlap;
-        result.extend(
-            (0..n).map(
-                |c| 
-                {
-                    let left_distance = (c * size) / denominator;
+        for c in 0..n {
+            let left_distance = c.checked_mul(size)
+                .ok_or(HistErrors::Overflow)?
+                / denominator;
                     
-                    let left = to_u(self.left) + T::Unsigned::from_usize(left_distance)
-                        .unwrap();
-                    let right_distance = (c + overlap + 1) * size / denominator;
-                    
-                    let right = to_u(self.left) + T::Unsigned::from_usize(right_distance)
-                        .unwrap();
-                  
-                    let left = from_u(left);
-                    let right = from_u(right);
-                    Self::new_inclusive(left, right)
-                        .expect("should work?")
-                }
-            )
-        );
-        result
-    }
+            let left = to_u(self.left) + T::Unsigned::from_usize(left_distance)
+                .ok_or(HistErrors::CastError)?;
+            
+            let right_distance = (c + overlap + 1).checked_mul(size)
+                .ok_or(HistErrors::Overflow)?
+                / denominator;
+            
+            let right = to_u(self.left) + T::Unsigned::from_usize(right_distance)
+                .ok_or(HistErrors::CastError)?;
+            
+            let left = from_u(left);
+            let right = from_u(right);
 
+            result.push(Self::new_inclusive(left, right)?);
+            if result.last().unwrap()
+                .hist.len() == 0 
+            {
+                return Err(HistErrors::IntervalWidthZero);
+            }
+
+        }
+        Ok(result)
+    }
 }
 
 /// Histogram for binning `usize`- alias for `HistogramFast<usize>`
@@ -335,20 +339,23 @@ mod tests{
     fn partion_test()
     {
         let h = HistU8Fast::new_inclusive(0, u8::MAX).unwrap();
-        let h_part = h.overlapping_partition(2, 0);
+        let h_part = h.overlapping_partition(2, 0).unwrap();
         assert_eq!(h.left, h_part[0].left);
         assert_eq!(h.right, h_part.last().unwrap().right);
 
 
         let h = HistI8Fast::new_inclusive(i8::MIN, i8::MAX).unwrap();
-        let h_part = h.overlapping_partition(2, 0);
+        let h_part = h.overlapping_partition(2, 0).unwrap();
         assert_eq!(h.left, h_part[0].left);
         assert_eq!(h.right, h_part.last().unwrap().right);
 
         let h = HistI16Fast::new_inclusive(i16::MIN, i16::MAX).unwrap();
-        let h_part = h.overlapping_partition(2, 2);
+        let h_part = h.overlapping_partition(2, 2).unwrap();
         assert_eq!(h.left, h_part[0].left);
         assert_eq!(h.right, h_part.last().unwrap().right);
+
+
+        let _ = h.overlapping_partition(2000, 0).unwrap();
     }
 
 }

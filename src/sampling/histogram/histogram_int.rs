@@ -209,6 +209,7 @@ where T: Ord + Sub<T, Output=T> + Add<T, Output=T> + One + NumCast + Copy
     }
 }
 
+
 /// # Histogram for binning `usize` - alias for `HistogramInt<usize>`
 /// * you should use `HistUsizeFast` instead, if your bins are `[left, left+1,..., right]`
 pub type HistUsize = HistogramInt<usize>;
