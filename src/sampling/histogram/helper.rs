@@ -1,5 +1,5 @@
 use num_traits::{ops::wrapping::*, Bounded};
-
+use std::mem;
 
 /// Helper trait for efficient calculations in other implementations
 pub trait HasUnsignedVersion {
@@ -93,7 +93,7 @@ impl HasUnsignedVersion for u128 {
 
 impl HasUnsignedVersion for usize {
     type Unsigned = usize;
-    type LeBytes = [u8; 8];
+    type LeBytes = [u8; mem::size_of::<Self>()];
 
     #[inline(always)]
     fn to_le_bytes(self) -> Self::LeBytes {
@@ -183,7 +183,7 @@ impl HasUnsignedVersion for i128 {
 
 impl HasUnsignedVersion for isize {
     type Unsigned = usize;
-    type LeBytes = [u8; 8];
+    type LeBytes = [u8; mem::size_of::<Self>()];
 
     #[inline(always)]
     fn to_le_bytes(self) -> Self::LeBytes {
