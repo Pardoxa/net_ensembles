@@ -1,9 +1,18 @@
 use num_traits::{ops::wrapping::*, Bounded};
 
+
+/// Helper trait for efficient calculations in other implementations
 pub trait HasUnsignedVersion {
+    /// which unsigned type corresponds to this type?
     type Unsigned;
+    /// Type returned by `self.to_le_bytes()`. 
+    /// Depends on how many bytes are needed, to represent the number
     type LeBytes;
+
+    /// to little endian. See implementation for integers in the standard library
     fn to_le_bytes(self) -> Self::LeBytes;
+
+    /// from little endian. See implementation for integers in the standard library
     fn from_le_bytes(bytes: Self::LeBytes) -> Self;
 }
 

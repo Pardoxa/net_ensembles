@@ -152,6 +152,22 @@ where
     Energy: Clone,
     Hist: Histogram + HistogramVal<Energy>
 {
+    /// # Create a new WangLandau simulation
+    /// **IMPORTANT** You have to call one of the `init*` functions, 
+    /// to create a valid state, before you can start the simulation
+    /// ## Parameter
+    /// * `log_f_threshold`: how small should the ln(f) (see paper) become
+    /// until the simulation is finished?
+    /// * `ensemble`: The ensemble to explore. 
+    /// Current state of ensemble will be used as inital condition for the `init*` functions
+    /// * `step_size`: The markov steps will be performed with this step size, e.g., 
+    /// `ensemble.m_steps(step_size)`
+    /// * `histogram`: Provides the binning. You can either use one of the already implemented
+    /// histograms, like `HistU32Fast`, `HistU32`, `HistF64` etc. or implement your own by 
+    /// implementing the traits `Histogram + HistogramVal<Energy>` yourself
+    /// * `check_refine_every`: how often to check, if every bin in the histogram was hit.
+    /// Needs to be at least 1. Good values depend on the problem at hand, but if you are 
+    /// unsure, you can start with a value like 1000 
     pub fn new(
         log_f_threshold: f64,
         ensemble: E,

@@ -71,11 +71,18 @@ pub trait WangLandau
     fn step_counter(&self) -> usize;
 }
 
+
+/// # trait to request a reference to the current (state of the) ensemble 
+/// * See also [WangLandauEEH](trait.WangLandauEEH.html)
 pub trait WangLandauEnsemble<E> : WangLandau
 {
+    /// return reference to current state of ensemble
     fn ensemble(&self) -> &E;
 }
 
+/// # trait to request the current histogram from a WangLandau simulation
+/// * Note: The histogram will likely be reset multiple times during a simulation
+/// * See also [WangLandauEEH](trait.WangLandauEEH.html)
 pub trait WangLandauHist<Hist> : WangLandau
 {
     /// # returns current histogram
@@ -84,11 +91,17 @@ pub trait WangLandauHist<Hist> : WangLandau
     fn hist(&self) -> &Hist;
 }
 
+/// # trait to request the current energy from a WangLandau simulation
+/// * `None` if the energy was not calculated yet
+/// * See also [WangLandauEEH](trait.WangLandauEEH.html)
 pub trait WangLandauEnergy<Energy> : WangLandau
 {
+    /// returns the last accepted `Energy` calculated
+    /// `None` if no energy was calculated yet
     fn energy(&self) -> Option<&Energy>;
 }
 
+/// Helper trait, so that you have to type less
 pub trait WangLandauEEH<E, Hist, Energy> 
     : WangLandauEnergy<Energy> + WangLandauEnsemble<E>
         + WangLandauHist<Hist>{}

@@ -136,6 +136,8 @@ impl<T: Node> SpacialNodeContainer<T> {
     }
 }
 
+/// Type definiton for convinience. This is used to implement 
+/// the spacial ensemble
 pub type SpacialGraph<T> = GenericGraph<T, SpacialNodeContainer<T>>;
 
 

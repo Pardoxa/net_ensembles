@@ -6,7 +6,7 @@ use std::{borrow::*, ops::*};
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
-/// # Faster version of HistogramGeneric for Integers
+/// # Faster version of HistogramInt for Integers
 /// provided the bins should be: (left, left +1, ..., right - 1)
 /// then you should use this version!
 #[derive(Debug, Clone)]
