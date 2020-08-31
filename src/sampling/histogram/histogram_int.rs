@@ -28,7 +28,12 @@ impl<T> HistogramInt<T>
 where T: PartialOrd + ToPrimitive + FromPrimitive + CheckedAdd + One + HasUnsignedVersion + Bounded
         + Sub<T, Output=T> + Mul<T, Output=T> + Zero + Copy + std::fmt::Debug,
     std::ops::RangeInclusive<T>: Iterator<Item=T>,
-    T::Unsigned: Bounded + HasUnsignedVersion<LeBytes=T::LeBytes> + WrappingAdd + ToPrimitive + Sub<Output=T::Unsigned>
+    T::Unsigned: Bounded + HasUnsignedVersion<LeBytes=T::LeBytes, Unsigned=T::Unsigned> 
+        + WrappingAdd + ToPrimitive + Sub<Output=T::Unsigned>
+        + std::ops::Rem<Output=T::Unsigned> + FromPrimitive + Zero
+        + std::cmp::Eq + std::ops::Div<Output=T::Unsigned>
+        + Ord + std::ops::Mul<Output=T::Unsigned> + WrappingSub + Copy + std::fmt::Debug,
+    std::ops::RangeInclusive<T::Unsigned>: Iterator<Item=T::Unsigned>
 {
     /// # Create a new histogram
     /// * `right`: exclusive border
@@ -45,30 +50,29 @@ where T: PartialOrd + ToPrimitive + FromPrimitive + CheckedAdd + One + HasUnsign
         }
         let left_u = to_u(left);
         let right_u = to_u(right);
-        let border_difference = match (right_u - left_u).to_usize(){
+        let border_difference = right_u - left_u;
+        let b = match T::Unsigned::from_usize(bins)
+        {
             Some(val) => val,
-            None => return Err(HistErrors::UsizeCastError),
+            None => return Err(HistErrors::IntervalWidthZero),
         };
-        if border_difference % bins != 0 {
+        if border_difference % b != T::Unsigned::zero() {
             return Err(HistErrors::ModuloError);
         }
 
-        let bin_size = match T::from_usize(border_difference / bins){
-            Some(val) => val,
-            None => return Err(HistErrors::CastError),
-        };
-        if bin_size <= T::zero() {
+        let bin_size = border_difference / b;
+
+        if bin_size <= T::Unsigned::zero() {
             return Err(HistErrors::IntervalWidthZero);
         }
         
         let hist = vec![0; bins];
-        let bins = match T::from_usize(bins) {
-            Some(val) => val,
-            None => return Err(HistErrors::CastError),
-        };
-
-        let bin_borders: Vec<_> = (T::zero()..=bins)
-            .map(|val| left + val * bin_size)
+        let bin_borders: Vec<_> = (T::Unsigned::zero()..=b)
+            .map(|val| {
+                from_u(
+                    left_u + to_u(val) * bin_size
+                )
+            })
             .collect();
         Ok(
             Self{
@@ -252,10 +256,14 @@ mod tests{
         + CheckedAdd + Zero + Ord + HasUnsignedVersion
         + One + NumCast + Copy + FromPrimitive + Bounded + std::fmt::Debug,
     std::ops::RangeInclusive<T>: Iterator<Item=T>,
-    T::Unsigned: Bounded + HasUnsignedVersion<LeBytes=T::LeBytes> 
+    T::Unsigned: Bounded + HasUnsignedVersion<LeBytes=T::LeBytes, Unsigned=T::Unsigned> 
         + WrappingAdd + ToPrimitive + Sub<Output=T::Unsigned>
+        + std::ops::Rem<Output=T::Unsigned> + FromPrimitive + Zero
+        + std::cmp::Eq + std::ops::Div<Output=T::Unsigned>
+        + Ord + std::ops::Mul<Output=T::Unsigned> + WrappingSub + Copy + std::fmt::Debug,
+    std::ops::RangeInclusive<T::Unsigned>: Iterator<Item=T::Unsigned>
     {
-        let bin_count = (right - left).to_usize().unwrap() + 1;
+        let bin_count = (to_u(right) - to_u(left)).to_usize().unwrap() + 1;
         let hist_wrapped =  HistogramInt::<T>::new_inclusive(left, right, bin_count);
         if hist_wrapped.is_err(){
             dbg!(&hist_wrapped);
@@ -298,5 +306,7 @@ mod tests{
         hist_test_normal(1u8, 3u8);
         hist_test_normal(123u128, 300u128);
         hist_test_normal(-123i128, 300i128);
+
+        hist_test_normal(i8::MIN + 1, i8::MAX - 1);
     }
 }
