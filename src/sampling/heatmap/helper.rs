@@ -37,7 +37,7 @@ impl GnuplotTerminal{
     {
         match self{
             Self::EpsLatex => {
-                "set t epslatex 9 standalone color size 7.4cm, 5cm header \"\\usepackage{amsmath}\\n\"\nset font \",9\""
+                "set t epslatex 9 standalone color size 7.4cm, 5cm header \"\\\\usepackage{amsmath}\\n\"\nset font \",9\""
             },
             Self::PDF => {
                 "set t pdf"
@@ -71,7 +71,7 @@ impl GnuplotTerminal{
     pub(crate) fn finish<W: Write>(&self, output_name: &str, mut w: W) -> std::io::Result<()>
     {
         match self {
-            Self::EpsLatex => writeln!(w, "system('{} -pdf -f')", output_name),
+            Self::EpsLatex => writeln!(w, "system('latexmk {} -pdf -f')", output_name),
             _ => Ok(())
         }
     } 

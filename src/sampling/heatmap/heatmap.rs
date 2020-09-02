@@ -597,11 +597,11 @@ mod tests{
         }
 
         heatmap.gnuplot(
-            "heatmap1.gp",
-            "heatmap1",
-            "heatmap_data1",
+            "EPS.gp",
+            "EPS",
+            "EPS_DATA",
             HeatmapNormalization::NormalizeRow,
-            GnuplotTerminal::PDF,
+            GnuplotTerminal::EpsLatex,
         ).unwrap();
 
         for x in 0..heatmap.width() {
