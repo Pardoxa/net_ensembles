@@ -9,129 +9,74 @@ use transpose::*;
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
+
+/// # Get index of heatmap corresponding to a coordinate
+#[inline(always)]
+pub fn heatmap_index(width: usize, x: usize, y: usize) -> usize
+{
+    y * width + x
+}
+
+/// # Heatmap
+/// * stores heatmap in row-major order: the rows of the heatmap are contiguous,
+/// and the columns are strided
+/// * enables you to quickly create a heatmap
+/// * you can create gnuplot scripts to plot the heatmap
+/// * you can transpose the heatmap
+/// * …
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum HeatmapError{
-    XError(HistErrors),
-    YError(HistErrors)
-}
-
-#[derive(Debug, Copy, Clone)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum GnuplotTerminal{
-    EpsLatex,
-    PDF,
-}
-
-impl GnuplotTerminal{
-    fn terminal(&self) -> &'static str
-    {
-        match self{
-            Self::EpsLatex => {
-                "set t epslatex 9 standalone color size 7.4cm, 5cm header \"\\usepackage{amsmath}\\n\"\nset font \",9\""
-            },
-            Self::PDF => {
-                "set t pdf"
-            }
-        }
-    }
-
-    fn output(&self, name: &str) -> String
-    {
-        let mut name = name.to_owned();
-        match self {
-            Self::EpsLatex => {
-                if name.ends_with(".tex") {
-                    name
-                } else {
-                    name.push_str(".tex");
-                    name
-                }
-            },
-            Self::PDF => {
-                if name.ends_with(".pdf") {
-                    name
-                } else {
-                    name.push_str(".pdf");
-                    name
-                }
-            }
-        }
-    }
-
-    fn finish<W: Write>(&self, output_name: &str, mut w: W) -> std::io::Result<()>
-    {
-        match self {
-            Self::EpsLatex => writeln!(w, "system('{} -pdf -f')", output_name),
-            _ => Ok(())
-        }
-    } 
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-/// Options. Choose, how the heatmap shall be normalized
-pub enum HeatmapNormalization{
-    /// Use [Heatmap::heatmap_normalized](struct.Heatmap.html#method.heatmap_normalized) for normalization
-    NormalizeTotal,
-    /// Use [Heatmap::heatmap_normalize_columns](struct.Heatmap.html#method.heatmap_normalize_columns) for normalization
-    NormalizeColumn,
-    /// Use [Heatmap::heatmap_normalize_rows](struct.Heatmap.html#method.heatmap_normalize_rows) for normalization
-    NormalizeRow,
-    /// heatmap as is, without normalizing or anything
-    AsIs
-}
-
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct Heatmap<HistX, HistY>{
-    hist_x: HistX,
-    hist_y: HistY,
-    bins_x: usize,
-    bins_y: usize,
-    heatmap: Vec<usize>, // stored bins_x, bins_y
+pub struct Heatmap<HistWidth, HistHeight>{
+    hist_width: HistWidth,
+    hist_height: HistHeight,
+    width: usize,
+    height: usize,
+    heatmap: Vec<usize>, // stored width, height
     error_count: usize
 }
 
-impl <HistX, HistY> Heatmap<HistX, HistY>
+impl <HistWidth, HistHeight> Heatmap<HistWidth, HistHeight>
 where 
-    HistX: Clone,
-    HistY: Clone,
+    HistWidth: Clone,
+    HistHeight: Clone,
 {
-    pub fn transpose(&self) -> Heatmap<HistY, HistX>
+    /// # Use this to get a "flipped" heatmap
+    /// * creates a transposed heatmap
+    /// * also look at [`self.transpose_inplace`](#method.transpose_inplace)
+    pub fn transpose(&self) -> Heatmap<HistHeight, HistWidth>
     {
         let mut transposed = vec![0; self.heatmap.len()];
         transpose(
             &self.heatmap,
             &mut transposed,
-            self.bins_x,
-            self.bins_y
+            self.width,
+            self.height
         );
         Heatmap{
-            hist_x: self.hist_y.clone(),
-            hist_y: self.hist_x.clone(),
-            bins_x: self.bins_y,
-            bins_y: self.bins_x,
+            hist_width: self.hist_height.clone(),
+            hist_height: self.hist_width.clone(),
+            width: self.height,
+            height: self.width,
             error_count: self.error_count,
             heatmap: transposed,
         }
     }
 }
 
-impl <HistX, HistY> Heatmap<HistX, HistY>
+impl <HistWidth, HistHeight> Heatmap<HistWidth, HistHeight>
 {
 
     /// # Use this to get a "flipped" heatmap
     /// * transposes the heatmap inplace
-    pub fn transpose_inplace(mut self) -> Heatmap<HistY, HistX>
+    pub fn transpose_inplace(mut self) -> Heatmap<HistHeight, HistWidth>
     {
-        let mut scratch = vec![0; self.bins_x.max(self.bins_y)];
-        transpose_inplace(&mut self.heatmap, &mut scratch, self.bins_x, self.bins_y);
+        let mut scratch = vec![0; self.width.max(self.height)];
+        transpose_inplace(&mut self.heatmap, &mut scratch, self.width, self.height);
         Heatmap{
-            hist_x: self.hist_y,
-            hist_y: self.hist_x,
-            bins_x: self.bins_y,
-            bins_y: self.bins_x,
+            hist_width: self.hist_height,
+            hist_height: self.hist_width,
+            width: self.height,
+            height: self.width,
             error_count: self.error_count,
             heatmap: self.heatmap
         }
@@ -142,62 +87,95 @@ impl <HistX, HistY> Heatmap<HistX, HistY>
     #[inline(always)]
     fn index(&self, x: usize, y: usize) -> usize
     {
-        y * self.bins_x + x
+        heatmap_index(self.width, x, y)
     }
 
+    /// Returns value stored in the heatmap at specified 
+    /// coordinates, or `None`, if out of Bounds
     pub fn get(&self, x: usize, y: usize) -> Option<usize>
     {
         self.heatmap.get(self.index(x, y)).copied()
     }
 
+    /// # row of the heatmap
+    /// * `None` if out of bounds
+    /// * otherwise it is a slice of the row at height `y`
+    /// # Note
+    /// *  there is no `get_column` method, because, due to implementation details,
+    /// it is way less efficient, and could not be returned as slice
+    pub fn get_row(&self, y: usize) -> Option<&[usize]>
+    {
+        let start = self.index(0, y);
+        let fin = self.index(self.width, y);
+        if fin > self.heatmap.len(){
+            None
+        } else {
+            Some(
+                &self.heatmap[start..fin]
+            )
+        }
+    }
+
+    /// Returns value stored in the heatmap at specified 
+    /// coordinates without performing bound checks.
+    /// **undefined behavior** if coordinates are out of bounds
     pub unsafe fn get_unchecked(&self, x: usize, y: usize) -> usize
     {
         *self.heatmap.get_unchecked(self.index(x, y))
     }
 
-    pub fn bins_x(&self) -> usize
+    /// # returns width of the heatmap
+    /// * the width is the same size, as the `self.width_projection().bin_count()` 
+    pub fn width(&self) -> usize
     {
-        self.bins_x
+        self.width
     }
 
-    pub fn bins_y(&self) -> usize
+    /// # returns height of the heatmap
+    /// * the height is the same size, as the `self.height_projection().bin_count()` 
+    pub fn height(&self) -> usize
     {
-        self.bins_y
+        self.height
     } 
 
 
-    /// # Returns reference to current X Histogram
+    /// # Returns reference to current width Histogram
     /// * all `counts` are counted here -> this is a projection of the heatmap
-    pub fn x_projection(&self) -> &HistX{
-        &self.hist_x
+    pub fn width_projection(&self) -> &HistWidth{
+        &self.hist_width
     }
 
-    /// # Returns reference to current Y Histogram
+    /// # Returns reference to current height Histogram
     /// * all `counts` are counted here -> this is a projection of the heatmap
-    pub fn y_projection(&self) -> &HistY{
-        &self.hist_y
+    pub fn height_projection(&self) -> &HistHeight{
+        &self.hist_height
     }
 }
 
 
-impl<HistX, HistY> Heatmap<HistX, HistY>
+impl<HistWidth, HistHeight> Heatmap<HistWidth, HistHeight>
 where 
-    HistX: Histogram + std::fmt::Debug,
-    HistY: Histogram + std::fmt::Debug,
+    HistWidth: Histogram,
+    HistHeight: Histogram,
 {
 
-    pub fn new(mut histogram_x: HistX, mut histogram_y: HistY) -> Self {
-        let bins_x = histogram_x.bin_count();
-        let bins_y = histogram_y.bin_count();
-        histogram_x.reset();
-        histogram_y.reset();
-        let heatmap = vec![0; bins_x * bins_y];
+    /// # Create a new Heatmap
+    /// * heatmap will have width `width_hist.bin_count()` 
+    /// and height `height_hist.bin_count()`
+    /// * histograms will be reset (zeroed) here, so it does not matter, if they 
+    /// were used before and contain Data
+    pub fn new(mut width_hist: HistWidth, mut height_hist: HistHeight) -> Self {
+        let width = width_hist.bin_count();
+        let height = height_hist.bin_count();
+        width_hist.reset();
+        height_hist.reset();
+        let heatmap = vec![0; width * height];
         Self{
-            bins_x,
-            bins_y,
+            width,
+            height,
             heatmap,
-            hist_x: histogram_x,
-            hist_y: histogram_y,
+            hist_width: width_hist,
+            hist_height: height_hist,
             error_count: 0
         }
     }
@@ -208,19 +186,58 @@ where
     /// * miss_count is reset to 0
     pub fn reset(&mut self)
     {
-        self.hist_x.reset();
-        self.hist_y.reset();
+        self.hist_width.reset();
+        self.hist_height.reset();
         self.heatmap.iter_mut().for_each(|v| *v = 0);
         self.error_count = 0;
     }
 
+    /// # "combine" heatmaps
+    /// * heatmaps will be combined by adding all entrys of `other` to `self`
+    /// * heatmaps have to have the same dimensions
+    pub fn combine<OtherHW, OtherHH>(&mut self, other: &Heatmap<OtherHW, OtherHH>) -> Result<(), HeatmapError>
+    where OtherHW: Histogram,
+        OtherHH: Histogram,
+    {
+        if self.width != other.width || self.height != other.height
+        {
+            return Err(HeatmapError::Dimension);
+        }
+        self.heatmap
+            .iter_mut()
+            .zip(
+                other.heatmap.iter()
+            ).for_each(
+                |(this, other)|
+                {
+                    *this += other;
+                }
+            );
+        
+        for (i, &count) in other.hist_width.hist().iter().enumerate()
+        {
+            self.hist_width
+                .count_multiple_index(i, count)
+                .unwrap()
+        }
+
+        for (i, &count) in other.hist_height.hist().iter().enumerate()
+        {
+            self.hist_height
+                .count_multiple_index(i, count)
+                .unwrap()
+        }
+        
+        Ok(())
+    }
+
     /// # counts how many bins were hit in total
-    /// * Note: it calculates this in O(min(self.bins_x, self.bins_y))
+    /// * Note: it calculates this in O(min(self.width, self.height))
     pub fn total(&self) -> usize {
-        if self.bins_x <= self.bins_y {
-            self.hist_x.hist().iter().sum()
+        if self.width <= self.height {
+            self.hist_width.hist().iter().sum()
         } else {
-            self.hist_y.hist().iter().sum()
+            self.hist_height.hist().iter().sum()
         }
     }
 
@@ -234,8 +251,9 @@ where
     /// * each vector entry will contain the number of times, the corresponding bin was hit
     /// * an entry is 0 if it was never hit
     /// # Access indices; understanding how the data is mapped
-    /// A specific heatmap location (x,y)
-    /// corresponds to the index `y * self.bins_x() + x`
+    /// * A specific heatmap location `(x,y)`
+    /// corresponds to the index `y * self.width() + x`
+    /// * you can use the `heatmap_index` function to calculate the index
     pub fn heatmap(&self) -> &Vec<usize>
     {
         &self.heatmap
@@ -247,7 +265,7 @@ where
     /// * otherwise the sum of this Vector is 1.0 (or at least very close to 1.0)
     /// # Access indices; understanding how the data is mapped
     /// A specific heatmap location (x,y)
-    /// corresponds to the index `y * self.bins_x() + x`
+    /// corresponds to the index `y * self.width() + x`
     /// # Note
     /// * used by `self.gnuplot` if option `HeatmapNormalization::NormalizeTotal` is used
     pub fn heatmap_normalized(&self) -> Vec<f64>
@@ -275,7 +293,7 @@ where
     ///  If it did not, the column will only consist of f64::NANs
     /// # Access indices; understanding how the data is mapped
     /// A specific heatmap location (x,y)
-    /// corresponds to the index `y * self.bins_x() + x`
+    /// corresponds to the index `y * self.width() + x`
     /// # Note
     /// * used by `self.gnuplot` if option `HeatmapNormalization::NormalizeColumn` is used
     pub fn heatmap_normalize_columns(&self) -> Vec<f64>
@@ -285,14 +303,14 @@ where
         if total == 0 {
             return res;
         }
-        for x in 0..self.bins_x {
-            let column_sum: usize = (0..self.bins_y)
+        for x in 0..self.width {
+            let column_sum: usize = (0..self.height)
                 .map(|y| unsafe{self.get_unchecked(x, y)})
                 .sum();
 
             if column_sum > 0 {
                 let denominator = column_sum as f64;
-                for y in 0..self.bins_y {
+                for y in 0..self.height {
                     let index = self.index(x, y);
                     unsafe {
                         *res.get_unchecked_mut(index) = *self.heatmap.get_unchecked(index) as f64 / denominator;
@@ -310,7 +328,7 @@ where
     ///  If it did not, the row will only consist of f64::NANs
     /// # Access indices; understanding how the data is mapped
     /// A specific heatmap location (x,y)
-    /// corresponds to the index `y * self.bins_x() + x`
+    /// corresponds to the index `y * self.width() + x`
     /// # Note
     /// * used by `self.gnuplot` if option `HeatmapNormalization::NormalizeRow` is used
     pub fn heatmap_normalize_rows(&self) -> Vec<f64>
@@ -320,14 +338,14 @@ where
         if total == 0 {
             return res;
         }
-        for y in 0..self.bins_y {
-            let column_sum: usize = (0..self.bins_x)
+        for y in 0..self.height {
+            let column_sum: usize = (0..self.width)
                 .map(|x| unsafe{self.get_unchecked(x, y)})
                 .sum();
 
             if column_sum > 0 {
                 let denominator = column_sum as f64;
-                for x in 0..self.bins_x {
+                for x in 0..self.width {
                     let index = self.index(x, y);
                     unsafe {
                         *res.get_unchecked_mut(index) = *self.heatmap.get_unchecked(index) as f64 / denominator;
@@ -339,28 +357,33 @@ where
     }
 }
 
-impl<HistX, HistY> Heatmap<HistX, HistY>
+impl<HistWidth, HistHeight> Heatmap<HistWidth, HistHeight>
 where 
-    HistX: Histogram + std::fmt::Debug,
-    HistY: Histogram + std::fmt::Debug,
+    HistWidth: Histogram,
+    HistHeight: Histogram,
 
 {
-    pub fn count<A, B, X, Y>(&mut self, x_val: A, y_val: B) -> Result<(), HeatmapError>
+    /// # update the heatmap
+    /// * calculates the coordinate `(x, y)` of the bin corresponding
+    /// to the given value pair `(width_val, height_val)`
+    /// * if coordinate is out of bounds, it counts a "miss" and returns the HeatmapError
+    /// * otherwise it counts the "hit" and returns the coordinate `(x, y)`
+    pub fn count<A, B, X, Y>(&mut self, width_val: A, height_val: B) -> Result<(usize, usize), HeatmapError>
     where 
-        HistX: HistogramVal<X>,
-        HistY: HistogramVal<Y>,
+        HistWidth: HistogramVal<X>,
+        HistHeight: HistogramVal<Y>,
         A: Borrow<X>,
         B: Borrow<Y>
     {
-        let x = self.hist_x
-            .get_bin_index(x_val)
+        let x = self.hist_width
+            .get_bin_index(width_val)
             .map_err(|e| {
                     self.error_count += 1;
                     HeatmapError::XError(e)
                 }
             )?;
-        let y = self.hist_y
-            .get_bin_index(y_val)
+        let y = self.hist_height
+            .count_val(height_val)
             .map_err(|e| {
                 self.error_count += 1;
                 HeatmapError::YError(e)
@@ -368,25 +391,22 @@ where
         )?;
         
         let index = self.index(x, y);
-        debug_assert!(index < self.heatmap.len());
         unsafe{
             *self.heatmap.get_unchecked_mut(index) += 1;
         }
-        self.hist_x.count_index(x)
-            .unwrap();
-        self.hist_y.count_index(y)
+        self.hist_width.count_index(x)
             .unwrap();
 
-        Ok(())
+        Ok((x, y))
     }
 
-    fn write_heatmap<W, V, I>(&self, mut data_file: W, iter: I) -> std::io::Result<()>
+    fn write<W, V, I>(&self, mut data_file: W, iter: I) -> std::io::Result<()>
     where W: Write,
         I: IntoIterator<Item=V>,
         V: std::fmt::Display
     {
         for (index, val) in iter.into_iter().enumerate(){
-            if (index + 1) % self.bins_x != 0 {
+            if (index + 1) % self.width != 0 {
                 write!(data_file, "{} ", val)?;
             }else{
                 writeln!(data_file, "{}", val)?;
@@ -395,20 +415,22 @@ where
         Ok(())
     }
 
-    pub fn write_heatmap_normalized<W: Write>(&self, data_file: W, mode: HeatmapNormalization) -> std::io::Result<()>
+    /// # Write the Data of the heatmap to a file (or whatever implements `Write`)
+    /// * You can either normalize the heatmap in different ways or write the heatmap "AsIs"
+    pub fn write_heatmap<W: Write>(&self, data_file: W, mode: HeatmapNormalization) -> std::io::Result<()>
     {
         match mode {
             HeatmapNormalization::AsIs => {
-                self.write_heatmap(data_file, self.heatmap.iter())
+                self.write(data_file, self.heatmap.iter())
             },
             HeatmapNormalization::NormalizeTotal => {
-                self.write_heatmap(data_file, self.heatmap_normalized())
+                self.write(data_file, self.heatmap_normalized())
             },
             HeatmapNormalization::NormalizeColumn => {
-                self.write_heatmap(data_file, self.heatmap_normalize_columns())
+                self.write(data_file, self.heatmap_normalize_columns())
             },
             HeatmapNormalization::NormalizeRow => {
-                self.write_heatmap(data_file, self.heatmap_normalize_rows())
+                self.write(data_file, self.heatmap_normalize_rows())
             }
         }
     }
@@ -473,15 +495,15 @@ where
         let data = File::create(data_file)?;
         let data = BufWriter::new(data);
 
-        self.write_heatmap_normalized(data, normalization_mode)?;
+        self.write_heatmap(data, normalization_mode)?;
 
         writeln!(gnu, "{}", terminal.terminal())?;
 
         let gnu_out = terminal.output(gnuplot_output_name.as_ref());
         writeln!(gnu, "set output \"{}\"", &gnu_out)?;
 
-        writeln!(gnu, "set xrange[-0.5:{}]", self.bins_x as f64 - 0.5)?;
-        writeln!(gnu, "set yrange[-0.5:{}]", self.bins_y as f64 - 0.5)?;
+        writeln!(gnu, "set xrange[-0.5:{}]", self.width as f64 - 0.5)?;
+        writeln!(gnu, "set yrange[-0.5:{}]", self.height as f64 - 0.5)?;
 
         writeln!(gnu, "set palette model HSV")?;
         writeln!(gnu, "set palette negative defined  ( 0 0 1 0, 2.8 0.4 0.6 0.8, 5.5 0.83 0 1 )")?;
@@ -502,6 +524,59 @@ mod tests{
     use rand_pcg::Pcg64;
     use crate::rand::{SeedableRng, distributions::*};
     use super::*;
+
+    #[test]
+    fn row_test()
+    {
+        let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
+        let h_y = HistU8Fast::new_inclusive(0, 6).unwrap();
+
+        let mut heatmap = Heatmap::new(h_x, h_y);
+
+        let mut rng = Pcg64::seed_from_u64(27456487);
+        let x_distr = Uniform::new_inclusive(0, 10_usize);
+        let y_distr = Uniform::new_inclusive(0, 6_u8);
+
+        for _ in 0..100 {
+            let x = x_distr.sample(&mut rng);
+            let y = y_distr.sample(&mut rng);
+            heatmap.count(x, y).unwrap();
+        }
+
+        let mut iter = heatmap.heatmap().iter();
+        for y in 0..heatmap.height()
+        {
+            let row = heatmap.get_row(y).unwrap();
+            assert_eq!(row.len(), heatmap.width());
+            for val in row
+            {
+                assert_eq!(val, iter.next().unwrap());
+            }
+        }
+    }
+
+    #[test]
+    fn combine_test()
+    {
+        let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
+        let h_y = HistU8Fast::new_inclusive(0, 6).unwrap();
+
+        let mut heatmap = Heatmap::new(h_x, h_y);
+
+        let mut rng = Pcg64::seed_from_u64(27456487);
+        let x_distr = Uniform::new_inclusive(0, 10_usize);
+        let y_distr = Uniform::new_inclusive(0, 6_u8);
+
+        for _ in 0..100 {
+            let x = x_distr.sample(&mut rng);
+            let y = y_distr.sample(&mut rng);
+            heatmap.count(x, y).unwrap();
+        }
+
+        let c = heatmap.clone();
+        heatmap.combine(&c).unwrap();
+
+    }
 
     #[test]
     fn plot_test()
@@ -529,28 +604,28 @@ mod tests{
             GnuplotTerminal::PDF,
         ).unwrap();
 
-        for x in 0..heatmap.bins_x() {
+        for x in 0..heatmap.width() {
             let mut sum = 0;
-            for y in 0..heatmap.bins_y()
+            for y in 0..heatmap.height()
             {
                 sum += heatmap.get(x, y).unwrap();
             }
-            assert_eq!(sum, heatmap.x_projection().hist()[x]);
+            assert_eq!(sum, heatmap.width_projection().hist()[x]);
         }
 
-        for y in 0..heatmap.bins_y() {
+        for y in 0..heatmap.height() {
             let mut sum = 0;
-            for x in 0..heatmap.bins_x()
+            for x in 0..heatmap.width()
             {
                 sum += heatmap.get(x, y).unwrap();
             }
-            assert_eq!(sum, heatmap.y_projection().hist()[y]);
+            assert_eq!(sum, heatmap.height_projection().hist()[y]);
         }
 
         let normed = heatmap.heatmap_normalize_columns();
-        for x in 0..heatmap.bins_x() {
+        for x in 0..heatmap.width() {
             let mut sum = 0.0;
-            for y in 0..heatmap.bins_y()
+            for y in 0..heatmap.height()
             {
                 sum += normed[heatmap.index(x, y)];
             }
@@ -559,9 +634,9 @@ mod tests{
 
 
         let normed = heatmap.heatmap_normalize_rows();
-        for y in 0..heatmap.bins_y() {
+        for y in 0..heatmap.height() {
             let mut sum = 0.0;
-            for x in 0..heatmap.bins_x()
+            for x in 0..heatmap.width()
             {
                 sum += normed[heatmap.index(x, y)];
             }
@@ -620,22 +695,22 @@ mod tests{
             assert_eq!(val1, val2);
         }
 
-        for x in 0..heatmap_i.bins_x() {
+        for x in 0..heatmap_i.width() {
             let mut sum = 0;
-            for y in 0..heatmap_i.bins_y()
+            for y in 0..heatmap_i.height()
             {
                 sum += heatmap_i.get(x, y).unwrap();
             }
-            assert_eq!(sum, heatmap_i.x_projection().hist()[x]);
+            assert_eq!(sum, heatmap_i.width_projection().hist()[x]);
         }
 
-        for y in 0..heatmap_i.bins_y() {
+        for y in 0..heatmap_i.height() {
             let mut sum = 0;
-            for x in 0..heatmap_i.bins_x()
+            for x in 0..heatmap_i.width()
             {
                 sum += heatmap_i.get(x, y).unwrap();
             }
-            assert_eq!(sum, heatmap_i.y_projection().hist()[y]);
+            assert_eq!(sum, heatmap_i.height_projection().hist()[y]);
         }
     }
 
