@@ -110,13 +110,13 @@ impl<T> Histogram for HistogramInt<T>
     }
 
     #[inline]
-    fn count_index(&mut self, index: usize) -> Result<(), HistErrors> {
-        if index < self.hist.len()
-        {
-            self.hist[index] += 1;
-            Ok(())
-        } else {
-            Err(HistErrors::OutsideHist)
+    fn count_multiple_index(&mut self, index: usize, count: usize) -> Result<(), HistErrors> {
+        match self.hist.get_mut(index) {
+            None => Err(HistErrors::OutsideHist),
+            Some(val) => {
+                *val += count;
+                Ok(())
+            },
         }
     }
 

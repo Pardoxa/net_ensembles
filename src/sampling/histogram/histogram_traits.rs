@@ -7,10 +7,18 @@ use serde::{Serialize, Deserialize};
 /// * anything that implements `Histogram` should also implement the trait `HistogramVal`
 pub trait Histogram {
     /// # `self.hist[index] += 1`, `Err()` if `index` out of bounds
-    fn count_index(&mut self, index: usize) -> Result<(), HistErrors>;
+    #[inline(always)]
+    fn count_index(&mut self, index: usize) -> Result<(), HistErrors>{
+        self.count_multiple_index(index, 1)
+    }
+
+    /// # `self.hist[index] += count`, `Err()` if `index` out of bounds
+    fn count_multiple_index(&mut self, index: usize, count: usize) -> Result<(), HistErrors>;
+
     /// # the created histogram
     fn hist(&self) -> &Vec<usize>;
     /// # How many bins the histogram contains
+    #[inline(always)]
     fn bin_count(&self) -> usize
     {
         self.hist().len()

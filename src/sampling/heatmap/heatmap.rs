@@ -3,6 +3,8 @@ use std::convert::*;
 use std::path::*;
 use std::fs::*;
 use std::io::{BufWriter, Write};
+use std::borrow::*;
+use transpose::*;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -92,7 +94,47 @@ pub struct Heatmap<HistX, HistY>{
 }
 
 impl <HistX, HistY> Heatmap<HistX, HistY>
+where 
+    HistX: Clone,
+    HistY: Clone,
 {
+    pub fn transpose(&self) -> Heatmap<HistY, HistX>
+    {
+        let mut transposed = vec![0; self.heatmap.len()];
+        transpose(
+            &self.heatmap,
+            &mut transposed,
+            self.bins_x,
+            self.bins_y
+        );
+        Heatmap{
+            hist_x: self.hist_y.clone(),
+            hist_y: self.hist_x.clone(),
+            bins_x: self.bins_y,
+            bins_y: self.bins_x,
+            error_count: self.error_count,
+            heatmap: transposed,
+        }
+    }
+}
+
+impl <HistX, HistY> Heatmap<HistX, HistY>
+{
+
+    pub fn transpose_inplace(mut self) -> Heatmap<HistY, HistX>
+    {
+        let mut scratch = vec![0; self.bins_x.max(self.bins_y)];
+        transpose_inplace(&mut self.heatmap, &mut scratch, self.bins_x, self.bins_y);
+        Heatmap{
+            hist_x: self.hist_y,
+            hist_y: self.hist_x,
+            bins_x: self.bins_y,
+            bins_y: self.bins_x,
+            error_count: self.error_count,
+            heatmap: self.heatmap
+        }
+    }
+
     /// x = j
     /// y = i
     #[inline(always)]
@@ -158,6 +200,18 @@ where
         }
     }
 
+    /// # Reset
+    /// * resets histograms 
+    /// * heatmap is reset to contain only 0's
+    /// * miss_count is reset to 0
+    pub fn reset(&mut self)
+    {
+        self.hist_x.reset();
+        self.hist_y.reset();
+        self.heatmap.iter_mut().for_each(|v| *v = 0);
+        self.error_count = 0;
+    }
+
     /// # counts how many bins were hit in total
     /// * Note: it calculates this in O(min(self.bins_x, self.bins_y))
     pub fn total(&self) -> usize {
@@ -166,6 +220,12 @@ where
         } else {
             self.hist_y.hist().iter().sum()
         }
+    }
+
+    /// # Counts how often the Heatmap was missed, i.e., you tried to count a value (x,y), which was outside the Heatmap
+    pub fn total_misses(&self) -> usize
+    {
+        self.error_count
     }
 
     /// # returns heatmap
@@ -283,10 +343,12 @@ where
     HistY: Histogram + std::fmt::Debug,
 
 {
-    pub fn count<X, Y>(&mut self, x_val: X, y_val: Y) -> Result<(), HeatmapError>
+    pub fn count<A, B, X, Y>(&mut self, x_val: A, y_val: B) -> Result<(), HeatmapError>
     where 
         HistX: HistogramVal<X>,
-        HistY: HistogramVal<Y>
+        HistY: HistogramVal<Y>,
+        A: Borrow<X>,
+        B: Borrow<Y>
     {
         let x = self.hist_x
             .get_bin_index(x_val)
@@ -318,10 +380,10 @@ where
 
     fn write_heatmap<W, V, I>(&self, mut data_file: W, iter: I) -> std::io::Result<()>
     where W: Write,
-        I: Iterator<Item=V>,
+        I: IntoIterator<Item=V>,
         V: std::fmt::Display
     {
-        for (index, val) in iter.enumerate(){
+        for (index, val) in iter.into_iter().enumerate(){
             if (index + 1) % self.bins_x != 0 {
                 write!(data_file, "{} ", val)?;
             }else{
@@ -338,13 +400,13 @@ where
                 self.write_heatmap(data_file, self.heatmap.iter())
             },
             HeatmapNormalization::NormalizeTotal => {
-                self.write_heatmap(data_file, self.heatmap_normalized().into_iter())
+                self.write_heatmap(data_file, self.heatmap_normalized())
             },
             HeatmapNormalization::NormalizeColumn => {
-                self.write_heatmap(data_file, self.heatmap_normalize_columns().into_iter())
+                self.write_heatmap(data_file, self.heatmap_normalize_columns())
             },
             HeatmapNormalization::NormalizeRow => {
-                self.write_heatmap(data_file, self.heatmap_normalize_rows().into_iter())
+                self.write_heatmap(data_file, self.heatmap_normalize_rows())
             }
         }
     }
@@ -484,6 +546,58 @@ mod tests{
                 sum += normed[heatmap.index(x, y)];
             }
             assert!((sum - 1.0).abs() < 1e-10);
+        }
+    }
+
+    #[test]
+    fn transpose_test()
+    {
+        let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
+        let h_y = HistU8Fast::new_inclusive(0, 5).unwrap();
+
+        let mut heatmap = Heatmap::new(h_x, h_y);
+
+        let mut rng = Pcg64::seed_from_u64(27456487);
+        let x_distr = Uniform::new_inclusive(0, 10_usize);
+        let y_distr = Uniform::new_inclusive(0, 5_u8);
+
+        for _ in 0..10 {
+            let x = x_distr.sample(&mut rng);
+            let y = y_distr.sample(&mut rng);
+            heatmap.count(x, y).unwrap();
+        }
+
+        heatmap.gnuplot(
+            "heatmapT.gp",
+            "heatmapT",
+            "heatmap_dataT",
+            HeatmapNormalization::AsIs,
+            GnuplotTerminal::PDF,
+        ).unwrap();
+
+        let heatmap_t = heatmap.transpose();
+
+        heatmap_t.gnuplot(
+            "heatmapT_T.gp",
+            "heatmapT_T",
+            "heatmap_dataT_T",
+            HeatmapNormalization::AsIs,
+            GnuplotTerminal::PDF,
+        ).unwrap();
+
+        let heatmap_i = heatmap.transpose_inplace();
+
+        heatmap_i.gnuplot(
+            "heatmapT_I.gp",
+            "heatmapT_I",
+            "heatmap_dataT_I",
+            HeatmapNormalization::AsIs,
+            GnuplotTerminal::PDF,
+        ).unwrap();
+
+        for (val1, val2) in heatmap_i.heatmap().iter().zip(heatmap_t.heatmap().iter())
+        {
+            assert_eq!(val1, val2);
         }
     }
 
