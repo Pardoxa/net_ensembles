@@ -121,6 +121,8 @@ where
 impl <HistX, HistY> Heatmap<HistX, HistY>
 {
 
+    /// # Use this to get a "flipped" heatmap
+    /// * transposes the heatmap inplace
     pub fn transpose_inplace(mut self) -> Heatmap<HistY, HistX>
     {
         let mut scratch = vec![0; self.bins_x.max(self.bins_y)];
@@ -527,6 +529,24 @@ mod tests{
             GnuplotTerminal::PDF,
         ).unwrap();
 
+        for x in 0..heatmap.bins_x() {
+            let mut sum = 0;
+            for y in 0..heatmap.bins_y()
+            {
+                sum += heatmap.get(x, y).unwrap();
+            }
+            assert_eq!(sum, heatmap.x_projection().hist()[x]);
+        }
+
+        for y in 0..heatmap.bins_y() {
+            let mut sum = 0;
+            for x in 0..heatmap.bins_x()
+            {
+                sum += heatmap.get(x, y).unwrap();
+            }
+            assert_eq!(sum, heatmap.y_projection().hist()[y]);
+        }
+
         let normed = heatmap.heatmap_normalize_columns();
         for x in 0..heatmap.bins_x() {
             let mut sum = 0.0;
@@ -598,6 +618,24 @@ mod tests{
         for (val1, val2) in heatmap_i.heatmap().iter().zip(heatmap_t.heatmap().iter())
         {
             assert_eq!(val1, val2);
+        }
+
+        for x in 0..heatmap_i.bins_x() {
+            let mut sum = 0;
+            for y in 0..heatmap_i.bins_y()
+            {
+                sum += heatmap_i.get(x, y).unwrap();
+            }
+            assert_eq!(sum, heatmap_i.x_projection().hist()[x]);
+        }
+
+        for y in 0..heatmap_i.bins_y() {
+            let mut sum = 0;
+            for x in 0..heatmap_i.bins_x()
+            {
+                sum += heatmap_i.get(x, y).unwrap();
+            }
+            assert_eq!(sum, heatmap_i.y_projection().hist()[y]);
         }
     }
 
