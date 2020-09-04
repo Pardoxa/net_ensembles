@@ -15,7 +15,7 @@ use serde::{Serialize, Deserialize};
 /// > DOI: [10.1103/PhysRevLett.71.211](https://doi.org/10.1103/PhysRevLett.71.211)
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct EntropicSampling<Hist, R, E, S, Res, T>
+pub struct EntropicSampling<Hist, R, E, S, Res, Energy>
 {
     rng: R,
     ensemble: E,
@@ -28,18 +28,18 @@ pub struct EntropicSampling<Hist, R, E, S, Res, T>
     step_goal: usize,
     hist: Hist,
     log_density: Vec<f64>,
-    old_energy: T,
+    old_energy: Energy,
     old_bin: usize,
 }
 
-impl<Hist, R, E, S, Res, T> TryFrom<WangLandau1T<Hist, R, E, S, Res, T>>
-    for EntropicSampling<Hist, R, E, S, Res, T>
+impl<Hist, R, E, S, Res, Energy> TryFrom<WangLandau1T<Hist, R, E, S, Res, Energy>>
+    for EntropicSampling<Hist, R, E, S, Res, Energy>
     where 
         Hist: Histogram,
         R: Rng
 {
     type Error = EntropicErrors;
-    fn try_from(mut wl: WangLandau1T<Hist, R, E, S, Res, T>) -> Result<Self, Self::Error> {
+    fn try_from(mut wl: WangLandau1T<Hist, R, E, S, Res, Energy>) -> Result<Self, Self::Error> {
         if wl.energy().is_none() {
             return Err(EntropicErrors::InvalidWangLandau);
         }
@@ -419,5 +419,39 @@ where Hist: Histogram,
             self.step_goal()
         )
     }
+}
 
+impl<Hist, R, E, S, Res, Energy> EntropicEnergy<Energy> for EntropicSampling<Hist, R, E, S, Res, Energy>
+where Hist: Histogram,
+    R: Rng,
+{
+    /// # Energy of ensemble
+    /// * assuming `energy_fn` (see `self.entropic_step` etc.) 
+    /// is deterministic and will allways give the same result for the same ensemble,
+    /// this returns the energy of the current ensemble
+    #[inline]
+    fn energy(&self) -> &Energy
+    {
+        &self.old_energy
+    }
+}
+
+impl<Hist, R, E, S, Res, Energy> EntropicHist<Hist> for EntropicSampling<Hist, R, E, S, Res, Energy>
+where Hist: Histogram,
+    R: Rng,
+{
+    #[inline]
+    fn hist(&self) -> &Hist
+    {
+        &self.hist
+    }
+}
+
+impl<Hist, R, E, S, Res, Energy> EntropicEnsemble<E> for EntropicSampling<Hist, R, E, S, Res, Energy>
+where Hist: Histogram,
+    R: Rng,
+{
+    fn ensemble(&self) -> &E {
+        &self.ensemble
+    }
 }

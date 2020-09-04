@@ -10,18 +10,11 @@ pub enum GlueErrors{
     BinarySearch,
     OutOfBounds,
     NoOverlap,
-    IO(std::io::Error)
 }
 
 impl From<HistErrors> for GlueErrors{
     fn from(e: HistErrors) -> Self {
         GlueErrors::BorderCreation(e)
-    }
-}
-
-impl From<std::io::Error> for GlueErrors{
-    fn from(e: std::io::Error) -> Self {
-        GlueErrors::IO(e)
     }
 }
 

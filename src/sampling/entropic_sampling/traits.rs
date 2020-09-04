@@ -57,3 +57,43 @@ pub trait Entropic
     fn write_log<W: Write>(&self, writer: W) -> Result<(), std::io::Error>;
     
 }
+
+/// # trait to request a reference to the current (state of the) ensemble 
+/// * See also [EntropicEEH](trait.EntropicEEH.html)
+pub trait EntropicEnsemble<E> : Entropic
+{
+    /// return reference to current state of ensemble
+    fn ensemble(&self) -> &E;
+}
+
+/// # trait to request the current histogram from a Entropic simulation
+/// * Note: The histogram will likely be reset multiple times during a simulation
+/// * See also [EntropicEEH](trait.EntropicEEH.html)
+pub trait EntropicHist<Hist> : Entropic
+{
+    /// # returns current histogram
+    /// * **Note**: histogram will be reset multiple times during the simulation
+    /// * please refere to the [papers](struct.EntropicAdaptive.html#adaptive-Entropic-1t)
+    fn hist(&self) -> &Hist;
+}
+
+/// # trait to request the current energy from a Entropic simulation
+/// * `None` if the energy was not calculated yet
+/// * See also [EntropicEEH](trait.EntropicEEH.html)
+pub trait EntropicEnergy<Energy> : Entropic
+{
+    /// returns the last accepted `Energy` calculated
+    /// `None` if no energy was calculated yet
+    fn energy(&self) -> &Energy;
+}
+
+/// Helper trait, so that you have to type less
+pub trait EntropicEEH<E, Hist, Energy> 
+    : EntropicEnergy<Energy> + EntropicEnsemble<E>
+        + EntropicHist<Hist>{}
+
+impl<A, E, Hist, Energy> EntropicEEH<E, Hist, Energy> for A
+    where 
+    A: EntropicEnergy<Energy> 
+        + EntropicEnsemble<E>
+        + EntropicHist<Hist>{}

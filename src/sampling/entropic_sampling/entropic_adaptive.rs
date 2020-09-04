@@ -636,3 +636,39 @@ where Hist: Histogram,
         }
     }
 }
+
+
+impl<Hist, R, E, S, Res, Energy> EntropicEnergy<Energy> for EntropicSamplingAdaptive<Hist, R, E, S, Res, Energy>
+where Hist: Histogram,
+    R: Rng,
+{
+    /// # Energy of ensemble
+    /// * assuming `energy_fn` (see `self.entropic_step` etc.) 
+    /// is deterministic and will allways give the same result for the same ensemble,
+    /// this returns the energy of the current ensemble
+    #[inline]
+    fn energy(&self) -> &Energy
+    {
+        &self.old_energy
+    }
+}
+
+impl<Hist, R, E, S, Res, Energy> EntropicHist<Hist> for EntropicSamplingAdaptive<Hist, R, E, S, Res, Energy>
+where Hist: Histogram,
+    R: Rng,
+{
+    #[inline]
+    fn hist(&self) -> &Hist
+    {
+        &self.histogram
+    }
+}
+
+impl<Hist, R, E, S, Res, Energy> EntropicEnsemble<E> for EntropicSamplingAdaptive<Hist, R, E, S, Res, Energy>
+where Hist: Histogram,
+    R: Rng,
+{
+    fn ensemble(&self) -> &E {
+        &self.ensemble
+    }
+}
