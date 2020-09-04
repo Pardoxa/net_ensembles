@@ -46,7 +46,6 @@ where WL: WangLandauHist<HIST>,
         }
     );
 
-
     // get log densitys
     let mut log10_vec: Vec<_> = list.iter()
         .map(|wl| wl.log_density_base10())
@@ -64,7 +63,7 @@ where WL: WangLandauHist<HIST>,
                 }
             }
         );
-    let mut glue_log_density = vec![f64::NAN;original_hist.bin_count()];
+    
     let borders = original_hist.borders_clone()
         .map_err(|e| GlueErrors::BorderCreation(e))?;
 
@@ -77,7 +76,45 @@ where WL: WangLandauHist<HIST>,
     }
 
 
-    // init 
+
+    // calc z
+    let z_vec = calc_z(&log10_vec, &left_list, &right_list)?;
+
+    // correct height
+    height_correction(&mut log10_vec, &z_vec);
+
+    // glueing together
+    let mut glue_log_density = glue(original_hist.bin_count(), &log10_vec, &left_list, &right_list)?;
+
+    // now norm the result
+    norm_sum_to_1(&mut glue_log_density);
+    
+    Ok((glue_log_density, borders, log10_vec, left_list))
+}
+
+fn norm_sum_to_1(glue_log_density: &mut Vec<f64>){
+    let sum = glue_log_density.iter()
+        .fold(0.0, |acc, &val| {
+            if val.is_finite(){
+               acc +  10_f64.powf(val)
+            } else {
+                acc
+            }
+        }  
+    );
+    
+    let sum = sum.log10();
+    glue_log_density.iter_mut()
+        .for_each(|val| *val -= sum);
+}
+
+/// Glues together probabilities
+/// size is original_hist.bin_count()
+fn glue(size: usize, log10_vec: &Vec<Vec<f64>>, left_list: &Vec<usize>, right_list: &Vec<usize>) -> Result<Vec<f64>, GlueErrors>
+{
+    let mut glue_log_density = vec![f64::NAN; size];
+
+    // init - first interval can be copied for better performance
     let first_log = log10_vec.first().unwrap();
     let l = *left_list.first().unwrap();
     let r = *right_list.first().unwrap();
@@ -90,10 +127,48 @@ where WL: WangLandauHist<HIST>,
         glue_count[i] = 1;
     }
 
+    for (i, log_vec) in log10_vec.iter().enumerate().skip(1)
+    {
+        let left = left_list[i];
+        let right = right_list[i];
+        glue_log_density[left..=right].iter_mut()
+            .zip(glue_count[left..=right].iter_mut())
+            .zip(log_vec.iter())
+            .for_each(|((res, count), &val)| {
+                *count += 1;
+                if res.is_finite(){
+                    *res += val;
+                } else {
+                    *res = val;
+                }
+            });
+    }
 
-    // calc z
-    let mut z_vec = Vec::with_capacity(list.len() - 1);
-    for i in 1..list.len()
+    glue_log_density.iter_mut()
+        .zip(glue_count.iter())
+        .for_each(|(log, &count)| {
+            if count > 0 {
+                *log /= count as f64;
+            }
+        });
+    
+    Ok(glue_log_density)
+}
+
+fn height_correction(log10_vec: &mut Vec<Vec<f64>>, z_vec: &Vec<f64>){
+    log10_vec.iter_mut()
+        .skip(1)
+        .zip(z_vec.iter())
+        .for_each( |(vec, &z)|
+            vec.iter_mut()
+                .for_each(|val| *val += z )
+        );
+}
+
+fn calc_z(log10_vec: &Vec<Vec<f64>>, left_list: &Vec<usize>, right_list: &Vec<usize>) -> Result<Vec<f64>, GlueErrors>
+{
+    let mut z_vec = Vec::with_capacity(left_list.len() - 1);
+    for i in 1..left_list.len()
     {
             let left_prev = left_list[i - 1];
             let left = left_list[i];
@@ -127,57 +202,7 @@ where WL: WangLandauHist<HIST>,
             }
             z_vec.push(z);
     }
-
-    // correct height
-    log10_vec.iter_mut()
-        .skip(1)
-        .zip(z_vec.iter())
-        .for_each( |(vec, &z)|
-            vec.iter_mut()
-                .for_each(|val| *val += z )
-        );
-
-    
-    for (i, log_vec) in log10_vec.iter().enumerate().skip(1)
-    {
-        let left = left_list[i];
-        let right = right_list[i];
-        glue_log_density[left..=right].iter_mut()
-            .zip(glue_count[left..=right].iter_mut())
-            .zip(log_vec.iter())
-            .for_each(|((res, count), &val)| {
-                *count += 1;
-                if res.is_finite(){
-                    *res += val;
-                } else {
-                    *res = val;
-                }
-            });
-    }
-
-    glue_log_density.iter_mut()
-        .zip(glue_count.iter())
-        .for_each(|(log, &count)| {
-            if count > 0 {
-                *log /= count as f64;
-            }
-        });
-
-    // now norm the result
-    let sum = glue_log_density.iter()
-        .fold(0.0, |acc, &val| {
-            if val.is_finite(){
-               acc +  10_f64.powf(val)
-            } else {
-                acc
-            }
-        }  );
-    
-    let sum = sum.log10();
-    glue_log_density.iter_mut()
-        .for_each(|val| *val -= sum);
-    
-    Ok((glue_log_density, borders, log10_vec, left_list))
+    Ok(z_vec)
 }
 
 fn get_index<T>(val: &T, borders: &Vec<T>) -> Result<usize, GlueErrors>
