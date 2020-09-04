@@ -783,7 +783,7 @@ where R: Rng,
     }
 
     /// # Wang Landau
-    /// * calls `self.wang_landau_step(energy_fn)` until `self.is_converged` 
+    /// * calls `self.wang_landau_step(energy_fn)` until `self.is_finished()` 
     /// or `condition(&self)` is false
     pub fn wang_landau_while<F, W>(
         &mut self,
@@ -792,19 +792,19 @@ where R: Rng,
     ) where F: Fn(&mut E) -> Option<T>,
         W: FnMut(&Self) -> bool,
     {
-        while !self.is_converged() && condition(&self) {
+        while !self.is_finished() && condition(&self) {
             self.wang_landau_step(&energy_fn);
         }
     }
 
     /// # Wang Landau
-    /// * calls `self.wang_landau_step(energy_fn, valid_ensemble)` until `self.is_converged` 
+    /// * calls `self.wang_landau_step(energy_fn, valid_ensemble)` until `self.is_finished()` 
     pub fn wang_landau_convergence<F>(
         &mut self,
         energy_fn: F,
     )where F: Fn(&mut E) -> Option<T>,
     {
-        while !self.is_converged() {
+        while !self.is_finished() {
             self.wang_landau_step(&energy_fn);
         }
     }

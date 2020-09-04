@@ -2,6 +2,7 @@ use crate::{rand::Rng, *};
 use std::{marker::PhantomData, iter::*};
 use crate::sampling::*;
 use std::convert::*;
+use std::io::Write;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -14,7 +15,7 @@ use serde::{Serialize, Deserialize};
 /// > DOI: [10.1103/PhysRevLett.71.211](https://doi.org/10.1103/PhysRevLett.71.211)
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct Entropic<Hist, R, E, S, Res, T>
+pub struct EntropicSampling<Hist, R, E, S, Res, T>
 {
     rng: R,
     ensemble: E,
@@ -32,7 +33,7 @@ pub struct Entropic<Hist, R, E, S, Res, T>
 }
 
 impl<Hist, R, E, S, Res, T> TryFrom<WangLandau1T<Hist, R, E, S, Res, T>>
-    for Entropic<Hist, R, E, S, Res, T>
+    for EntropicSampling<Hist, R, E, S, Res, T>
     where 
         Hist: Histogram,
         R: Rng
@@ -66,7 +67,7 @@ impl<Hist, R, E, S, Res, T> TryFrom<WangLandau1T<Hist, R, E, S, Res, T>>
 }
 
 impl<Hist, R, E, S, Res, T> TryFrom<WangLandauAdaptive<Hist, R, E, S, Res, T>>
-    for Entropic<Hist, R, E, S, Res, T>
+    for EntropicSampling<Hist, R, E, S, Res, T>
     where 
         Hist: Histogram,
         R: Rng
@@ -106,7 +107,7 @@ impl<Hist, R, E, S, Res, T> TryFrom<WangLandauAdaptive<Hist, R, E, S, Res, T>>
     }
 }
 
-impl<Hist, R, E, S, Res, T> Entropic<Hist, R, E, S, Res, T>
+impl<Hist, R, E, S, Res, T> EntropicSampling<Hist, R, E, S, Res, T>
 {
 
     /// # Current state of the Ensemble
@@ -124,23 +125,6 @@ impl<Hist, R, E, S, Res, T> Entropic<Hist, R, E, S, Res, T>
     pub fn energy(&self) -> &T
     {
         &self.old_energy
-    }
-
-    /// # Number of entropic steps done until now
-    /// * will be reset by [`self.refine_estimate`](#method.refine_estimate)
-    #[inline]
-    pub fn step_count(&self) -> usize
-    {
-        self.step_count
-    }
-
-    /// # Number of entropic steps to be performed
-    /// * if `self` was created from `WangLandauAdaptive`,
-    /// `step_goal` will be equal to the number of WangLandau steps, that were performed
-    #[inline]
-    pub fn step_goal(&self) -> usize
-    {
-        self.step_goal
     }
 
     /// # Number of entropic steps to be performed
@@ -182,7 +166,7 @@ impl<Hist, R, E, S, Res, T> Entropic<Hist, R, E, S, Res, T>
         &self.hist
     }
 }
-impl<Hist, R, E, S, Res, T> Entropic<Hist, R, E, S, Res, T>
+impl<Hist, R, E, S, Res, T> EntropicSampling<Hist, R, E, S, Res, T>
 where Hist: Histogram,
     R: Rng
 {
@@ -268,7 +252,7 @@ where Hist: Histogram,
     }
 }
 
-impl<Hist, R, E, S, Res, T> Entropic<Hist, R, E, S, Res, T>
+impl<Hist, R, E, S, Res, T> EntropicSampling<Hist, R, E, S, Res, T>
 where Hist: Histogram + HistogramVal<T>,
     R: Rng,
     E: MarkovChain<S, Res>,
@@ -399,4 +383,41 @@ where Hist: Histogram + HistogramVal<T>,
             .count_index(self.old_bin)
             .unwrap();
     }
+}
+
+
+impl<Hist, R, E, S, Res, T> Entropic for EntropicSampling<Hist, R, E, S, Res, T>
+where Hist: Histogram,
+    R: Rng,
+{
+    /// # Number of entropic steps done until now
+    /// * will be reset by [`self.refine_estimate`](#method.refine_estimate)
+    #[inline]
+    fn step_counter(&self) -> usize
+    {
+        self.step_count
+    }
+
+    /// # Number of entropic steps to be performed
+    /// * if `self` was created from `WangLandauAdaptive`,
+    /// `step_goal` will be equal to the number of WangLandau steps, that were performed
+    #[inline]
+    fn step_goal(&self) -> usize
+    {
+        self.step_goal
+    }
+
+    fn log_density(&self) -> Vec<f64> {
+        self.log_density_refined()
+    }
+
+    fn write_log<W: Write>(&self, mut w: W) -> Result<(), std::io::Error> {
+        writeln!(w,
+            "#Acceptance prob_total: {}\n#total_steps: {:e}\n#step_goal {:e}",
+            self.fraction_accepted_total(),
+            self.step_counter(),
+            self.step_goal()
+        )
+    }
+
 }

@@ -4,7 +4,7 @@ use std::io::Write;
 /// # Traits for quantities that all Wang Landau simulations have
 /// * see also: `WangLandauHist`
 /// * this trait is for convinience, so that you do not have
-/// to write all the trait bounds of `WangLandauHist`, if you are
+/// to write all the trait bounds of, e.g.,  `WangLandauHist`, if you are
 /// not using functuinality, that requires it
 pub trait WangLandau
 {
@@ -21,7 +21,7 @@ pub trait WangLandau
     
     /// # Checks wang landau threshold
     /// * `log_f <= log_f_threshold`
-    fn is_converged(&self) -> bool{
+    fn is_finished(&self) -> bool{
         self.log_f() <= self.log_f_threshold()
     }
     

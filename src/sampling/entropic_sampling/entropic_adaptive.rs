@@ -2,13 +2,14 @@ use crate::{rand::{Rng, seq::*}, *};
 use std::{marker::PhantomData, iter::*};
 use crate::sampling::*;
 use std::{collections::*, convert::*};
+use std::io::Write;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-/// Error states, that entropic sampling, or the creation of `EntropicAdaptive`
+/// Error states, that entropic sampling, or the creation of `EntropicSamplingAdaptive`
 /// could encounter
 pub enum EntropicErrors {
     /// # source (`WangLandauAdaptive`) was in an invalid state
@@ -43,7 +44,7 @@ pub enum EntropicErrors {
 /// > DOI: [10.1103/PhysRevLett.71.211](https://doi.org/10.1103/PhysRevLett.71.211)
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct EntropicAdaptive<Hist, R, E, S, Res, T>
+pub struct EntropicSamplingAdaptive<Hist, R, E, S, Res, T>
 {
     rng: R,
     samples_per_trial: usize,
@@ -70,7 +71,7 @@ pub struct EntropicAdaptive<Hist, R, E, S, Res, T>
 }
 
 impl<Hist, R, E, S, Res, T> TryFrom<WangLandauAdaptive<Hist, R, E, S, Res, T>>
-    for EntropicAdaptive<Hist, R, E, S, Res, T>
+    for EntropicSamplingAdaptive<Hist, R, E, S, Res, T>
     where 
         Hist: Histogram,
         R: Rng
@@ -119,7 +120,7 @@ impl<Hist, R, E, S, Res, T> TryFrom<WangLandauAdaptive<Hist, R, E, S, Res, T>>
     }
 }
 
-impl<Hist, R, E, S, Res, T> EntropicAdaptive<Hist, R, E, S, Res, T>
+impl<Hist, R, E, S, Res, T> EntropicSamplingAdaptive<Hist, R, E, S, Res, T>
 {
 
     /// # Current state of the Ensemble
@@ -233,12 +234,12 @@ impl<Hist, R, E, S, Res, T> EntropicAdaptive<Hist, R, E, S, Res, T>
         &self.histogram
     }
 }
-impl<Hist, R, E, S, Res, T> EntropicAdaptive<Hist, R, E, S, Res, T>
+impl<Hist, R, E, S, Res, T> EntropicSamplingAdaptive<Hist, R, E, S, Res, T>
 where Hist: Histogram,
     R: Rng
 {
 
-    /// # Creates EntropicAdaptive from a `WangLandauAdaptive` state
+    /// # Creates EntropicSamplingAdaptive from a `WangLandauAdaptive` state
     /// * `WangLandauAdaptive` state needs to be valid, i.e., you must have called one of the `init*` methods
     /// - this ensures, that the members `old_energy` and `old_bin` are not `None`
     pub fn from_wl_adaptive(wl: WangLandauAdaptive<Hist, R, E, S, Res, T>) -> Result<Self, EntropicErrors>
@@ -430,7 +431,7 @@ where Hist: Histogram,
     }
 }
 
-impl<Hist, R, E, S, Res, T> EntropicAdaptive<Hist, R, E, S, Res, T>
+impl<Hist, R, E, S, Res, T> EntropicSamplingAdaptive<Hist, R, E, S, Res, T>
 where Hist: Histogram + HistogramVal<T>,
     R: Rng,
     E: MarkovChain<S, Res>,
@@ -559,5 +560,79 @@ where Hist: Histogram + HistogramVal<T>,
         };
         
         self.histogram.count_index(self.old_bin).unwrap();
+    }
+}
+
+impl<Hist, R, E, S, Res, T> Entropic for EntropicSamplingAdaptive<Hist, R, E, S, Res, T>
+where Hist: Histogram,
+    R: Rng
+{
+    /// # Number of entropic steps done until now
+    /// * will be reset by [`self.refine_estimate`](#method.refine_estimate)
+    #[inline]
+    fn step_counter(&self) -> usize
+    {
+        self.step_count
+    }
+
+    /// # Number of entropic steps to be performed
+    /// * if `self` was created from `WangLandauAdaptive`,
+    /// `step_goal` will be equal to the number of WangLandau steps, that were performed
+    #[inline]
+    fn step_goal(&self) -> usize
+    {
+        self.step_goal
+    }
+
+    fn log_density(&self) -> Vec<f64> {
+        self.log_density_refined()
+    }
+
+    fn write_log<W: Write>(&self, mut w: W) -> Result<(), std::io::Error> {
+        writeln!(w,
+            "#Acceptance prob_total: {}\n#Acceptance prob current: {}\n#total_steps: {}",
+            self.fraction_accepted_total(),
+            self.fraction_accepted_current(),
+            self.step_counter(),
+        )?;
+
+        writeln!(w, "#min_step_size {}", self.min_step_size())?;
+        writeln!(w, "#max_step_size {}", self.max_step_size())?;
+
+        write!(w, "#Current acception histogram:")?;
+        for val in self.accepted_step_hist.iter()
+        {
+            write!(w, " {}", val)?;
+        }
+
+        write!(w, "\n#Current rejection histogram:")?;
+        for val in self.rejected_step_hist.iter()
+        {
+            write!(w, " {}", val)?;
+        }
+
+        writeln!(w, "\n#bestof threshold: {}", self.best_of_threshold)?;
+        writeln!(w, "#min_bestof_count: {}", self.min_best_of_count)?;
+        write!(w, "\n#Current_Bestof:")?;
+
+        for val in self.best_of_steps.iter()
+        {
+            write!(w, " {}", val)?;
+        }
+
+        write!(w, "#current_statistics_estimate:")?;
+        let estimate = self.estimate_statistics();
+        match estimate {
+            Ok(estimate) => {
+                for val in estimate
+                {
+                    write!(w, " {}", val)?;
+                }
+                writeln!(w)
+            },
+            _ => {
+                writeln!(w, " None")
+            }
+        }
     }
 }
