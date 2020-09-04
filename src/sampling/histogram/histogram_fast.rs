@@ -67,7 +67,7 @@ impl<T> HistogramFast<T>
 }
 
 
-impl<T> HistogramPartion for HistogramFast<T> 
+impl<T> HistogramPartition for HistogramFast<T> 
 where T: PrimInt + CheckedSub + ToPrimitive + CheckedAdd + One + FromPrimitive
     + HasUnsignedVersion + Bounded,
 T::Unsigned: Bounded + HasUnsignedVersion<LeBytes=T::LeBytes, Unsigned=T::Unsigned> 

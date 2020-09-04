@@ -105,11 +105,11 @@ impl <HistWidth, HistHeight> Heatmap<HistWidth, HistHeight>
     /// it is way less efficient, and could not be returned as slice
     pub fn get_row(&self, y: usize) -> Option<&[usize]>
     {
-        let start = self.index(0, y);
         let fin = self.index(self.width, y);
         if fin > self.heatmap.len(){
             None
         } else {
+            let start = self.index(0, y);
             Some(
                 &self.heatmap[start..fin]
             )
@@ -227,6 +227,7 @@ where
                 .count_multiple_index(i, count)
                 .unwrap()
         }
+        self.error_count += other.error_count;
         
         Ok(())
     }

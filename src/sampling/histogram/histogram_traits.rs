@@ -82,7 +82,7 @@ pub trait HistogramIntervalDistance<T> {
 /// # Your Interval is to large to sample in a resonable amound of time? No problem
 /// In WangLandau or EntropicSampling, you can split your interval
 /// in smaller, overlapping intervals and "glue" them together later on
-pub trait HistogramPartion: Sized
+pub trait HistogramPartition: Sized
 {
     /// # partition the interval
     /// * returns Vector of `n` histograms, that together 
