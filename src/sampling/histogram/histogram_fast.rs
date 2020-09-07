@@ -169,23 +169,22 @@ impl<T> Histogram for HistogramFast<T>
 }
 
 impl<T> HistogramVal<T> for HistogramFast<T>
-where T: PartialOrd + CheckedSub + CheckedAdd + One + Saturating + NumCast + Copy + std::fmt::Debug,
+where T: PartialOrd + CheckedSub + CheckedAdd + One + Saturating + NumCast + Copy,
     std::ops::RangeInclusive<T>: Iterator<Item=T>
 {
     #[inline]
-    fn get_left(&self) -> T {
+    fn first_border(&self) -> T {
         self.left
     }
 
-    #[inline]
-    fn get_right(&self) -> T {
+    fn second_last_border(&self) -> T {
         self.right
     }
 
     fn distance(&self, val: T) -> f64 {
         if self.not_inside(val) {
-            let dist = if val < self.get_left() {
-                self.get_left() - val
+            let dist = if val < self.first_border() {
+                self.first_border() - val
             } else {
                 val.saturating_sub(self.right)
             };
@@ -284,7 +283,7 @@ mod tests{
 
     fn hist_test_fast<T>(left: T, right: T)
     where T: PrimInt + num_traits::Bounded + PartialOrd + CheckedSub + One 
-        + Saturating + NumCast + Copy + FromPrimitive + std::fmt::Debug + HasUnsignedVersion,
+        + Saturating + NumCast + Copy + FromPrimitive + HasUnsignedVersion,
     std::ops::RangeInclusive<T>: Iterator<Item=T>,
     T::Unsigned: Bounded + HasUnsignedVersion<LeBytes=T::LeBytes> 
         + WrappingAdd + ToPrimitive + Sub<Output=T::Unsigned>

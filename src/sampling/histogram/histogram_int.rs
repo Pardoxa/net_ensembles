@@ -23,16 +23,23 @@ impl<T> HistogramInt<T>{
         &self.bin_borders
     }
 }
+impl<T> HistogramInt<T>
+where T: Copy{
+    fn get_right(&self) -> T
+    {
+        self.bin_borders[self.bin_borders.len() - 1]
+    }
+}
 
 impl<T> HistogramInt<T> 
 where T: PartialOrd + ToPrimitive + FromPrimitive + CheckedAdd + One + HasUnsignedVersion + Bounded
-        + Sub<T, Output=T> + Mul<T, Output=T> + Zero + Copy + std::fmt::Debug,
+        + Sub<T, Output=T> + Mul<T, Output=T> + Zero + Copy,
     std::ops::RangeInclusive<T>: Iterator<Item=T>,
     T::Unsigned: Bounded + HasUnsignedVersion<LeBytes=T::LeBytes, Unsigned=T::Unsigned> 
         + WrappingAdd + ToPrimitive + Sub<Output=T::Unsigned>
         + std::ops::Rem<Output=T::Unsigned> + FromPrimitive + Zero
         + std::cmp::Eq + std::ops::Div<Output=T::Unsigned>
-        + Ord + std::ops::Mul<Output=T::Unsigned> + WrappingSub + Copy + std::fmt::Debug,
+        + Ord + std::ops::Mul<Output=T::Unsigned> + WrappingSub + Copy,
     std::ops::RangeInclusive<T::Unsigned>: Iterator<Item=T::Unsigned>
 {
     /// # Create a new histogram
@@ -135,8 +142,8 @@ where T: Ord + Sub<T, Output=T> + Add<T, Output=T> + One + NumCast + Copy
 
     fn distance(&self, val: T) -> f64 {
         if self.not_inside(val) {
-            let dist = if val < self.get_left() {
-                self.get_left() - val
+            let dist = if val < self.first_border() {
+                self.first_border() - val
             } else {
                 val - self.get_right() + T::one()
             };
@@ -147,26 +154,25 @@ where T: Ord + Sub<T, Output=T> + Add<T, Output=T> + One + NumCast + Copy
     }
 
     #[inline]
-    fn get_left(&self) -> T {
+    fn first_border(&self) -> T {
         self.bin_borders[0]
     }
 
-    #[inline]
-    fn get_right(&self) -> T {
+    fn second_last_border(&self) -> T {
         self.bin_borders[self.bin_borders.len() - 1]
     }
 
     #[inline]
     fn is_inside<V: Borrow<T>>(&self, val: V) -> bool {
         let val = *val.borrow();
-        val >= self.get_left()
+        val >= self.first_border()
             && val < self.get_right()
     }
 
     #[inline]
     fn not_inside<V: Borrow<T>>(&self, val: V) -> bool {
         let val = *val.borrow();
-        val < self.get_left()
+        val < self.first_border()
             || val >= self.get_right()
     }
 
@@ -197,8 +203,8 @@ where T: Ord + Sub<T, Output=T> + Add<T, Output=T> + One + NumCast + Copy
         if self.not_inside(val) {
             let num_bins_overlap = 1usize.max(self.bin_count() / overlap);
             let dist = 
-            if val < self.get_left() { 
-                self.get_left() - val
+            if val < self.first_border() { 
+                self.first_border() - val
             } else {
                 val - self.get_right()
             };
@@ -255,20 +261,19 @@ mod tests{
     fn hist_test_normal<T>(left: T, right: T)
     where T: num_traits::Bounded + PartialOrd + CheckedSub 
         + CheckedAdd + Zero + Ord + HasUnsignedVersion
-        + One + NumCast + Copy + FromPrimitive + Bounded + std::fmt::Debug,
+        + One + NumCast + Copy + FromPrimitive + Bounded,
     std::ops::RangeInclusive<T>: Iterator<Item=T>,
     T::Unsigned: Bounded + HasUnsignedVersion<LeBytes=T::LeBytes, Unsigned=T::Unsigned> 
         + WrappingAdd + ToPrimitive + Sub<Output=T::Unsigned>
         + std::ops::Rem<Output=T::Unsigned> + FromPrimitive + Zero
         + std::cmp::Eq + std::ops::Div<Output=T::Unsigned>
-        + Ord + std::ops::Mul<Output=T::Unsigned> + WrappingSub + Copy + std::fmt::Debug,
-    std::ops::RangeInclusive<T::Unsigned>: Iterator<Item=T::Unsigned>
+        + Ord + std::ops::Mul<Output=T::Unsigned> + WrappingSub + Copy,
+    std::ops::RangeInclusive<T::Unsigned>: Iterator<Item=T::Unsigned>,
+    HistogramInt::<T>: std::fmt::Debug,
     {
         let bin_count = (to_u(right) - to_u(left)).to_usize().unwrap() + 1;
         let hist_wrapped =  HistogramInt::<T>::new_inclusive(left, right, bin_count);
-        if hist_wrapped.is_err(){
-            dbg!(&hist_wrapped);
-        }
+       
         let mut hist = hist_wrapped.unwrap();
         assert!(hist.not_inside(T::max_value()));
         assert!(hist.not_inside(T::min_value()));
@@ -292,7 +297,7 @@ mod tests{
         assert_eq!(hist.interval_distance_overlap(lm1, 1), 1);
         assert_eq!(hist.borders_clone().unwrap().len() - 1, hist.bin_count());
         assert_eq!(
-            HistogramInt::<T>::new_inclusive(left, T::max_value(), bin_count).unwrap_err(),
+            HistogramInt::<T>::new_inclusive(left, T::max_value(), bin_count).expect_err("err"),
             HistErrors::Overflow
         );
     }

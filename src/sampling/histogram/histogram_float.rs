@@ -22,6 +22,14 @@ impl<T> HistogramFloat<T>{
     }
 }
 
+impl<T> HistogramFloat<T>
+where T: Copy {
+    fn get_right(&self) -> T
+    {
+        self.bin_borders[self.bin_borders.len() - 1]
+    }
+}
+
 impl<T> HistogramFloat<T> 
 where T: Float + PartialOrd + FromPrimitive {
     /// # Create a new Historgram
@@ -63,7 +71,7 @@ where T: Float + PartialOrd + FromPrimitive {
     /// Returns the length of the interval
     pub fn interval_length(&self) -> T
     {
-        self.get_right() - self.get_left()
+        self.get_right() - self.first_border()
     }
 }
 
@@ -109,8 +117,8 @@ where T: Float + Zero + NumCast {
             0.0
         } else if !val.is_finite() {
             f64::INFINITY
-        } else if val < self.get_left() {
-            (self.get_left() - val).to_f64().unwrap()
+        } else if val < self.first_border() {
+            (self.first_border() - val).to_f64().unwrap()
         } else {
             (val - self.get_right() + T::epsilon())
                 .to_f64()
@@ -119,13 +127,13 @@ where T: Float + Zero + NumCast {
     }
 
     #[inline]
-    fn get_left(&self) -> T {
+    fn first_border(&self) -> T {
         self.bin_borders[0]
     }
 
     #[inline]
-    fn get_right(&self) -> T {
-        self.bin_borders[self.bin_borders.len() - 1]
+    fn second_last_border(&self) -> T {
+        self.bin_borders[self.bin_borders.len() - 2]
     }
 
     fn is_inside<V: Borrow<T>>(&self, val: V) -> bool {
@@ -184,8 +192,8 @@ where T: Float + FromPrimitive + Zero + NumCast
         if self.not_inside(val) {
             let num_bins_overlap = self.bin_count() / overlap;
             let dist = 
-            if val < self.get_left() { 
-                let tmp = self.get_left() - val;
+            if val < self.first_border() { 
+                let tmp = self.first_border() - val;
                 (tmp / self.interval_length()).floor()
             } else {
                 let tmp = val - self.get_right();
@@ -225,7 +233,7 @@ mod tests{
 
             let hist = HistogramFloat::<f64>::new(left, right, i).unwrap();
 
-            assert_eq!(left, hist.get_left(), "i={}", i);
+            assert_eq!(left, hist.first_border(), "i={}", i);
             assert_eq!(right, hist.get_right(), "i={}", i);
             assert_eq!(i+1, hist.borders().len(), "i={}", i);
 

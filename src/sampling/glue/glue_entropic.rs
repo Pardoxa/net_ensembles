@@ -27,10 +27,10 @@ where Entr: EntropicHist<HIST>,
     // sort
     list.sort_unstable_by(|a, b| {
             a.hist()
-                .get_left()
+                .first_border()
                 .partial_cmp(
                     &b.hist()
-                    .get_left()
+                    .first_border()
                 ).unwrap_or(Ordering::Less)
         }
     );
@@ -42,8 +42,8 @@ where Entr: EntropicHist<HIST>,
     let mut right_list = Vec::with_capacity(list.len());
     for wl in list.iter()
     {
-        left_list.push(get_index(&wl.hist().get_left(), &borders)?);
-        right_list.push(get_index(&wl.hist().get_right(), &borders)?);
+        left_list.push(get_index(&wl.hist().first_border(), &borders)?);
+        right_list.push(get_index(&wl.hist().second_last_border(), &borders)?);
     }
 
     // get log densitys
