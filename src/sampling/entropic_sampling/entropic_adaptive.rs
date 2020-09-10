@@ -671,4 +671,8 @@ where Hist: Histogram,
     fn ensemble(&self) -> &E {
         &self.ensemble
     }
+
+    unsafe fn ensemble_mut(&mut self) -> &mut E {
+        &mut self.ensemble
+    }
 }

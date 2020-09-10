@@ -64,6 +64,13 @@ pub trait EntropicEnsemble<E> : Entropic
 {
     /// return reference to current state of ensemble
     fn ensemble(&self) -> &E;
+
+    /// * returns reference to current state of ensemble
+    /// * If, whatever you do with the ensemble, changes the 
+    ///   energy of the current state, 
+    /// you cannot trust the results of entropic sampling anymore
+    /// * use with care
+    unsafe fn ensemble_mut(&mut self) -> &mut E;
 }
 
 /// # trait to request the current histogram from a Entropic simulation

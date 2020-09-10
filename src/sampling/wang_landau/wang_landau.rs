@@ -78,6 +78,14 @@ impl<Hist, R, E, S, Res, Energy> WangLandau
             self.step_counter(),
             self.log_f(),
             self.mode
+        )?;
+        writeln!(
+            writer,
+            "#total_steps_accepted: {}\n#total_steps_rejected: {}\n#current_accepted_steps: {}\n#current_rejected_steps: {}",
+            self.accepted_steps_total,
+            self.recected_steps_total,
+            self.accepted_steps_current,
+            self.recected_steps_current
         )
     }
 

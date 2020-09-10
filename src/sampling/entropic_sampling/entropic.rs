@@ -294,6 +294,45 @@ where Hist: Histogram + HistogramVal<T>,
     }
 
     /// # Entropic sampling
+    /// * if possible, use `entropic_sampling_while` instead, as it is safer
+    /// * use this if you need **mutable access** to your ensemble while printing or 
+    /// calculating the condition. Note, that whatever you do there, should not change
+    /// the energy of the current state. Otherwise this can lead to undefined behavior and
+    /// the results of the entropic sampling cannot be trusted anymore!
+    /// * performs `self.entropic_step(energy_fn)` until `condition` is false
+    /// * **Note**: you have access to the current step_count (`self.step_count()`)
+    /// # Parameter
+    /// * `energy_fn` function calculating `Some(energy)` of the system
+    /// or rather the Parameter of which you wish to obtain the probability distribution.
+    /// If there are any states, for which the calculation is invalid, `None` should be returned
+    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None`
+    /// will always be rejected 
+    /// * **Important** `energy_fn`: should be the same as used for Wang Landau, otherwise the results will be wrong!
+    /// * `print_fn`: see below
+    /// # Correlations
+    /// * if you want to measure correlations between "energy" and other measurable quantities,
+    /// use `print_fn`, which will be called after each step - use this function to write to 
+    /// a file or whatever you desire
+    /// * Note: You do not have to recalculate the energy, if you need it in `print_fn`:
+    ///  just call `self.energy()` 
+    /// * you have mutable access to your ensemble with `self.ensemble_mut()`
+    /// * if you do not need it, you can use `|_|{}` as `print_fn`
+    pub unsafe fn entropic_sampling_while_unsafe<F, G, W>(
+        &mut self,
+        energy_fn: F,
+        mut print_fn: G,
+        mut condition: W
+    ) where F: Fn(&mut E) -> Option<T>,
+        G: FnMut(&mut Self) -> (),
+        W: FnMut(&mut Self) -> bool
+    {
+        while condition(self) {
+            self.entropic_step(&energy_fn);
+            print_fn(self);
+        }
+    }
+
+    /// # Entropic sampling
     /// * performs `self.entropic_step(energy_fn)` until `self.step_count == self.step_goal`
     /// # Parameter
     /// * `energy_fn` function calculating `Some(energy)` of the system
@@ -453,5 +492,9 @@ where Hist: Histogram,
 {
     fn ensemble(&self) -> &E {
         &self.ensemble
+    }
+
+    unsafe fn ensemble_mut(&mut self) -> &mut E {
+        &mut self.ensemble
     }
 }

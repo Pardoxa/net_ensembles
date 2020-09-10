@@ -105,6 +105,12 @@ impl<R, E, S, Res, Hist, T> WangLandau for WangLandauAdaptive<Hist, R, E, S, Res
             self.log_f(),
             self.mode
         )?;
+        writeln!(
+            writer,
+            "#total_steps_accepted: {}\n#total_steps_rejected: {}",
+            self.total_steps_accepted,
+            self.total_steps_rejected
+        )?;
 
         writeln!(writer, "#min_step_size {}", self.min_step_size())?;
         writeln!(writer, "#max_step_size {}", self.max_step_size())?;
