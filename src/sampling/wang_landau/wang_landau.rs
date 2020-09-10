@@ -508,6 +508,8 @@ where
                 if self.step_count % self.check_refine_every == 0 
                     && !self.hist.any_bin_zero() 
                 {
+                    self.recected_steps_current = 0;
+                    self.accepted_steps_current = 0;
                     let ref_1_t = self.log_f_1_t();
                     self.log_f *= 0.5;
                     if self.log_f < ref_1_t {
