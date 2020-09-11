@@ -60,10 +60,10 @@ where T: Display
         writeln!(w, "#total_steps {}", self.total_steps)?;
         writeln!(w, "#total_steps_accepted {}", self.total_steps_accepted)?;
         writeln!(w, "#total_steps_rejected {}", self.total_steps_rejected)?;
-        let frac_acc = self.total_steps as f64 / self.total_steps_accepted as f64;
-        writeln!(w, "#total_acception_fraction {}", frac_acc)?;
-        let frac_rej = self.total_steps as f64 / self.total_steps_rejected as f64;
-        writeln!(w, "#total_rejection_fraction {}", frac_rej)?;
+        let frac_acc =  self.total_steps_accepted as f64 / self.total_steps as f64;
+        writeln!(w, "#total_acception_fraction {:e}", frac_acc)?;
+        let frac_rej = self.total_steps_rejected as f64 / self.total_steps as f64;
+        writeln!(w, "#total_rejection_fraction {:e}", frac_rej)?;
 
         let glue_log_density = &self.glued_log10_probability;
         let borders = &self.borders;
