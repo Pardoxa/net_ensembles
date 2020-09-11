@@ -4,8 +4,51 @@ use std::io::Write;
 pub trait Entropic
 {
     /// # Counter
-    /// how many wang Landau steps were performed until now?
+    /// how many Entropic steps were performed until now?
     fn step_counter(&self) -> usize;
+
+    /// # Counter
+    /// * how many markov steps were performed until now?
+    /// * this includes steps, that were perfored to find the estimate, i.e., during wang landau
+    fn steps_total(&self) -> usize{
+        self.total_steps_accepted() + self.total_steps_rejected()
+    }
+
+    /// # How many steps were accepted until now?
+    /// * this includes steps, that were perfored to find the estimate, i.e., during wang landau
+    fn total_steps_accepted(&self) -> usize;
+
+    /// # How many steps were rejected until now?
+    /// * this includes steps, that were perfored to find the estimate, i.e., during wang landau
+    fn total_steps_rejected(&self) -> usize;
+
+    /// # Calculate, which fraction of steps were accepted
+    /// * this includes steps, that were perfored to find the estimate, i.e., during wang landau
+    /// * if no steps were performed, it returns `f64::NAN`
+    fn fraction_accepted_total(&self) -> f64 {
+        let total_acc = self.total_steps_accepted();
+        let total_steps = total_acc + self.total_steps_rejected();
+
+        if total_steps == 0 {
+            f64::NAN
+        } else {
+            total_acc as f64 / total_steps as f64
+        }
+    }
+
+    /// # Calculate, which fraction of steps were rejected
+    /// * this includes steps, that were perfored to find the estimate, i.e., during wang landau
+    /// * if no steps were performed, it returns `f64::NAN`
+    fn fraction_rejected_total(&self) -> f64 {
+        let total_rej = self.total_steps_rejected();
+        let total_steps = total_rej + self.total_steps_accepted();
+
+        if total_steps == 0 {
+            f64::NAN
+        } else {
+            total_rej as f64 / total_steps as f64
+        }
+    }
 
     /// # What is the goal to reach?
     fn step_goal(&self) -> usize;

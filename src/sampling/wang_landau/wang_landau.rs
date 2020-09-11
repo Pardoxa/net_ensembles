@@ -100,6 +100,14 @@ impl<Hist, R, E, S, Res, Energy> WangLandau
     {
         self.step_count
     }
+
+    fn total_steps_rejected(&self) -> usize {
+        self.recected_steps_total
+    }
+
+    fn total_steps_accepted(&self) -> usize {
+        self.accepted_steps_total
+    }
 }
 
 

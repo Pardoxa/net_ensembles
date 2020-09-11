@@ -1,5 +1,4 @@
 use rand::{Rng, seq::*};
-use num_traits::{Num, cast::ToPrimitive};
 use average::Variance;
 
 

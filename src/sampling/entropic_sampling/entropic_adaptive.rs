@@ -59,6 +59,8 @@ pub struct EntropicSamplingAdaptive<Hist, R, E, S, Res, T>
     rejected_step_hist: Vec<usize>,
     total_steps_rejected: usize,
     total_steps_accepted: usize,
+    wl_steps_accepted: usize,
+    wl_steps_rejected: usize,
     min_step: usize,
     counter: usize,
     step_count: usize,
@@ -81,6 +83,8 @@ impl<Hist, R, E, S, Res, T> TryFrom<WangLandauAdaptive<Hist, R, E, S, Res, T>>
         if wl.old_bin.is_none() || wl.old_energy.is_none() {
             return Err(EntropicErrors::InvalidWangLandau);
         }
+        let wl_steps_rejected = wl.total_steps_rejected();
+        let wl_steps_accepted = wl.total_steps_accepted();
         wl.accepted_step_hist
             .iter_mut()
             .for_each(|v| *v = 0);
@@ -93,6 +97,8 @@ impl<Hist, R, E, S, Res, T> TryFrom<WangLandauAdaptive<Hist, R, E, S, Res, T>>
         
         Ok(
             Self{
+                wl_steps_rejected,
+                wl_steps_accepted,
                 counter: 0,
                 step_marker: wl.step_marker,
                 step_res_marker: wl.step_res_marker,
@@ -201,18 +207,29 @@ impl<Hist, R, E, S, Res, T> EntropicSamplingAdaptive<Hist, R, E, S, Res, T>
         }
     }
 
-    /// # Fraction of steps accepted since the creation of `self`
-    /// * total_steps_accepted / total_steps
-    /// * `NaN` if no steps were performed yet
-    pub fn fraction_accepted_total(&self) -> f64 {
-        let total_acc = self.total_steps_accepted 
+    /// # total number of entropic steps, that were accepted
+    pub fn total_entr_steps_accepted(&self) -> usize
+    {
+        self.total_steps_accepted 
             + self.accepted_step_hist
                 .iter()
-                .sum::<usize>();
-        let total_steps = total_acc + self.total_steps_rejected 
+                .sum::<usize>()
+    }
+
+    /// # total number of entropic steps, that were rejected
+    pub fn total_entr_steps_rejected(&self) -> usize
+    {
+        self.total_steps_rejected
             + self.rejected_step_hist
                 .iter()
-                .sum::<usize>();
+                .sum::<usize>()
+    }
+
+    /// # Fraction of steps accepted since the creation of `self`
+    /// * `NaN` if no steps were performed yet
+    pub fn fraction_accepted_total_entropic(&self) -> f64 {
+        let total_acc = self.total_entr_steps_accepted();
+        let total_steps = total_acc + self.total_entr_steps_rejected();
 
         if total_steps == 0 {
             f64::NAN
@@ -573,6 +590,14 @@ where Hist: Histogram,
     fn step_counter(&self) -> usize
     {
         self.step_count
+    }
+
+    fn total_steps_accepted(&self) -> usize {
+        self.total_entr_steps_accepted() + self.wl_steps_accepted
+    }
+
+    fn total_steps_rejected(&self) -> usize {
+        self.total_entr_steps_rejected() + self.wl_steps_rejected
     }
 
     /// # Number of entropic steps to be performed

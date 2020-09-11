@@ -28,7 +28,20 @@ pub struct GlueResult<T>{
     /// # Index map
     /// * `self.left_list[i]` is the index of `self.borders` where the interval `self.log10_vec`
     /// has the first entry
-    pub left_list: Vec<usize>
+    pub left_list: Vec<usize>,
+
+    /// # How many markov steps were performed in total?
+    /// * includes steps used to find initial valid ensemble
+    /// * for entropic sampling, this includes the steps of the wang landau simulation
+    pub total_steps: usize,
+    /// # How many markov steps were accepted in total?
+    /// * includes steps used to find initial valid ensemble
+    /// * for entropic sampling, this includes the steps of the wang landau simulation
+    pub total_steps_accepted: usize,
+    /// # How many markov steps were rejected in total?
+    /// * includes steps used to find initial valid ensemble
+    /// * for entropic sampling, this includes the steps of the wang landau simulation
+    pub total_steps_rejected: usize,
 }
 
 impl<T> GlueResult<T>
@@ -43,6 +56,15 @@ where T: Display
             write!(w, " curve_{}", i)?;
         }
         writeln!(w)?;
+
+        writeln!(w, "#total_steps {}", self.total_steps)?;
+        writeln!(w, "#total_steps_accepted {}", self.total_steps_accepted)?;
+        writeln!(w, "#total_steps_rejected {}", self.total_steps_rejected)?;
+        let frac_acc = self.total_steps as f64 / self.total_steps_accepted as f64;
+        writeln!(w, "#total_acception_fraction {}", frac_acc)?;
+        let frac_rej = self.total_steps as f64 / self.total_steps_rejected as f64;
+        writeln!(w, "#total_rejection_fraction {}", frac_rej)?;
+
         let glue_log_density = &self.glued_log10_probability;
         let borders = &self.borders;
         let log10_vec = &self.log10_vec;
@@ -89,6 +111,13 @@ where WL: WangLandauHist<HIST>,
     if list.is_empty(){
         return Err(GlueErrors::EmptyList);
     }
+
+    let total_steps = list.iter()
+        .fold(0_usize, |acc, wl| acc + wl.steps_total());
+    let total_steps_accepted = list.iter()
+        .fold(0_usize, |acc, wl| acc + wl.total_steps_accepted());
+    let total_steps_rejected = list.iter()
+        .fold(0, |acc, wl| acc + wl.total_steps_rejected());
 
     // sort
     list.sort_unstable_by(|a, b| {
@@ -137,6 +166,9 @@ where WL: WangLandauHist<HIST>,
         glued_log10_probability: glue_log_density,
         left_list,
         borders,
+        total_steps,
+        total_steps_accepted,
+        total_steps_rejected
     };
     Ok(glue_res)
 }

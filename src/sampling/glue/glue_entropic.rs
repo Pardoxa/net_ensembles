@@ -24,6 +24,13 @@ where Entr: EntropicHist<HIST>,
         return Err(GlueErrors::EmptyList);
     }
 
+    let total_steps = list.iter()
+        .fold(0_usize, |acc, wl| acc + wl.steps_total());
+    let total_steps_accepted = list.iter()
+        .fold(0_usize, |acc, wl| acc + wl.total_steps_accepted());
+    let total_steps_rejected = list.iter()
+        .fold(0, |acc, wl| acc + wl.total_steps_rejected());
+
     // sort
     list.sort_unstable_by(|a, b| {
             a.hist()
@@ -67,6 +74,9 @@ where Entr: EntropicHist<HIST>,
     norm_sum_to_1(&mut glue_log_density);
     
     let glue_res = GlueResult{
+        total_steps_rejected,
+        total_steps_accepted,
+        total_steps,
         log10_vec,
         glued_log10_probability: glue_log_density,
         left_list,

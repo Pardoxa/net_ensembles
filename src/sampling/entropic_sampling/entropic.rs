@@ -23,6 +23,8 @@ pub struct EntropicSampling<Hist, R, E, S, Res, Energy>
     step_res_marker: PhantomData<Res>,
     total_steps_rejected: usize,
     total_steps_accepted: usize,
+    wl_steps_rejected: usize,
+    wl_steps_accepted: usize,
     step_size: usize,
     step_count: usize,
     step_goal: usize,
@@ -48,6 +50,8 @@ impl<Hist, R, E, S, Res, Energy> TryFrom<WangLandau1T<Hist, R, E, S, Res, Energy
         
         Ok(
             Self{
+                wl_steps_accepted: wl.total_steps_accepted(),
+                wl_steps_rejected: wl.total_steps_rejected(),
                 step_goal: wl.step_counter(),
                 step_marker: wl.marker1,
                 step_res_marker: wl.marker2,
@@ -89,6 +93,8 @@ impl<Hist, R, E, S, Res, T> TryFrom<WangLandauAdaptive<Hist, R, E, S, Res, T>>
         
         Ok(
             Self{
+                wl_steps_accepted: wl.total_steps_accepted(),
+                wl_steps_rejected: wl.total_steps_rejected(),
                 step_goal: wl.step_counter(),
                 step_marker: wl.step_marker,
                 step_res_marker: wl.step_res_marker,
@@ -457,6 +463,14 @@ where Hist: Histogram,
             self.step_counter(),
             self.step_goal()
         )
+    }
+
+    fn total_steps_accepted(&self) -> usize {
+        self.total_steps_accepted + self.wl_steps_accepted
+    }
+
+    fn total_steps_rejected(&self) -> usize {
+        self.total_steps_rejected + self.wl_steps_rejected
     }
 }
 

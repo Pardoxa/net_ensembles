@@ -56,6 +56,20 @@ pub struct WangLandauAdaptive<Hist, R, E, S, Res, Energy>
 
 impl<R, E, S, Res, Hist, T> WangLandau for WangLandauAdaptive<Hist, R, E, S, Res, T>
 {
+    fn total_steps_accepted(&self) -> usize {
+        self.total_steps_accepted + 
+            self.accepted_step_hist
+                .iter()
+                .sum::<usize>()
+    }
+
+    fn total_steps_rejected(&self) -> usize {
+        self.total_steps_rejected 
+            + self.rejected_step_hist
+                .iter()
+                .sum::<usize>()
+    }
+
     #[inline(always)]
     fn log_f(&self) -> f64
     {
@@ -224,24 +238,6 @@ impl<R, E, S, Res, Hist, T> WangLandauAdaptive<Hist, R, E, S, Res, T>
             1.0
         } else {
             frac
-        }
-    }
-
-    /// # total_steps_accepted / total_steps 
-    pub fn fraction_accepted_total(&self) -> f64 {
-        let total_acc = self.total_steps_accepted 
-            + self.accepted_step_hist
-                .iter()
-                .sum::<usize>();
-        let total_steps = total_acc + self.total_steps_rejected 
-            + self.rejected_step_hist
-                .iter()
-                .sum::<usize>();
-
-        if total_steps == 0 {
-            f64::NAN
-        } else {
-            total_acc as f64 / total_steps as f64
         }
     }
 
