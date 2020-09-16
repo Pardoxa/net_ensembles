@@ -92,8 +92,7 @@ where T: Display
 }
 
 /// # Combine multiple WangLandau intervals to get the probability distribution of the whole interval
-/// * `list`: Vector of Wang landau distributions. Is mutable, because the list will be sorted.
-/// Appart from that, this list will not be changed and can be used by you later on without problems
+/// * `list`: Vector of Wang landau distributions
 /// # Restrictions
 /// * `original_hist` has to contain all the borders of the histograms.
 /// Meaning: The size of a bin has to be constant among all histograms of the `list`.
@@ -103,7 +102,7 @@ where T: Display
 /// Create the `original_hist` first. Then create the other Histograms using the `HistogramPartion` trait.
 /// This is the intended way. But as long as the borders and bin sizes match, this function will work properly
 /// # Understanding returned Parameters (OK(..)):
-pub fn glue_wl<WL, HIST, T>(list: &mut Vec<WL>, original_hist: &HIST) -> Result<GlueResult<T>, GlueErrors>
+pub fn glue_wl<WL, HIST, T>(list: &Vec<WL>, original_hist: &HIST) -> Result<GlueResult<T>, GlueErrors>
 where WL: WangLandauHist<HIST>,
     HIST: Histogram + HistogramVal<T>,
     T: PartialOrd
@@ -118,6 +117,8 @@ where WL: WangLandauHist<HIST>,
         .fold(0_usize, |acc, wl| acc + wl.total_steps_accepted());
     let total_steps_rejected = list.iter()
         .fold(0, |acc, wl| acc + wl.total_steps_rejected());
+
+    let mut list: Vec<_> = list.iter().collect();
 
     // sort
     list.sort_unstable_by(|a, b| {

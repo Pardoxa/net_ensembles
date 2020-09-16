@@ -4,8 +4,7 @@ use glue_helper::*;
 
 
 /// # Combine multiple WangLandau intervals to get the probability distribution of the whole interval
-/// * `list`: Vector of Wang landau distributions. Is mutable, because the list will be sorted.
-/// Appart from that, this list will not be changed and can be used by you later on without problems
+/// * `list`: Vector of Wang landau distributions.
 /// # Restrictions
 /// * `original_hist` has to contain all the borders of the histograms.
 /// Meaning: The size of a bin has to be constant among all histograms of the `list`.
@@ -15,10 +14,10 @@ use glue_helper::*;
 /// Create the `original_hist` first. Then create the other Histograms using the `HistogramPartion` trait.
 /// This is the intended way. But as long as the borders and bin sizes match, this function will work properly
 /// # Understanding returned Parameters (OK(..)):
-pub fn glue_entropic<Entr, HIST, T>(list: &mut Vec<Entr>, original_hist: &HIST) -> Result<GlueResult<T>, GlueErrors>
+pub fn glue_entropic<Entr, HIST, T, I>(list: &Vec<Entr>, original_hist: &HIST) -> Result<GlueResult<T>, GlueErrors>
 where Entr: EntropicHist<HIST>,
     HIST: Histogram + HistogramVal<T>,
-    T: PartialOrd
+    T: PartialOrd,
 {
     if list.is_empty(){
         return Err(GlueErrors::EmptyList);
@@ -30,6 +29,8 @@ where Entr: EntropicHist<HIST>,
         .fold(0_usize, |acc, wl| acc + wl.total_steps_accepted());
     let total_steps_rejected = list.iter()
         .fold(0, |acc, wl| acc + wl.total_steps_rejected());
+
+    let mut list: Vec<_> = list.iter().collect();
 
     // sort
     list.sort_unstable_by(|a, b| {
@@ -47,15 +48,15 @@ where Entr: EntropicHist<HIST>,
 
     let mut left_list = Vec::with_capacity(list.len());
     let mut right_list = Vec::with_capacity(list.len());
-    for wl in list.iter()
+    for &entr in list.iter()
     {
-        left_list.push(get_index(&wl.hist().first_border(), &borders)?);
-        right_list.push(get_index(&wl.hist().second_last_border(), &borders)?);
+        left_list.push(get_index(&entr.hist().first_border(), &borders)?);
+        right_list.push(get_index(&entr.hist().second_last_border(), &borders)?);
     }
 
     // get log densitys
     let mut log10_vec: Vec<_> = list.iter()
-        .map(|wl| wl.log_density_base10())
+        .map(|&entr| entr.log_density_base10())
         .collect();
 
     // re-normalize to prevent later precision problems
