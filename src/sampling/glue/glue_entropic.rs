@@ -14,7 +14,7 @@ use glue_helper::*;
 /// Create the `original_hist` first. Then create the other Histograms using the `HistogramPartion` trait.
 /// This is the intended way. But as long as the borders and bin sizes match, this function will work properly
 /// # Understanding returned Parameters (OK(..)):
-pub fn glue_entropic<Entr, HIST, T, I>(list: &Vec<Entr>, original_hist: &HIST) -> Result<GlueResult<T>, GlueErrors>
+pub fn glue_entropic<Entr, HIST, T>(list: &Vec<Entr>, original_hist: &HIST) -> Result<GlueResult<T>, GlueErrors>
 where Entr: EntropicHist<HIST>,
     HIST: Histogram + HistogramVal<T>,
     T: PartialOrd,
