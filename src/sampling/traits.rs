@@ -63,7 +63,6 @@ pub trait MarkovChain<S, Res> {
         }
     }
 
-
 }
 
 /// Use the metropolis algorithm

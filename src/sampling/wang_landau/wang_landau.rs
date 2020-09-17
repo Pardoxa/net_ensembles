@@ -101,10 +101,12 @@ impl<Hist, R, E, S, Res, Energy> WangLandau
         self.step_count
     }
 
+    #[inline(always)]
     fn total_steps_rejected(&self) -> usize {
         self.recected_steps_total
     }
 
+    #[inline(always)]
     fn total_steps_accepted(&self) -> usize {
         self.accepted_steps_total
     }
@@ -536,36 +538,10 @@ where
     }
 
 
-
-    /// # Wang Landau Step
-    /// * performs a single Wang Landau step
-    /// # Parameter
-    /// * `energy_fn` function calculating `Some(energy)` of the system
-    /// or rather the Parameter of which you wish to obtain the probability distribution.
-    /// If there are any states, for which the calculation is invalid, `None` should be returned
-    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None`
-    /// will always be rejected 
-    /// # Important
-    /// * You have to call one of the `self.init*` functions before calling this one - 
-    /// **will panic otherwise**
-    pub fn wang_landau_step<F>(
-        &mut self,
-        energy_fn: F,
-    )where F: Fn(&mut E) -> Option<Energy>
+    fn wl_step_helper(&mut self, energy: Option<Energy>, steps: Vec<S>)
     {
-        debug_assert!(
-            self.old_energy.is_some(),
-            "Error - self.old_energy invalid - Did you forget to call one of the `self.init*` members for initialization?"
-        );
-
-        self.step_count += 1;
-
-
-        let steps = self.ensemble.m_steps(self.step_size);
-        
-        self.check_refine();
-        
-        let current_energy = match energy_fn(&mut self.ensemble){
+        let current_energy = match energy 
+        {
             Some(energy) => energy,
             None => {
                 self.count_rejected();
@@ -604,12 +580,81 @@ where
         self.log_density[self.old_bin] += self.log_f;
     }
 
+    /// # Wang Landau Step
+    /// * performs a single Wang Landau step
+    /// # Parameter
+    /// * `energy_fn` function calculating `Some(energy)` of the system
+    /// or rather the Parameter of which you wish to obtain the probability distribution.
+    /// If there are any states, for which the calculation is invalid, `None` should be returned
+    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None`
+    /// will always be rejected 
+    /// # Important
+    /// * You have to call one of the `self.init*` functions before calling this one - 
+    /// **will panic otherwise**
+    pub fn wang_landau_step<F>(
+        &mut self,
+        energy_fn: F,
+    )where F: Fn(&E) -> Option<Energy>
+    {
+        debug_assert!(
+            self.old_energy.is_some(),
+            "Error - self.old_energy invalid - Did you forget to call one of the `self.init*` members for initialization?"
+        );
+
+        self.step_count += 1;
+
+
+        let steps = self.ensemble.m_steps(self.step_size);
+        
+        self.check_refine();
+        let current_energy = energy_fn(&mut self.ensemble);
+        
+        self.wl_step_helper(current_energy, steps);
+    }
+
+    /// # Wang Landau Step
+    /// * if possible, use `self.wang_landau_step()` instead - it is safer
+    /// * unsafe, because you have to make sure, that the `energy_fn` function 
+    /// does not change the state of the ensemble in such a way, that the result of
+    /// `energy_fn` changes when called again. Maybe do cleanup at the beginning of the energy function?
+    /// * performs a single Wang Landau step
+    /// # Parameter
+    /// * `energy_fn` function calculating `Some(energy)` of the system
+    /// or rather the Parameter of which you wish to obtain the probability distribution.
+    /// If there are any states, for which the calculation is invalid, `None` should be returned
+    /// * steps resulting in ensembles for which `energy_fn(&mut ensemble)` is `None`
+    /// will always be rejected 
+    /// # Important
+    /// * You have to call one of the `self.init*` functions before calling this one - 
+    /// **will panic otherwise**
+    pub unsafe fn wang_landau_step_unsafe<F>(
+        &mut self,
+        mut energy_fn: F,
+    )where F: FnMut(&mut E) -> Option<Energy>
+    {
+        debug_assert!(
+            self.old_energy.is_some(),
+            "Error - self.old_energy invalid - Did you forget to call one of the `self.init*` members for initialization?"
+        );
+
+        self.step_count += 1;
+
+
+        let steps = self.ensemble.m_steps(self.step_size);
+        
+        self.check_refine();
+        let current_energy = energy_fn(&mut self.ensemble);
+        
+        self.wl_step_helper(current_energy, steps);
+    }
+
     /// # Wang Landau
+    /// * perform Wang Landau simulation
     /// * calls `self.wang_landau_step(energy_fn, valid_ensemble)` until `self.is_finished()` 
     pub fn wang_landau_convergence<F>(
         &mut self,
         energy_fn: F,
-    )where F: Fn(&mut E) -> Option<Energy>,
+    )where F: Fn(&E) -> Option<Energy>,
     {
         while !self.is_finished() {
             self.wang_landau_step(&energy_fn);
@@ -617,13 +662,30 @@ where
     }
 
     /// # Wang Landau
+    /// * if possible, use `self.wang_landau_convergence()` instead - it is safer
+    /// * You have mutable access to your ensemble, which is why this function is unsafe. 
+    /// If you do anything, which changes the future outcome of the energy function, the results will be wrong!
+    /// * perform Wang Landau simulation
+    /// * calls `self.wang_landau_step_unsafe(energy_fn, valid_ensemble)` until `self.is_finished()` 
+    pub unsafe fn wang_landau_convergence_unsafe<F>(
+        &mut self,
+        mut energy_fn: F,
+    )where F: FnMut(&mut E) -> Option<Energy>,
+    {
+        while !self.is_finished() {
+            self.wang_landau_step_unsafe(&mut energy_fn);
+        }
+    }
+
+    /// # Wang Landau
+    /// * perform Wang Landau simulation
     /// * calls `self.wang_landau_step(energy_fn)` until `self.is_finished()` 
     /// or `condition(&self)` is false
     pub fn wang_landau_while<F, W>(
         &mut self,
         energy_fn: F,
         mut condition: W
-    ) where F: Fn(&mut E) -> Option<Energy>,
+    ) where F: Fn(&E) -> Option<Energy>,
         W: FnMut(&Self) -> bool,
     {
         while !self.is_finished() && condition(&self) {
@@ -631,8 +693,28 @@ where
         }
     }
 
+    /// # Wang Landau
+    /// * if possible, use `self.wang_landau_while()` instead - it is safer
+    /// * You have mutable access to your ensemble, which is why this function is unsafe. 
+    /// If you do anything, which changes the future outcome of the energy function, the results will be wrong!
+    /// * perform Wang Landau simulation
+    /// * calls `self.wang_landau_step(energy_fn)` until `self.is_finished()` 
+    /// or `condition(&self)` is false
+    pub unsafe fn wang_landau_while_unsafe<F, W>(
+        &mut self,
+        mut energy_fn: F,
+        mut condition: W
+    ) where F: FnMut(&mut E) -> Option<Energy>,
+        W: FnMut(&Self) -> bool,
+    {
+        while !self.is_finished() && condition(&self) {
+            self.wang_landau_step_unsafe(&mut energy_fn);
+        }
+    }
+
 
     /// **panics** if index is invalid
+    #[inline(always)]
     fn metropolis_acception_prob(&self, new_bin: usize) -> f64
     {
         

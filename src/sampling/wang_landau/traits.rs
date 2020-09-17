@@ -21,7 +21,9 @@ pub trait WangLandau
     
     /// # Checks wang landau threshold
     /// * `log_f <= log_f_threshold`
-    fn is_finished(&self) -> bool{
+    #[inline(always)]
+    fn is_finished(&self) -> bool
+    {
         self.log_f() <= self.log_f_threshold()
     }
     
