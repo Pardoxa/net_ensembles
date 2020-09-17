@@ -118,6 +118,11 @@ impl <Hist, R, E, S, Res, Energy> WangLandauEnsemble<E>
     fn ensemble(&self) -> &E {
         &self.ensemble
     }
+
+    #[inline(always)]
+    unsafe fn ensemble_mut(&mut self) -> &mut E {
+        &mut self.ensemble
+    }
 }
 
 impl <Hist, R, E, S, Res, Energy> WangLandauEnergy<Energy> 

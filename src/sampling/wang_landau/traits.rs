@@ -122,6 +122,11 @@ pub trait WangLandauEnsemble<E> : WangLandau
 {
     /// return reference to current state of ensemble
     fn ensemble(&self) -> &E;
+
+    /// # mutable reference to current state
+    /// * **unsafe** you should not make any changes, that effect the energy state of the system.
+    /// otherwise the WangLandau simulations will give false results!
+    unsafe fn ensemble_mut(&mut self) -> &mut E;
 }
 
 /// # trait to request the current histogram from a WangLandau simulation

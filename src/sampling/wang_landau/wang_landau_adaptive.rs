@@ -175,6 +175,10 @@ impl<R, E, S, Res, Hist, T> WangLandauEnsemble<E>
     {
         &self.ensemble
     }
+
+    unsafe fn ensemble_mut(&mut self) -> &mut E {
+        &mut self.ensemble
+    }
 }
 
 impl<R, E, S, Res, Hist, Energy> WangLandauEnergy<Energy> 
