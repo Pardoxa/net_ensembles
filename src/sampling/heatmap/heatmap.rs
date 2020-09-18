@@ -26,7 +26,7 @@ pub fn heatmap_index(width: usize, x: usize, y: usize) -> usize
 /// * …
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct Heatmap<HistWidth, HistHeight>{
+pub struct HeatmapUsize<HistWidth, HistHeight>{
     hist_width: HistWidth,
     hist_height: HistHeight,
     width: usize,
@@ -35,7 +35,9 @@ pub struct Heatmap<HistWidth, HistHeight>{
     error_count: usize
 }
 
-impl <HistWidth, HistHeight> Heatmap<HistWidth, HistHeight>
+pub type HeatmapU<HistWidth, HistHeight> = HeatmapUsize<HistWidth, HistHeight>;
+
+impl <HistWidth, HistHeight> HeatmapUsize<HistWidth, HistHeight>
 where 
     HistWidth: Clone,
     HistHeight: Clone,
@@ -43,7 +45,7 @@ where
     /// # Use this to get a "flipped" heatmap
     /// * creates a transposed heatmap
     /// * also look at [`self.transpose_inplace`](#method.transpose_inplace)
-    pub fn transpose(&self) -> Heatmap<HistHeight, HistWidth>
+    pub fn transpose(&self) -> HeatmapUsize<HistHeight, HistWidth>
     {
         let mut transposed = vec![0; self.heatmap.len()];
         transpose(
@@ -52,7 +54,7 @@ where
             self.width,
             self.height
         );
-        Heatmap{
+        HeatmapUsize{
             hist_width: self.hist_height.clone(),
             hist_height: self.hist_width.clone(),
             width: self.height,
@@ -63,16 +65,16 @@ where
     }
 }
 
-impl <HistWidth, HistHeight> Heatmap<HistWidth, HistHeight>
+impl <HistWidth, HistHeight> HeatmapUsize<HistWidth, HistHeight>
 {
 
     /// # Use this to get a "flipped" heatmap
     /// * transposes the heatmap inplace
-    pub fn transpose_inplace(mut self) -> Heatmap<HistHeight, HistWidth>
+    pub fn transpose_inplace(mut self) -> HeatmapUsize<HistHeight, HistWidth>
     {
         let mut scratch = vec![0; self.width.max(self.height)];
         transpose_inplace(&mut self.heatmap, &mut scratch, self.width, self.height);
-        Heatmap{
+        HeatmapUsize{
             hist_width: self.hist_height,
             hist_height: self.hist_width,
             width: self.height,
@@ -153,7 +155,7 @@ impl <HistWidth, HistHeight> Heatmap<HistWidth, HistHeight>
 }
 
 
-impl<HistWidth, HistHeight> Heatmap<HistWidth, HistHeight>
+impl<HistWidth, HistHeight> HeatmapUsize<HistWidth, HistHeight>
 where 
     HistWidth: Histogram,
     HistHeight: Histogram,
@@ -195,7 +197,7 @@ where
     /// # "combine" heatmaps
     /// * heatmaps will be combined by adding all entrys of `other` to `self`
     /// * heatmaps have to have the same dimensions
-    pub fn combine<OtherHW, OtherHH>(&mut self, other: &Heatmap<OtherHW, OtherHH>) -> Result<(), HeatmapError>
+    pub fn combine<OtherHW, OtherHH>(&mut self, other: &HeatmapUsize<OtherHW, OtherHH>) -> Result<(), HeatmapError>
     where OtherHW: Histogram,
         OtherHH: Histogram,
     {
@@ -359,12 +361,12 @@ where
             return res;
         }
         for y in 0..self.height {
-            let column_sum: usize = (0..self.width)
+            let row_sum: usize = (0..self.width)
                 .map(|x| unsafe{self.get_unchecked(x, y)})
                 .sum();
 
-            if column_sum > 0 {
-                let denominator = column_sum as f64;
+            if row_sum > 0 {
+                let denominator = row_sum as f64;
                 for x in 0..self.width {
                     let index = self.index(x, y);
                     unsafe {
@@ -377,7 +379,7 @@ where
     }
 }
 
-impl<HistWidth, HistHeight> Heatmap<HistWidth, HistHeight>
+impl<HistWidth, HistHeight> HeatmapUsize<HistWidth, HistHeight>
 where 
     HistWidth: Histogram,
     HistHeight: Histogram,
@@ -475,7 +477,7 @@ where
     /// let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
     /// let h_y = HistU8Fast::new_inclusive(0, 10).unwrap();
     ///
-    /// let mut heatmap = Heatmap::new(h_x, h_y);
+    /// let mut heatmap = HeatmapU::new(h_x, h_y);
     /// heatmap.count(0, 0).unwrap();
     /// heatmap.count(10, 0).unwrap();
     ///
@@ -553,7 +555,7 @@ mod tests{
         let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
         let h_y = HistU8Fast::new_inclusive(0, 6).unwrap();
 
-        let mut heatmap = Heatmap::new(h_x, h_y);
+        let mut heatmap = HeatmapUsize::new(h_x, h_y);
 
         let mut rng = Pcg64::seed_from_u64(27456487);
         let x_distr = Uniform::new_inclusive(0, 10_usize);
@@ -583,7 +585,7 @@ mod tests{
         let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
         let h_y = HistU8Fast::new_inclusive(0, 6).unwrap();
 
-        let mut heatmap = Heatmap::new(h_x, h_y);
+        let mut heatmap = HeatmapUsize::new(h_x, h_y);
 
         let mut rng = Pcg64::seed_from_u64(27456487);
         let x_distr = Uniform::new_inclusive(0, 10_usize);
@@ -606,7 +608,7 @@ mod tests{
         let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
         let h_y = HistU8Fast::new_inclusive(0, 10).unwrap();
 
-        let mut heatmap = Heatmap::new(h_x, h_y);
+        let mut heatmap = HeatmapUsize::new(h_x, h_y);
 
         let mut rng = Pcg64::seed_from_u64(27456487);
         let x_distr = Uniform::new_inclusive(0, 10_usize);
@@ -672,7 +674,7 @@ mod tests{
         let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
         let h_y = HistU8Fast::new_inclusive(0, 5).unwrap();
 
-        let mut heatmap = Heatmap::new(h_x, h_y);
+        let mut heatmap = HeatmapUsize::new(h_x, h_y);
 
         let mut rng = Pcg64::seed_from_u64(27456487);
         let x_distr = Uniform::new_inclusive(0, 10_usize);
