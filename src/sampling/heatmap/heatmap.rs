@@ -232,7 +232,8 @@ where
         Ok(())
     }
 
-    /// # counts how many bins were hit in total
+    /// # counts how often the heatmap was hit
+    /// * should be equal to `self.heatmap.iter().sum::<usize>()` but more efficient
     /// * Note: it calculates this in O(min(self.width, self.height))
     pub fn total(&self) -> usize {
         if self.width <= self.height {
@@ -246,6 +247,24 @@ where
     pub fn total_misses(&self) -> usize
     {
         self.error_count
+    }
+
+    /// # counts how many bins of the heatmap where hit at least once
+    pub fn bins_hit(&self) -> usize
+    {
+        self.heatmap
+            .iter()
+            .filter(|&&val| val > 0)
+            .count()
+    }
+
+    /// # counts how many bins of the heatmap where never hit
+    pub fn bins_not_hit(&self) -> usize
+    {
+        self.heatmap
+            .iter()
+            .filter(|&&val| val == 0)
+            .count()
     }
 
     /// # returns heatmap
@@ -395,7 +414,9 @@ where
         unsafe{
             *self.heatmap.get_unchecked_mut(index) += 1;
         }
-        self.hist_width.count_index(x)
+
+        self.hist_width
+            .count_index(x)
             .unwrap();
 
         Ok((x, y))

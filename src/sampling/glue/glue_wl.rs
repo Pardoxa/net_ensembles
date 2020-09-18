@@ -92,7 +92,7 @@ where T: Display
 }
 
 /// # Combine multiple WangLandau intervals to get the probability distribution of the whole interval
-/// * `list`: Vector of Wang landau distributions
+/// * `list`: slice of Wang landau distributions
 /// # Restrictions
 /// * `original_hist` has to contain all the borders of the histograms.
 /// Meaning: The size of a bin has to be constant among all histograms of the `list`.
@@ -102,7 +102,7 @@ where T: Display
 /// Create the `original_hist` first. Then create the other Histograms using the `HistogramPartion` trait.
 /// This is the intended way. But as long as the borders and bin sizes match, this function will work properly
 /// # Understanding returned Parameters (OK(..)):
-pub fn glue_wl<WL, HIST, T>(list: &Vec<WL>, original_hist: &HIST) -> Result<GlueResult<T>, GlueErrors>
+pub fn glue_wl<WL, HIST, T>(list: &[WL], original_hist: &HIST) -> Result<GlueResult<T>, GlueErrors>
 where WL: WangLandauHist<HIST>,
     HIST: Histogram + HistogramVal<T>,
     T: PartialOrd

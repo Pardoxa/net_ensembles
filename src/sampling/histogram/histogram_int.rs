@@ -187,7 +187,7 @@ where T: Ord + Sub<T, Output=T> + Add<T, Output=T> + One + NumCast + Copy
 
         self.bin_borders
             .binary_search(val.borrow())
-            .or_else(|index_m1| Ok(index_m1 + 1))
+            .or_else(|index_m1| Ok(index_m1 - 1))
     }
 
     fn borders_clone(&self) -> Result<Vec<T>, HistErrors> {
@@ -314,5 +314,19 @@ mod tests{
         hist_test_normal(-123i128, 300i128);
 
         hist_test_normal(i8::MIN + 1, i8::MAX - 1);
+    }
+
+    #[test]
+    fn hist_index(){
+        let hist = HistogramInt::<isize>::new(0, 20, 2).unwrap();
+        assert_eq!(hist.borders(), &[0_isize, 10, 20]);
+        for i in 0..=9
+        {
+            assert_eq!(hist.get_bin_index(&i).unwrap(), 0);
+        }
+        for i in 10..20 {
+            assert_eq!(hist.get_bin_index(&i).unwrap(), 1);
+        }
+        assert!(hist.get_bin_index(&20).is_err());
     }
 }
