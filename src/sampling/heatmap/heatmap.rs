@@ -139,14 +139,16 @@ impl <HistWidth, HistHeight> HeatmapUsize<HistWidth, HistHeight>
 
 
     /// # Returns reference to current width Histogram
+    /// * histogram used to bin in the "width" direction
     /// * all `counts` are counted here -> this is a projection of the heatmap
-    pub fn width_projection(&self) -> &HistWidth{
+    pub fn width_hist(&self) -> &HistWidth{
         &self.hist_width
     }
 
     /// # Returns reference to current height Histogram
+    /// * histogram used to bin in the "height" direction
     /// * all `counts` are counted here -> this is a projection of the heatmap
-    pub fn height_projection(&self) -> &HistHeight{
+    pub fn height_hist(&self) -> &HistHeight{
         &self.hist_height
     }
 }
@@ -665,7 +667,7 @@ where
         settings.write_axis(
             &mut gnuplot_writer,
             self.hist_width.bin_count(),
-            self.hist_width.bin_count()
+            self.hist_height.bin_count()
         )?;
 
         settings.pallet.write_pallet(&mut gnuplot_writer)?;
@@ -775,7 +777,7 @@ mod tests{
             {
                 sum += heatmap.get(x, y).unwrap();
             }
-            assert_eq!(sum, heatmap.width_projection().hist()[x]);
+            assert_eq!(sum, heatmap.width_hist().hist()[x]);
         }
 
         for y in 0..heatmap.height() {
@@ -784,7 +786,7 @@ mod tests{
             {
                 sum += heatmap.get(x, y).unwrap();
             }
-            assert_eq!(sum, heatmap.height_projection().hist()[y]);
+            assert_eq!(sum, heatmap.height_hist().hist()[y]);
         }
 
         let normed = heatmap.vec_normalized_columns();
@@ -866,7 +868,7 @@ mod tests{
             {
                 sum += heatmap_i.get(x, y).unwrap();
             }
-            assert_eq!(sum, heatmap_i.width_projection().hist()[x]);
+            assert_eq!(sum, heatmap_i.width_hist().hist()[x]);
         }
 
         for y in 0..heatmap_i.height() {
@@ -875,7 +877,7 @@ mod tests{
             {
                 sum += heatmap_i.get(x, y).unwrap();
             }
-            assert_eq!(sum, heatmap_i.height_projection().hist()[y]);
+            assert_eq!(sum, heatmap_i.height_hist().hist()[y]);
         }
     }
 

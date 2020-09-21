@@ -175,6 +175,20 @@ impl <HistWidth, HistHeight> HeatmapF64<HistWidth, HistHeight>
     pub fn height_count_hist(&self) -> &HistHeight{
         &self.hist_height
     }
+
+    /// # Returns reference to current width Histogram
+    /// * histogram used to bin in the "width" direction
+    /// * all `counts` are counted here -> this is a projection of the heatmap
+    pub fn width_hist(&self) -> &HistWidth{
+        &self.hist_width
+    }
+
+    /// # Returns reference to current height Histogram
+    /// * histogram used to bin in the "height" direction
+    /// * all `counts` are counted here -> this is a projection of the heatmap
+    pub fn height_hist(&self) -> &HistHeight{
+        &self.hist_height
+    }
 }
 
 
@@ -502,7 +516,6 @@ where
         writeln!(gnuplot_writer, "\"")?;
         settings.write_label(&mut gnuplot_writer)?;
 
-
         writeln!(gnuplot_writer, "set xrange[-0.5:{}]", self.width as f64 - 0.5)?;
         writeln!(gnuplot_writer, "set yrange[-0.5:{}]", self.height as f64 - 0.5)?;
         if !settings.title.is_empty(){
@@ -512,7 +525,7 @@ where
         settings.write_axis(
             &mut gnuplot_writer,
             self.hist_width.bin_count(),
-            self.hist_width.bin_count()
+            self.hist_height.bin_count()
         )?;
 
         settings.pallet.write_pallet(&mut gnuplot_writer)?;

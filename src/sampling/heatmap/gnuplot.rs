@@ -35,16 +35,16 @@ impl GnuplotAxis{
                 } else {
                     let t_m1 = tics - 1;
                     let difference = (max - min) / t_m1 as f64;
-                    dbg!(difference);
+                    
                     let bin_dif = (num_bins - 1) as f64 / t_m1 as f64;
                     write!(w, "set {}tics ( ", axis)?;
                     for i in  0..t_m1 {
-                        dbg!(i as f64 * difference);
+                        
                         let val = min + i as f64 * difference;
                         let pos = i as f64 * bin_dif;
-                        write!(w, "\"{}\" {}, ", val, pos)?; 
+                        write!(w, "\"{:#}\" {:e}, ", val, pos)?; 
                     }
-                    writeln!(w, "\"{}\" {} )", max,  num_bins - 1)
+                    writeln!(w, "\"{:#}\" {:e} )", max,  num_bins - 1)
                 }
             }, 
             Self::Labels{labels} => {
@@ -60,7 +60,7 @@ impl GnuplotAxis{
                         let bin_dif = (num_bins - 1) as f64 / t_m1 as f64;
                         for (i, lab) in labels.iter().enumerate(){
                             let pos = i as f64 * bin_dif;
-                            write!(w, "\"{}\" {}, ", lab, pos)?; 
+                            write!(w, "\"{}\" {:e}, ", lab, pos)?; 
                         }
                         writeln!(w, " )")
                     }
