@@ -2,6 +2,7 @@ use crate::sampling::*;
 use std::io::Write;
 use std::borrow::*;
 use transpose::*;
+use std::convert::*;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -18,12 +19,35 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct HeatmapF64<HistWidth, HistHeight>{
-    hist_width: HistWidth,
-    hist_height: HistHeight,
-    width: usize,
-    height: usize,
-    heatmap: Vec<f64>, // stored width, height
-    error_count: usize
+    pub(crate) hist_width: HistWidth,
+    pub(crate) hist_height: HistHeight,
+    pub(crate) width: usize,
+    pub(crate) height: usize,
+    pub(crate) heatmap: Vec<f64>, // stored width, height
+    pub(crate) error_count: usize
+}
+
+impl<HistWidth, HistHeight> From<HeatmapU<HistWidth, HistHeight>> for HeatmapF64<HistWidth, HistHeight>
+where 
+    HistWidth: Histogram,
+    HistHeight: Histogram,
+{
+    fn from(other: HeatmapU<HistWidth, HistHeight>) -> Self {
+        let mut heatmap = Vec::with_capacity(other.heatmap().len());
+        heatmap.extend(
+            other.heatmap()
+                .iter()
+                .map(|&val| val as f64)
+        );
+        Self{
+            heatmap,
+            width: other.width,
+            height: other.height,
+            hist_width: other.hist_width,
+            hist_height: other.hist_height,
+            error_count: other.error_count,
+        }
+    }
 }
 
 impl <HistWidth, HistHeight> HeatmapF64<HistWidth, HistHeight>
@@ -194,11 +218,22 @@ where
     }
 
     /// # "combine" heatmaps
-    /// * heatmaps will be combined by adding all entrys of `other` to `self`
     /// * heatmaps have to have the same dimensions
-    pub fn combine<OtherHW, OtherHH>(&mut self, other: &HeatmapF64<OtherHW, OtherHH>) -> Result<(), HeatmapError>
+    /// * miss counts of other will be added to self
+    /// * with and hight histogram counts will be added to self
+    /// * `self.heatmap` will be modified at each index by 
+    /// `self.heatmap[i] = combine_fn(self.heatmap[i], other.heatmap[i])`
+    /// # Usecase
+    /// * e.g. if you want to add, subtract or multiply two heatmaps
+    pub fn combine<OtherHW, OtherHH, F>
+    (
+        &mut self,
+        other: &HeatmapF64<OtherHW, OtherHH>,
+        combine_fn: F
+    ) -> Result<(), HeatmapError>
     where OtherHW: Histogram,
         OtherHH: Histogram,
+        F: Fn(f64, f64) -> f64
     {
         if self.width != other.width || self.height != other.height
         {
@@ -209,9 +244,9 @@ where
             .zip(
                 other.heatmap.iter()
             ).for_each(
-                |(this, other)|
+                |(this, &other)|
                 {
-                    *this += other;
+                    *this = combine_fn(*this, other);
                 }
             );
         

@@ -1,8 +1,4 @@
 use crate::sampling::*;
-use std::convert::*;
-use std::path::*;
-use std::fs::*;
-use std::io::{BufWriter, Write};
 use std::borrow::*;
 use transpose::*;
 
@@ -27,12 +23,12 @@ pub fn heatmap_index(width: usize, x: usize, y: usize) -> usize
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct HeatmapUsize<HistWidth, HistHeight>{
-    hist_width: HistWidth,
-    hist_height: HistHeight,
-    width: usize,
-    height: usize,
-    heatmap: Vec<usize>, // stored width, height
-    error_count: usize
+    pub(crate) hist_width: HistWidth,
+    pub(crate) hist_height: HistHeight,
+    pub(crate) width: usize,
+    pub(crate) height: usize,
+    pub(crate) heatmap: Vec<usize>, // stored width, height
+    pub(crate) error_count: usize
 }
 
 pub type HeatmapU<HistWidth, HistHeight> = HeatmapUsize<HistWidth, HistHeight>;
@@ -111,7 +107,7 @@ impl <HistWidth, HistHeight> HeatmapUsize<HistWidth, HistHeight>
         if fin > self.heatmap.len(){
             None
         } else {
-            let start = self.index(0, y);
+            let start = fin - self.width;
             Some(
                 &self.heatmap[start..fin]
             )
@@ -245,6 +241,23 @@ where
         }
     }
 
+    /// check if at least one bin was hit
+    fn any_hit(&self) -> bool {
+
+        let hist_vec = 
+        if self.width <= self.height {
+            self.hist_width
+                .hist()
+        } else {
+            self.hist_height
+                .hist()
+        };
+
+        hist_vec
+                .iter()
+                .any(|&val| val != 0)
+    }
+
     /// # Counts how often the Heatmap was missed, i.e., you tried to count a value (x,y), which was outside the Heatmap
     pub fn total_misses(&self) -> usize
     {
@@ -281,20 +294,20 @@ where
         &self.heatmap
     }
 
-    /// # returns normalized heatmap
-    /// * returns normalized heatmap as Vector 
-    /// * Vector contains only f64::NAN, if nothing was in the heatmap
+
+    /// # returns Vector representing normalized heatmap
+    /// * Vector contains only 0.0, if nothing was in the heatmap
     /// * otherwise the sum of this Vector is 1.0 (or at least very close to 1.0)
     /// # Access indices; understanding how the data is mapped
-    /// A specific heatmap location (x,y)
+    /// * A specific heatmap location (x,y)
     /// corresponds to the index `y * self.width() + x`
-    /// # Note
-    /// * used by `self.gnuplot` if option `HeatmapNormalization::NormalizeTotal` is used
-    pub fn heatmap_normalized(&self) -> Vec<f64>
+    /// * you can use the function `heatmap_index(width, x, y)` for calculating the index
+    pub fn vec_normalized(&self) -> Vec<f64>
     {
         let total = self.total();
+        
         if total == 0 {
-            vec![f64::NAN; self.heatmap.len()]
+            vec![0.0; self.heatmap.len()]
         } else {
             let total = total as f64;
             let mut res = Vec::with_capacity(self.heatmap.len());
@@ -308,21 +321,58 @@ where
         }
     }
 
-    /// # returns heatmap, normalized column wise
-    /// * returns normalized heatmap as Vector 
-    /// * Vector contains only f64::NAN, if nothing was in the heatmap
-    /// * otherwise the sum of each column (fixed x) will be 1.0, if it contained at least one hit.
-    ///  If it did not, the column will only consist of f64::NANs
+    /// # returns normalized heatmap
+    /// * returns normalized heatmap as `HeatmapF64` 
+    /// * Heatmap vector `self.heatmap_normalized().heatmap()` contains only 0.0, if nothing was in the heatmap
+    /// * otherwise the sum of this Vector is 1.0 (within numerical errors)
+    pub fn heatmap_normalized(&self) -> HeatmapF64<HistWidth, HistHeight>
+    where HistHeight: Clone,
+        HistWidth: Clone
+    {
+        let heatmap_vec = self.vec_normalized();
+
+        HeatmapF64{
+            heatmap: heatmap_vec,
+            hist_height: self.hist_height.clone(),
+            hist_width: self.hist_width.clone(),
+            error_count: self.error_count,
+            width: self.width,
+            height: self.height
+        }
+    }
+
+    /// # returns normalized heatmap
+    /// * returns normalized heatmap as `HeatmapF64` 
+    /// * Heatmap vector `self.heatmap_normalized().heatmap()` contains only 0.0, if nothing was in the heatmap
+    /// * otherwise the sum of this Vector is 1.0 (within numerical errors)
+    pub fn into_heatmap_normalized(self) -> HeatmapF64<HistWidth, HistHeight>
+    {
+        let heatmap_vec = self.vec_normalized();
+
+        HeatmapF64{
+            heatmap: heatmap_vec,
+            hist_height: self.hist_height,
+            hist_width: self.hist_width,
+            error_count: self.error_count,
+            width: self.width,
+            height: self.height
+        }
+    }
+
+    
+    /// # returns vector representing heatmap, normalized column wise
+    /// * Vector contains only 0.0, if nothing was in the heatmap
+    /// * otherwise the sum of each column (fixed x) will be 1.0 (within numerical errors), if it contained at least one hit.
+    ///  If it did not, the column will only consist of 0.0
     /// # Access indices; understanding how the data is mapped
     /// A specific heatmap location (x,y)
     /// corresponds to the index `y * self.width() + x`
-    /// # Note
-    /// * used by `self.gnuplot` if option `HeatmapNormalization::NormalizeColumn` is used
-    pub fn heatmap_normalize_columns(&self) -> Vec<f64>
+    /// * you can use the function `heatmap_index(width, x, y)` for calculating the index
+    pub fn vec_normalized_columns(&self) -> Vec<f64>
     {
-        let total = self.total();
-        let mut res = vec![f64::NAN; self.heatmap.len()];
-        if total == 0 {
+        
+        let mut res = vec![0.0; self.heatmap.len()];
+        if !self.any_hit() {
             return res;
         }
         for x in 0..self.width {
@@ -343,48 +393,126 @@ where
         res
     }
 
-    /// # returns heatmap, normalized row wise
-    /// * returns normalized heatmap as Vector 
-    /// * Vector contains only f64::NAN, if nothing was in the heatmap
-    /// * otherwise the sum of each row (fixed y) will be 1.0, if it contained at least one hit.
-    ///  If it did not, the row will only consist of f64::NANs
+    /// # returns (column wise) normalized heatmap
+    /// * returns normalized heatmap as `HeatmapF64` 
+    /// * Heatmap vector `self.heatmap_normalized().heatmap()` contains only 0.0, if nothing was in the heatmap
+    /// * otherwise the sum of each column (fixed x) will be 1.0 (within numerical errors), if it contained at least one hit.
+    ///  If it did not, the column will only consist of 0.0
+    /// * otherwise the sum of this Vector is 1.0 
+    pub fn heatmap_normalized_columns(&self) -> HeatmapF64<HistWidth, HistHeight>
+    where HistHeight: Clone,
+        HistWidth: Clone
+    {
+        let heatmap_vec = self.vec_normalized_columns();
+
+        HeatmapF64{
+            heatmap: heatmap_vec,
+            hist_height: self.hist_height.clone(),
+            hist_width: self.hist_width.clone(),
+            error_count: self.error_count,
+            width: self.width,
+            height: self.height
+        }
+    }
+
+    /// # returns (column wise) normalized heatmap
+    /// * returns normalized heatmap as `HeatmapF64` 
+    /// * Heatmap vector `self.heatmap_normalized().heatmap()` contains only 0.0, if nothing was in the heatmap
+    /// * otherwise the sum of each column (fixed x) will be 1.0 (within numerical errors), if it contained at least one hit.
+    ///  If it did not, the column will only consist of 0.0
+    /// * otherwise the sum of this Vector is 1.0 
+    pub fn into_heatmap_normalized_columns(self) -> HeatmapF64<HistWidth, HistHeight>
+    {
+        let heatmap_vec = self.vec_normalized_columns();
+
+        HeatmapF64{
+            heatmap: heatmap_vec,
+            hist_height: self.hist_height,
+            hist_width: self.hist_width,
+            error_count: self.error_count,
+            width: self.width,
+            height: self.height
+        }
+    }
+
+    /// # returns vector representing heatmap, normalized row wise
+    /// * Vector contains only 0.0, if nothing was in the heatmap
+    /// * otherwise the sum of each row (fixed x) will be 1.0 (within numerical errors), if it contained at least one hit.
+    ///  If it did not, the row will only consist of 0.0
     /// # Access indices; understanding how the data is mapped
     /// A specific heatmap location (x,y)
     /// corresponds to the index `y * self.width() + x`
-    /// # Note
-    /// * used by `self.gnuplot` if option `HeatmapNormalization::NormalizeRow` is used
-    pub fn heatmap_normalize_rows(&self) -> Vec<f64>
+    /// * you can use the function `heatmap_index(width, x, y)` for calculating the index
+    pub fn vec_normalized_rows(&self) -> Vec<f64>
     {
-        let total = self.total();
-        let mut res = vec![f64::NAN; self.heatmap.len()];
-        if total == 0 {
+        
+        let mut res = vec![0.0; self.heatmap.len()];
+        if !self.any_hit() {
             return res;
         }
         for y in 0..self.height {
-            let row_sum: usize = (0..self.width)
-                .map(|x| unsafe{self.get_unchecked(x, y)})
-                .sum();
+            let start_index = self.index(0, y);
+            let fin = start_index + self.width;
+            let row_slice = &self.heatmap[start_index..fin];
+            let row_sum = row_slice.iter()
+                .sum::<usize>();
 
             if row_sum > 0 {
                 let denominator = row_sum as f64;
-                for x in 0..self.width {
-                    let index = self.index(x, y);
-                    unsafe {
-                        *res.get_unchecked_mut(index) = *self.heatmap.get_unchecked(index) as f64 / denominator;
-                    }
+                let res_slice = &mut res[start_index..fin];
+                for (res_val, &heat_val) in res_slice
+                    .into_iter()
+                    .zip(row_slice.into_iter())
+                {
+                    *res_val = heat_val as f64 / denominator;
                 }
             }
         }
         res
     }
-}
 
-impl<HistWidth, HistHeight> HeatmapUsize<HistWidth, HistHeight>
-where 
-    HistWidth: Histogram,
-    HistHeight: Histogram,
+    /// # returns (row wise) normalized heatmap
+    /// * returns normalized heatmap as `HeatmapF64` 
+    /// * Heatmap vector `self.heatmap_normalized().heatmap()` contains only 0.0, if nothing was in the heatmap
+    /// * otherwise the sum of each row (fixed x) will be 1.0 (within numerical errors), if it contained at least one hit.
+    ///  If it did not, the row will only consist of 0.0
+    /// * otherwise the sum of this Vector is 1.0 
+    pub fn heatmap_normalized_rows(&self) -> HeatmapF64<HistWidth, HistHeight>
+    where HistHeight: Clone,
+        HistWidth: Clone
+    {
+        let heatmap_vec = self.vec_normalized_rows();
 
-{
+        HeatmapF64{
+            heatmap: heatmap_vec,
+            hist_height: self.hist_height.clone(),
+            hist_width: self.hist_width.clone(),
+            error_count: self.error_count,
+            width: self.width,
+            height: self.height
+        }
+    }
+
+    /// # returns (row wise) normalized heatmap
+    /// * returns normalized heatmap as `HeatmapF64` 
+    /// * Heatmap vector `self.heatmap_normalized().heatmap()` contains only 0.0, if nothing was in the heatmap
+    /// * otherwise the sum of each row (fixed x) will be 1.0 (within numerical errors), if it contained at least one hit.
+    ///  If it did not, the row will only consist of 0.0
+    /// * otherwise the sum of this Vector is 1.0 
+    pub fn into_heatmap_normalized_rows(self) -> HeatmapF64<HistWidth, HistHeight>
+    {
+        let heatmap_vec = self.vec_normalized_rows();
+
+        HeatmapF64{
+            heatmap: heatmap_vec,
+            hist_height: self.hist_height,
+            hist_width: self.hist_width,
+            error_count: self.error_count,
+            width: self.width,
+            height: self.height
+        }
+    }
+
     /// # update the heatmap
     /// * calculates the coordinate `(x, y)` of the bin corresponding
     /// to the given value pair `(width_val, height_val)`
@@ -424,122 +552,122 @@ where
         Ok((x, y))
     }
 
-    fn write<W, V, I>(&self, mut data_file: W, iter: I) -> std::io::Result<()>
-    where W: Write,
-        I: IntoIterator<Item=V>,
-        V: std::fmt::Display
-    {
-        for (index, val) in iter.into_iter().enumerate(){
-            if (index + 1) % self.width != 0 {
-                write!(data_file, "{} ", val)?;
-            }else{
-                writeln!(data_file, "{}", val)?;
-            }
-        }
-        Ok(())
-    }
+    // fn write<W, V, I>(&self, mut data_file: W, iter: I) -> std::io::Result<()>
+    // where W: Write,
+    //     I: IntoIterator<Item=V>,
+    //     V: std::fmt::Display
+    // {
+    //     for (index, val) in iter.into_iter().enumerate(){
+    //         if (index + 1) % self.width != 0 {
+    //             write!(data_file, "{} ", val)?;
+    //         }else{
+    //             writeln!(data_file, "{}", val)?;
+    //         }
+    //     }
+    //     Ok(())
+    // }
 
-    /// # Write the Data of the heatmap to a file (or whatever implements `Write`)
-    /// * You can either normalize the heatmap in different ways or write the heatmap "AsIs"
-    pub fn write_heatmap<W: Write>(&self, data_file: W, mode: HeatmapNormalization) -> std::io::Result<()>
-    {
-        match mode {
-            HeatmapNormalization::AsIs => {
-                self.write(data_file, self.heatmap.iter())
-            },
-            HeatmapNormalization::NormalizeTotal => {
-                self.write(data_file, self.heatmap_normalized())
-            },
-            HeatmapNormalization::NormalizeColumn => {
-                self.write(data_file, self.heatmap_normalize_columns())
-            },
-            HeatmapNormalization::NormalizeRow => {
-                self.write(data_file, self.heatmap_normalize_rows())
-            }
-        }
-    }
+    // # Write the Data of the heatmap to a file (or whatever implements `Write`)
+    // * You can either normalize the heatmap in different ways or write the heatmap "AsIs"
+    //pub fn write_heatmap<W: Write>(&self, data_file: W, mode: HeatmapNormalization) -> std::io::Result<()>
+    //{
+    //    match mode {
+    //        HeatmapNormalization::AsIs => {
+    //            self.write(data_file, self.heatmap.iter())
+    //        },
+    //        HeatmapNormalization::NormalizeTotal => {
+    //            self.write(data_file, self.heatmap_normalized())
+    //        },
+    //        HeatmapNormalization::NormalizeColumn => {
+    //            self.write(data_file, self.heatmap_normalize_columns())
+    //        },
+    //        HeatmapNormalization::NormalizeRow => {
+    //            self.write(data_file, self.heatmap_normalize_rows())
+    //        }
+    //    }
+    //}
 
-    /// # Plot your heatmap!
-    /// This function writes a file, that can be plottet via the terminal via [gnuplot](http://www.gnuplot.info/)
-    /// ```bash
-    /// gnuplot gnuplot_file
-    /// ```
-    /// ## Parameter:
-    /// * `gnuplot_file`: filename/Path of the file to be plotted. The corresponding file will be truncated, if it already exists
-    /// * `gnuplot_output_name`: how shall the file, created by executing gnuplot, be called? Ending of file will be set automatically
-    /// * `heatmap_data`: filename/Path of the file where the heatmap data is stored. Needed for plotting the heatmap.
-    /// * `normalization_mode`: Should the heatmap be normalized? If yes, how?
-    /// ```
-    /// use rand_pcg::Pcg64;
-    /// use rand::{SeedableRng, distributions::*};
-    /// use net_ensembles::sampling::*;
-    /// 
-    /// let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
-    /// let h_y = HistU8Fast::new_inclusive(0, 10).unwrap();
-    ///
-    /// let mut heatmap = HeatmapU::new(h_x, h_y);
-    /// heatmap.count(0, 0).unwrap();
-    /// heatmap.count(10, 0).unwrap();
-    ///
-    /// let mut rng = Pcg64::seed_from_u64(27456487);
-    /// let x_distr = Uniform::new_inclusive(0, 10_usize);
-    /// let y_distr = Uniform::new_inclusive(0, 10_u8);
-    ///
-    /// for _ in 0..100000 {
-    ///     let x = x_distr.sample(&mut rng);
-    ///     let y = y_distr.sample(&mut rng);
-    ///     heatmap.count(x, y).unwrap();
-    /// }
-    ///
-    /// heatmap.gnuplot(
-    ///     "heatmap.gp",
-    ///     "heatmap",
-    ///     "heatmap_data",
-    ///     HeatmapNormalization::NormalizeColumn,
-    ///     GnuplotTerminal::PDF,
-    /// ).unwrap();
-    /// ```
-    pub fn gnuplot<Path1, Path2, S>(
-        &self,
-        gnuplot_file: Path1,
-        gnuplot_output_name: S,
-        data_file: Path2,
-        normalization_mode: HeatmapNormalization,
-        terminal: GnuplotTerminal
-    ) -> std::io::Result<()>
-    where 
-        Path1: AsRef<Path>,
-        Path2: AsRef<Path>,
-        S: AsRef<str>
-    {
-        let gnu = File::create(gnuplot_file)?;
-        let mut gnu = BufWriter::new(gnu);
-
-        let data_file_name = data_file.as_ref().to_str().unwrap().to_owned();
-        let data = File::create(data_file)?;
-        let data = BufWriter::new(data);
-
-        self.write_heatmap(data, normalization_mode)?;
-
-        writeln!(gnu, "{}", terminal.terminal())?;
-
-        let gnu_out = terminal.output(gnuplot_output_name.as_ref());
-        writeln!(gnu, "set output \"{}\"", &gnu_out)?;
-
-        writeln!(gnu, "set xrange[-0.5:{}]", self.width as f64 - 0.5)?;
-        writeln!(gnu, "set yrange[-0.5:{}]", self.height as f64 - 0.5)?;
-
-        writeln!(gnu, "set palette model HSV")?;
-        writeln!(gnu, "set palette negative defined  ( 0 0 1 0, 2.8 0.4 0.6 0.8, 5.5 0.83 0 1 )")?;
-        writeln!(gnu, "set view map")?;
-
-        writeln!(gnu, "set rmargin screen 0.8125\nset lmargin screen 0.175")?;
-
-        writeln!(gnu, "splot \"{}\" matrix with image t \"\" ", data_file_name)?;
-        writeln!(gnu, "set output")?;
-
-        terminal.finish(&gnu_out, gnu)
-    }
+  //  /// # Plot your heatmap!
+  //  /// This function writes a file, that can be plottet via the terminal via [gnuplot](http://www.gnuplot.info/)
+  //  /// ```bash
+  //  /// gnuplot gnuplot_file
+  //  /// ```
+  //  /// ## Parameter:
+  //  /// * `gnuplot_file`: filename/Path of the file to be plotted. The corresponding file will be truncated, if it already exists
+  //  /// * `gnuplot_output_name`: how shall the file, created by executing gnuplot, be called? Ending of file will be set automatically
+  //  /// * `heatmap_data`: filename/Path of the file where the heatmap data is stored. Needed for plotting the heatmap.
+  //  /// * `normalization_mode`: Should the heatmap be normalized? If yes, how?
+  //  /// ```
+  //  /// use rand_pcg::Pcg64;
+  //  /// use rand::{SeedableRng, distributions::*};
+  //  /// use net_ensembles::sampling::*;
+  //  /// 
+  //  /// let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
+  //  /// let h_y = HistU8Fast::new_inclusive(0, 10).unwrap();
+  //  ///
+  //  /// let mut heatmap = HeatmapU::new(h_x, h_y);
+  //  /// heatmap.count(0, 0).unwrap();
+  //  /// heatmap.count(10, 0).unwrap();
+  //  ///
+  //  /// let mut rng = Pcg64::seed_from_u64(27456487);
+  //  /// let x_distr = Uniform::new_inclusive(0, 10_usize);
+  //  /// let y_distr = Uniform::new_inclusive(0, 10_u8);
+  //  ///
+  //  /// for _ in 0..100000 {
+  //  ///     let x = x_distr.sample(&mut rng);
+  //  ///     let y = y_distr.sample(&mut rng);
+  //  ///     heatmap.count(x, y).unwrap();
+  //  /// }
+  //  ///
+  //  /// heatmap.gnuplot(
+  //  ///     "heatmap.gp",
+  //  ///     "heatmap",
+  //  ///     "heatmap_data",
+  //  ///     HeatmapNormalization::NormalizeColumn,
+  //  ///     GnuplotTerminal::PDF,
+  //  /// ).unwrap();
+  //  /// ```
+  //  pub fn gnuplot<Path1, Path2, S>(
+  //      &self,
+  //      gnuplot_file: Path1,
+  //      gnuplot_output_name: S,
+  //      data_file: Path2,
+  //      normalization_mode: HeatmapNormalization,
+  //      terminal: GnuplotTerminal
+  //  ) -> std::io::Result<()>
+  //  where 
+  //      Path1: AsRef<Path>,
+  //      Path2: AsRef<Path>,
+  //      S: AsRef<str>
+  //  {
+  //      let gnu = File::create(gnuplot_file)?;
+  //      let mut gnu = BufWriter::new(gnu);
+//
+  //      let data_file_name = data_file.as_ref().to_str().unwrap().to_owned();
+  //      let data = File::create(data_file)?;
+  //      let data = BufWriter::new(data);
+//
+  //      self.write_heatmap(data, normalization_mode)?;
+//
+  //      writeln!(gnu, "{}", terminal.terminal())?;
+//
+  //      let gnu_out = terminal.output(gnuplot_output_name.as_ref());
+  //      writeln!(gnu, "set output \"{}\"", &gnu_out)?;
+//
+  //      writeln!(gnu, "set xrange[-0.5:{}]", self.width as f64 - 0.5)?;
+  //      writeln!(gnu, "set yrange[-0.5:{}]", self.height as f64 - 0.5)?;
+//
+  //      writeln!(gnu, "set palette model HSV")?;
+  //      writeln!(gnu, "set palette negative defined  ( 0 0 1 0, 2.8 0.4 0.6 0.8, 5.5 0.83 0 1 )")?;
+  //      writeln!(gnu, "set view map")?;
+//
+  //      writeln!(gnu, "set rmargin screen 0.8125\nset lmargin screen 0.175")?;
+//
+  //      writeln!(gnu, "splot \"{}\" matrix with image t \"\" ", data_file_name)?;
+  //      writeln!(gnu, "set output")?;
+//
+  //      terminal.finish(&gnu_out, gnu)
+  //  }
 
 }
 
@@ -620,13 +748,13 @@ mod tests{
             heatmap.count(x, y).unwrap();
         }
 
-        heatmap.gnuplot(
-            "EPS.gp",
-            "EPS",
-            "EPS_DATA",
-            HeatmapNormalization::NormalizeRow,
-            GnuplotTerminal::EpsLatex,
-        ).unwrap();
+        // heatmap.gnuplot(
+        //     "EPS.gp",
+        //     "EPS",
+        //     "EPS_DATA",
+        //     HeatmapNormalization::NormalizeRow,
+        //     GnuplotTerminal::EpsLatex,
+        // ).unwrap();
 
         for x in 0..heatmap.width() {
             let mut sum = 0;
@@ -646,7 +774,7 @@ mod tests{
             assert_eq!(sum, heatmap.height_projection().hist()[y]);
         }
 
-        let normed = heatmap.heatmap_normalize_columns();
+        let normed = heatmap.vec_normalized_columns();
         for x in 0..heatmap.width() {
             let mut sum = 0.0;
             for y in 0..heatmap.height()
@@ -657,7 +785,7 @@ mod tests{
         }
 
 
-        let normed = heatmap.heatmap_normalize_rows();
+        let normed = heatmap.vec_normalized_rows();
         for y in 0..heatmap.height() {
             let mut sum = 0.0;
             for x in 0..heatmap.width()
@@ -686,33 +814,33 @@ mod tests{
             heatmap.count(x, y).unwrap();
         }
 
-        heatmap.gnuplot(
-            "heatmapT.gp",
-            "heatmapT",
-            "heatmap_dataT",
-            HeatmapNormalization::AsIs,
-            GnuplotTerminal::PDF,
-        ).unwrap();
+        // heatmap.gnuplot(
+        //     "heatmapT.gp",
+        //     "heatmapT",
+        //     "heatmap_dataT",
+        //     HeatmapNormalization::AsIs,
+        //     GnuplotTerminal::PDF,
+        // ).unwrap();
 
         let heatmap_t = heatmap.transpose();
 
-        heatmap_t.gnuplot(
-            "heatmapT_T.gp",
-            "heatmapT_T",
-            "heatmap_dataT_T",
-            HeatmapNormalization::AsIs,
-            GnuplotTerminal::PDF,
-        ).unwrap();
+        // heatmap_t.gnuplot(
+        //     "heatmapT_T.gp",
+        //     "heatmapT_T",
+        //     "heatmap_dataT_T",
+        //     HeatmapNormalization::AsIs,
+        //     GnuplotTerminal::PDF,
+        // ).unwrap();
 
         let heatmap_i = heatmap.transpose_inplace();
 
-        heatmap_i.gnuplot(
-            "heatmapT_I.gp",
-            "heatmapT_I",
-            "heatmap_dataT_I",
-            HeatmapNormalization::AsIs,
-            GnuplotTerminal::PDF,
-        ).unwrap();
+        // heatmap_i.gnuplot(
+        //     "heatmapT_I.gp",
+        //     "heatmapT_I",
+        //     "heatmap_dataT_I",
+        //     HeatmapNormalization::AsIs,
+        //     GnuplotTerminal::PDF,
+        // ).unwrap();
 
         for (val1, val2) in heatmap_i.heatmap().iter().zip(heatmap_t.heatmap().iter())
         {

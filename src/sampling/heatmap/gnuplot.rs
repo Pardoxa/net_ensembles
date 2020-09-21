@@ -78,6 +78,7 @@ pub enum GnuplotTerminal{
 }
 
 impl GnuplotTerminal{
+    #[allow(dead_code)]
     pub(crate) fn terminal(&self) -> &'static str
     {
         match self{
@@ -89,7 +90,7 @@ impl GnuplotTerminal{
             }
         }
     }
-
+    #[allow(dead_code)]
     pub(crate) fn output(&self, name: &str) -> String
     {
         let mut name = name.to_owned();
@@ -113,6 +114,7 @@ impl GnuplotTerminal{
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn finish<W: Write>(&self, output_name: &str, mut w: W) -> std::io::Result<()>
     {
         match self {
