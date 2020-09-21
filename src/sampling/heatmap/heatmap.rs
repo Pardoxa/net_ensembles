@@ -622,7 +622,8 @@ where
     /// settings.x_axis(GnuplotAxis::new(-5.0, 5.0, 6))
     ///     .y_axis(GnuplotAxis::from_slice(&["a", "b", "c", "d"]))
     ///     .y_label("letter")
-    ///     .x_label("number");
+    ///     .x_label("number")
+    ///     .title("Example");
     ///
     /// // create skript
     /// heatmap.gnuplot(
@@ -657,6 +658,9 @@ where
 
         writeln!(gnuplot_writer, "set xrange[-0.5:{}]", self.width as f64 - 0.5)?;
         writeln!(gnuplot_writer, "set yrange[-0.5:{}]", self.height as f64 - 0.5)?;
+        if !settings.title.is_empty(){
+            writeln!(gnuplot_writer, "set title '{}'", settings.title)?;
+        }
 
         settings.write_axis(
             &mut gnuplot_writer,

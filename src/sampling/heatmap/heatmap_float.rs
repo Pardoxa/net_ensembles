@@ -396,22 +396,137 @@ where
         Ok((x, y))
     }
 
-    /// # Write the Data of the heatmap to a file (or whatever implements `Write`)
-    /// * You can either normalize the heatmap in different ways or write the heatmap "AsIs"
-    pub fn write_heatmap<W: Write>(&self, mut data_file: W) -> std::io::Result<()>
+    /// # Write heatmap to file
+    /// * writes data of heatmap to file.
+    /// # file
+    /// * lets assume `self.width()`is 4 and `self.height()` is 3
+    /// * the resulting file could look like
+    /// ```txt
+    /// 0.1 1.0 0.0 10.0
+    /// 100.0 0.2 0.3 1.1
+    /// 2.2 9.3 1.0 0.0
+    /// ```
+    pub fn write_to<W>(&self, mut data_file: W) -> std::io::Result<()>
+    where W: Write
     {
+        for y in 0..self.height {
+            let row = unsafe{ self.get_row_unchecked(y) };
 
-        for (index, val) in self.heatmap.iter().enumerate()
-        {
-            if (index + 1) % self.width != 0 {
-                write!(data_file, "{:e} ", val)?;
-            }else{
-                writeln!(data_file, "{:e}", val)?;
+            if let Some((last, slice)) = row.split_last() {
+                for val in slice {
+                    write!(data_file, "{:e} ", val)?;
+                }
+                writeln!(data_file, "{:e}", last)?;
             }
         }
         Ok(())
     }
 
-    
+    /// # Create a gnuplot script to plot your heatmap
+    /// This function writes a file, that can be plottet via the terminal via [gnuplot](http://www.gnuplot.info/)
+    /// ```bash
+    /// gnuplot gnuplot_file
+    /// ```
+    /// ## Parameter:
+    /// * `gnuplot_writer`: writer gnuplot script will be written to
+    /// * `gnuplot_output_name`: how shall the file, created by executing gnuplot, be called? Ending of file will be set automatically
+    /// ## Example
+    /// ```
+    /// use rand_pcg::Pcg64;
+    /// use rand::{SeedableRng, distributions::*};
+    /// use net_ensembles::sampling::*;
+    /// use std::fs::File;
+    /// use std::io::BufWriter;
+    /// 
+    /// // first randomly create a heatmap
+    /// let h_x = HistUsizeFast::new_inclusive(0, 10).unwrap();
+    /// let h_y = HistU8Fast::new_inclusive(0, 10).unwrap();
+    ///
+    /// let mut heatmap = HeatmapU::new(h_x, h_y);
+    /// heatmap.count(0, 0).unwrap();
+    /// heatmap.count(10, 0).unwrap();
+    ///
+    /// let mut rng = Pcg64::seed_from_u64(27456487);
+    /// let x_distr = Uniform::new_inclusive(0, 10_usize);
+    /// let y_distr = Uniform::new_inclusive(0, 10_u8);
+    ///
+    /// for _ in 0..100000 {
+    ///     let x = x_distr.sample(&mut rng);
+    ///     let y = y_distr.sample(&mut rng);
+    ///     heatmap.count(x, y).unwrap();
+    /// }
+    /// 
+    /// // create File for gnuplot skript
+    /// let file = File::create("heatmap_normalized.gp").unwrap();
+    /// let buf = BufWriter::new(file);
+    ///
+    /// // Choose settings for gnuplot
+    /// let mut settings = GnuplotSettings::new();
+    /// settings.x_axis(GnuplotAxis::new(-5.0, 5.0, 6))
+    ///     .y_axis(GnuplotAxis::from_slice(&["a", "b", "c", "d"]))
+    ///     .y_label("letter")
+    ///     .x_label("number")
+    ///     .title("Example");
+    ///
+    /// 
+    /// // norm heatmap row wise - this converts HeatmapU to HeatmapfF64
+    /// let heatmap = heatmap.into_heatmap_normalized_rows();
+    ///
+    /// // create skript
+    /// heatmap.gnuplot(
+    ///     buf,
+    ///     "heatmap_normalized",
+    ///     settings
+    /// ).unwrap();
+    /// ```
+    /// Skript can now be plotted with
+    /// ```bash
+    /// gnuplot heatmap_normalized.gp
+    /// ```
+    pub fn gnuplot<W, S, GS>(
+        &self,
+        mut gnuplot_writer: W,
+        gnuplot_output_name: S,
+        settings: GS
+    ) -> std::io::Result<()>
+    where 
+        W: Write,
+        S: AsRef<str>,
+        GS: Borrow<GnuplotSettings>
+    {
+        let settings = settings.borrow();
+        settings.terminal_str();
+        writeln!(gnuplot_writer, "{}", settings.terminal_str())?;
+        write!(gnuplot_writer, "set output \"")?;
+        settings.terminal.output(gnuplot_output_name.as_ref(), &mut gnuplot_writer)?;
+        writeln!(gnuplot_writer, "\"")?;
+        settings.write_label(&mut gnuplot_writer)?;
+
+
+        writeln!(gnuplot_writer, "set xrange[-0.5:{}]", self.width as f64 - 0.5)?;
+        writeln!(gnuplot_writer, "set yrange[-0.5:{}]", self.height as f64 - 0.5)?;
+        if !settings.title.is_empty(){
+            writeln!(gnuplot_writer, "set title '{}'", settings.title)?;
+        }
+
+        settings.write_axis(
+            &mut gnuplot_writer,
+            self.hist_width.bin_count(),
+            self.hist_width.bin_count()
+        )?;
+
+        settings.pallet.write_pallet(&mut gnuplot_writer)?;
+        writeln!(gnuplot_writer, "set view map")?;
+
+        writeln!(gnuplot_writer, "set rmargin screen 0.8125\nset lmargin screen 0.175")?;
+        writeln!(gnuplot_writer, "$data << EOD")?;
+        self.write_to(&mut gnuplot_writer)?;
+        writeln!(gnuplot_writer, "EOD")?;
+        writeln!(gnuplot_writer, "splot $data matrix with image t \"{}\" ", settings.get_title())?;
+
+        writeln!(gnuplot_writer, "set output")?;
+
+        settings.terminal.finish(gnuplot_output_name.as_ref(), gnuplot_writer)
+    }
 
 }

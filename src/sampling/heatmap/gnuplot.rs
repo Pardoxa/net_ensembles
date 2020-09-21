@@ -147,9 +147,9 @@ impl GnuplotSettings {
     }
 
     /// # Builder pattern - set title
-    pub fn title<'a>(&'a mut self, title: String) -> &'a mut Self
+    pub fn title<'a, S: Into<String>>(&'a mut self, title: S) -> &'a mut Self
     {
-        self.title = title;
+        self.title = title.into();
         self
     }
 
