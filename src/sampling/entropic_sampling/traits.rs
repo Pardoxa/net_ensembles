@@ -72,11 +72,10 @@ pub trait Entropic
     /// for the requested interval
     /// * this is what we are doing the simulations for
     fn log_density_base10(&self) -> Vec<f64>{
-        let factor = std::f64::consts::E.log10();
         let mut density = self.log_density();
         density
             .iter_mut()
-            .for_each(|val| *val *= factor);
+            .for_each(|val| *val *= std::f64::consts::LOG10_E);
         density
         
     }

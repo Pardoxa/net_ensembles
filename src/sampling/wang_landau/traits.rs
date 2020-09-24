@@ -40,10 +40,9 @@ pub trait WangLandau
     /// for the requested interval
     /// * this is what we are doing the simulations for
     fn log_density_base10(&self) -> Vec<f64>{
-        let factor = std::f64::consts::E.log10();
         self.log_density()
             .iter()
-            .map(|val| val * factor)
+            .map(|val| val * std::f64::consts::LOG10_E)
             .collect()
     }
 
