@@ -148,7 +148,7 @@ where WL: WangLandauHist<HIST>,
         .collect();
 
     // re-normalize to prevent later precision problems
-    re_normalize_density(&mut log10_vec);
+    inner_subtract_max(&mut log10_vec);
 
     // calc z
     let z_vec = calc_z(&log10_vec, &left_list, &right_list)?;

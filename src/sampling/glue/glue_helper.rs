@@ -19,6 +19,10 @@ impl From<HistErrors> for GlueErrors{
 }
 
 pub(crate) fn norm_sum_to_1(glue_log_density: &mut Vec<f64>){
+    // prevent errors due to small or very large numbers
+    subtract_max(glue_log_density);
+
+    // calculate actual sum in non log space
     let sum = glue_log_density.iter()
         .fold(0.0, |acc, &val| {
             if val.is_finite(){
@@ -151,17 +155,24 @@ where
     index.map_err(|_| GlueErrors::BinarySearch)
 }
 
-pub(crate) fn re_normalize_density(log10_vec: &mut Vec<Vec<f64>>)
+/// calles subtract_max on all contained vectors
+pub(crate) fn inner_subtract_max(log10_vec: &mut Vec<Vec<f64>>)
 {
     log10_vec.iter_mut()
-    .for_each(
-        |v|
-        {
-            let max = v.iter().copied().fold(f64::NAN, f64::max);
-            if max.is_finite() {
-                v.iter_mut()
-                    .for_each(|val| *val -= max);
-            }
-        }
+        .for_each(
+        |v| subtract_max(v)
     );
+}
+
+/// subtracts maximum, if it is finite
+fn subtract_max(list: &mut[f64]){
+    let max = list
+        .iter()
+        .copied()
+        .fold(f64::NAN, f64::max);
+
+    if max.is_finite() {
+        list.iter_mut()
+            .for_each(|val| *val -= max);
+    }
 }
