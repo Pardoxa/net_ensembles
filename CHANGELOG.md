@@ -21,7 +21,7 @@
 ### Ensemble
 * adding Barabási-Albert ensemble - work in progress
 * adding ConfigurationModel - work in progress
-* adding SpacialEnsmeble - work in progress
+* adding Spacial Ensemble - work in progress
 * moved `sort_adj`to `WithGraph`trait
 * `ErEnsembleC`: removed `R: Rng` trait bound for struct, added `Dot` trait
 * `ErEnsembleM`: removed `R: Rng` trait bound for struct, added `Dot` trait
@@ -31,6 +31,8 @@
 * WithGraph now has `sort_adj()` member
 * MarkovChain now has member `m_steps_quiet()`
 * adding traits `Histogram`, `HistogramVal` and `HistogramIntervalDistance`
+* HasRng - changed `swap_rng(&mut self, rng: Rng) -> Rng` to `swap_rng(&mut self, rng: &mut Rng)`
+  and moved HasRng into sampling module. Reexported at old position.
 
 ### module sampling
 * added `WangLandauAdaptive` for performing WangLandau simulation
@@ -48,7 +50,7 @@
 * **Almost all `u32` where changed into `usize`**. 
   In fact so many, that I will not list them all, sorry for the inconvinience.
   Why? Because `u32` was a very bad choice and I had to convert it into `usize` almost everywhere anyway. 
-  Currently (almost?) noone uses this library anyway. That might change, meaning:
+  Currently (almost?) no one uses this library anyway. That might change, meaning:
   if I do not do this change now, it will only become increasingly inconvinient in the future,
   so I'd be stuck with it.
 * This increases the performance of some iterators

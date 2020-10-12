@@ -9,7 +9,7 @@ pub use graph_traits::MeasurableGraphQuantities;
 pub use graph_traits::GraphErrors;
 
 mod ensemble_traits;
-pub use ensemble_traits::HasRng;
+pub use crate::sampling::traits::HasRng;
 pub use ensemble_traits::WithGraph;
 pub use ensemble_traits::GraphIterators;
 pub use ensemble_traits::GraphIteratorsMut;

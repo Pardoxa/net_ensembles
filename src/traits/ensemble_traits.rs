@@ -2,18 +2,6 @@ use crate::{AdjContainer, traits::*, iter::*, GenericGraph};
 use crate::generic_graph::{Dfs, DfsWithIndex, Bfs};
 use crate::{sw_graph::SwContainer, graph::NodeContainer};
 
-/// # Access internal random number generator
-pub trait HasRng<Rng>
-where Rng: rand::Rng
-{
-    /// # Access RNG
-    /// If, for some reason, you want access to the internal random number generator: Here you go
-    fn rng(&mut self) -> &mut Rng;
-
-    /// # If you need to exchange the internal rng
-    /// * returns old rng
-    fn swap_rng(&mut self, rng: Rng) -> Rng;
-}
 
 /// unify graph ensembles in a trait
 pub trait WithGraph<T, G> {

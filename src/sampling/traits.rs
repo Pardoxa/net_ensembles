@@ -421,3 +421,17 @@ pub trait SimpleSample{
         vec
     }
 }
+
+
+/// # Access internal random number generator
+pub trait HasRng<Rng>
+where Rng: rand::Rng
+{
+    /// # Access RNG
+    /// If, for some reason, you want access to the internal random number generator: Here you go
+    fn rng(&mut self) -> &mut Rng;
+
+    /// # If you need to exchange the internal rng
+    /// * swaps internal random number generator with `rng`
+    fn swap_rng(&mut self, rng: &mut Rng);
+}

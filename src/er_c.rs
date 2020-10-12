@@ -107,9 +107,8 @@ impl<T, R> HasRng<R> for ErEnsembleC<T, R>
 
     /// # Swap random number generator
     /// * returns old internal rng
-    fn swap_rng(&mut self, mut rng: R) -> R {
-        std::mem::swap(&mut self.rng, &mut rng);
-        rng
+    fn swap_rng(&mut self, rng: &mut R) {
+        std::mem::swap(&mut self.rng, rng);
     }
 }
 

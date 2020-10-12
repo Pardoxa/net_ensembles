@@ -1,5 +1,5 @@
 use crate::{rand::Rng, *};
-use std::{marker::PhantomData, iter::*};
+use std::{marker::PhantomData, iter::*, mem::swap};
 use crate::sampling::*;
 use std::convert::*;
 use std::io::Write;
@@ -585,5 +585,17 @@ where Hist: Histogram,
 
     unsafe fn ensemble_mut(&mut self) -> &mut E {
         &mut self.ensemble
+    }
+}
+
+impl<Hist, R, E, S, Res, Energy> HasRng<R> for EntropicSampling<Hist, R, E, S, Res, Energy>
+    where R: Rng,
+{
+    fn rng(&mut self) -> &mut R {
+        &mut self.rng
+    }
+
+    fn swap_rng(&mut self, rng: &mut R) {
+        swap(&mut self.rng, rng);
     }
 }

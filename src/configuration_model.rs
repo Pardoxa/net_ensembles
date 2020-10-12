@@ -260,9 +260,8 @@ impl<T, R> HasRng<R> for ConfigurationModel<T, R>
         &mut self.rng
     }
 
-    fn swap_rng(&mut self, mut rng: R) -> R {
-        std::mem::swap(&mut self.rng, &mut rng);
-        rng
+    fn swap_rng(&mut self, rng: &mut R) {
+        std::mem::swap(&mut self.rng, rng);
     }
 }
 

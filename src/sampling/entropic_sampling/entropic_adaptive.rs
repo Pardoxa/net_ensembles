@@ -803,3 +803,15 @@ where Hist: Histogram,
         &mut self.ensemble
     }
 }
+
+impl<Hist, R, E, S, Res, Energy> HasRng<R> for EntropicSamplingAdaptive<Hist, R, E, S, Res, Energy>
+    where R: Rng,
+{
+    fn rng(&mut self) -> &mut R {
+        &mut self.rng
+    }
+
+    fn swap_rng(&mut self, rng: &mut R) {
+        std::mem::swap(&mut self.rng, rng);
+    }
+}
