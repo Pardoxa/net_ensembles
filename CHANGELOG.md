@@ -2,6 +2,9 @@
 
 ## v0.4.0 &rarr; master
 
+### sampling
+* move sampling to new crate - sampling is reexported at old location
+
 ### Iterators
 * adding new breadth first iterator `BfsFiltered`
 * improve `size_hint` for a few iterators

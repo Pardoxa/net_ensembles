@@ -27,7 +27,7 @@ jobs:
         components: rustfmt, rust-src
 
     - name: Build Documentation
-      run: cargo doc --all --no-deps
+      run: cargo doc --no-deps -p sampling -p net_ensembles
 
 
     - name: Move Files Checkout

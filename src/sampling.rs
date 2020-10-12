@@ -3,22 +3,4 @@
 
 /// Contains traits useful for sampling an ensemble
 /// like MarkovChain or Metropolis etc.
-pub mod traits;
-mod metropolis_helper;
-mod wang_landau;
-mod histogram;
-mod heatmap;
-mod entropic_sampling;
-mod glue;
-#[cfg(feature="bootstrap")]
-mod bootstrap;
-
-pub use wang_landau::*;
-pub use entropic_sampling::*;
-
-pub use metropolis_helper::*;
-pub use histogram::*;
-pub use heatmap::*;
-pub use glue::*;
-#[cfg(feature="bootstrap")]
-pub use bootstrap::*;
+pub use sampling::*;
