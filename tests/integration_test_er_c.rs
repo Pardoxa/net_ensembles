@@ -4,6 +4,7 @@ use rand::SeedableRng;
 use net_ensembles::*;
 mod common;
 use common::{equal_graphs, PhaseNode};
+use net_ensembles::sampling::Metropolis;
 use std::fmt::Write;
 use std::fs::File;
 use std::io::BufReader;
@@ -18,9 +19,10 @@ fn step_test() {
     let mut e_0 = e.clone();
     e_0.sort_adj();
 
+    let mut steps = Vec::new();
     for i in 0..=200 {
-        let steps = e.m_steps(i);
-        e.undo_steps_quiet(steps);
+        e.m_steps(i, &mut steps);
+        e.undo_steps_quiet(&steps);
 
         e.sort_adj();
         equal_graphs(&e_0.graph(), &e.graph());
@@ -36,58 +38,53 @@ fn monte_continue(){
     while !ensemble.is_connected().unwrap() {
         ensemble.randomize();
     }
-    let mut ensemble_clone = ensemble.clone();
+    let ensemble_clone = ensemble.clone();
     let mut large_deviation_metropolis = String::new();
 
     // now perform large deviation simulation
     let metropolis_rng = Pcg64::seed_from_u64(77526);
-    let state = ensemble.metropolis_while(
-        metropolis_rng, // rng
-        -10.0,          // temperature
-        30,             // stepsize
-        100,            // steps
-        |ensemble| ensemble.is_connected().unwrap(),    // valid_self
-        |ensemble| ensemble.diameter().unwrap() as f64, // energy
-        |ensemble, counter, energy, rejected| {         // measure
-            // of cause, you can store it in a file instead
-            writeln!(large_deviation_metropolis, "{}, {}, {}, {}", counter, rejected, energy, ensemble.leaf_count())
-            .unwrap();
-        },
-        |_, counter| counter == 20,                     // break_if
+
+    let current_energy = ensemble.diameter().unwrap() as f64;
+    let mut metropolis = Metropolis::new_from_temperature(
+        metropolis_rng,
+        ensemble,
+        current_energy,
+        -10.0,
+        30
+    ).ok().unwrap();
+
+    metropolis.metropolis_while(
+        |ensemble| ensemble.diameter().map(|val| val as f64), // energy
+        |metr|   writeln!(large_deviation_metropolis, "{}, {}, {}", metr.counter(), metr.energy(), metr.ensemble().leaf_count()).unwrap(), // measure
+        |metr| metr.counter() < 20
     );
 
-    // resume the simulation
-    ensemble.continue_metropolis_while(
-        state,
-        false,
-        |ensemble| ensemble.is_connected().unwrap(),    // valid_self
-        |ensemble| ensemble.diameter().unwrap() as f64, // energy
-        |ensemble, counter, energy, rejected| {         // measure
-            // of cause, you can store it in a file instead
-            writeln!(large_deviation_metropolis, "{}, {}, {}, {}", counter, rejected, energy, ensemble.leaf_count())
-            .unwrap();
-        },
-        |_, counter| counter == 20,                     // break_if
+    metropolis.metropolis_while(
+        |ensemble| ensemble.diameter().map(|val| val as f64), // energy
+        |metr|   writeln!(large_deviation_metropolis, "{}, {}, {}", metr.counter(), metr.energy(), metr.ensemble().leaf_count()).unwrap(), // measure
+        |metr| metr.counter() < 40
     );
+
+
+
 
     // alternative simulation
     let mut large_deviation_metropolis_clone = String::new();
 
-    let metropolis_rng = Pcg64::seed_from_u64(77526);
+    let metropolis_rng2 = Pcg64::seed_from_u64(77526);
 
-    ensemble_clone.metropolis_while(
-        metropolis_rng, // rng
-        -10.0,          // temperature
-        30,             // stepsize
-        100,            // steps
-        |ensemble| ensemble.is_connected().unwrap(),    // valid_self
-        |ensemble| ensemble.diameter().unwrap() as f64, // energy
-        |ensemble, counter, energy, rejected| {         // measure
-            // of cause, you can store it in a file instead
-            writeln!(large_deviation_metropolis_clone, "{}, {}, {}, {}", counter, rejected, energy, ensemble.leaf_count())
-            .unwrap();
-        },
-        |_, _| false,                     // break_if
+    let mut metropolis2 = Metropolis::new_from_temperature(
+        metropolis_rng2,
+        ensemble_clone,
+        current_energy,
+        -10.0,
+        30
+    ).ok().unwrap();
+
+    metropolis2.metropolis_while(
+        |ensemble| ensemble.diameter().map(|val| val as f64), // energy
+        |metr|   writeln!(large_deviation_metropolis_clone, "{}, {}, {}", metr.counter(), metr.energy(), metr.ensemble().leaf_count()).unwrap(), // measure
+        |metr| metr.counter() < 40
     );
 
     assert_eq!(

@@ -23,7 +23,7 @@ const ROOT_EDGES_PER_VERTEX: usize = 2;
 
 /// # Returned by markov steps
 /// * information about the performed step and possible errors
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum SwChangeState {
     /// ERROR adjecency list invalid?
@@ -502,14 +502,14 @@ where   T: Node + SerdeStateConform,
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
-    fn undo_step(&mut self, step: SwChangeState) -> SwChangeState {
+    fn undo_step(&mut self, step: &SwChangeState) -> SwChangeState {
         match step {
             SwChangeState::Rewire(root, old_to, new_to) |
-            SwChangeState::Reset (root, old_to, new_to)  => self.graph.rewire_edge(root, new_to, old_to), // swap old to and new to in rewire
+            SwChangeState::Reset (root, old_to, new_to)  => self.graph.rewire_edge(*root, *new_to, *old_to), // swap old to and new to in rewire
             SwChangeState::Nothing |
             SwChangeState::BlockedByExistingEdge |
             SwChangeState::InvalidAdjecency |
-            SwChangeState::GError(_)                     => step
+            SwChangeState::GError(_)                     => *step
         }
     }
 
@@ -520,12 +520,12 @@ where   T: Node + SerdeStateConform,
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
-    fn undo_step_quiet(&mut self, step: SwChangeState) {
+    fn undo_step_quiet(&mut self, step: &SwChangeState) {
         match step {
             SwChangeState::Rewire(root, old_to, new_to) |
             SwChangeState::Reset (root, old_to, new_to)  => {
                 // swap old to and new to in rewire to undo step
-                let state = self.graph.rewire_edge(root, new_to, old_to);
+                let state = self.graph.rewire_edge(*root, *new_to, *old_to);
                 if !state.is_valid() {
                     panic!("undo step - rewire error: {:?}", state);
                 }
@@ -555,17 +555,17 @@ mod tests {
 
         // the following code creates 3 connected components
         while e.is_connected().unwrap(){
-            e.m_steps(10);
+            e.m_steps_quiet(10);
         }
 
         let mut comp = e.connected_components();
-
+        let mut steps = Vec::new();
         while comp.len() < 3{
-            let step = e.m_steps(10);
+            e.m_steps(10, &mut steps);
             comp = e.connected_components();
 
             if  comp.len() < 2{
-                e.undo_steps_quiet(step);
+                e.undo_steps_quiet(&steps);
             }
 
         }

@@ -55,10 +55,12 @@ fn step_test() {
     let mut e_0 = e.clone();
     e_0.sort_adj();
 
+    let mut steps = Vec::with_capacity(501);
+    let mut undo_step = Vec::new();
     for i in 0..=500 {
-        let _steps = e.m_steps(i);
+        e.m_steps(i, &mut steps);
         //println!("do: {:?}", _steps);
-        let _undo_step = e.undo_steps(_steps);
+        let _undo_step = e.undo_steps(&steps, &mut undo_step);
         //println!("undo: {:?}", _undo_step);
 
         e.sort_adj();
@@ -74,10 +76,11 @@ fn step_quiet_test() {
     let mut e_0 = e.clone();
     e_0.sort_adj();
 
+    let mut steps = Vec::with_capacity(501);
     for i in 0..=500 {
-        let _steps = e.m_steps(i);
+        e.m_steps(i, &mut steps);
         //println!("do: {:?}", _steps);
-        let _undo_step = e.undo_steps_quiet(_steps);
+        e.undo_steps_quiet(&steps);
         //println!("undo: {:?}", _undo_step);
 
         e.sort_adj();

@@ -16,7 +16,7 @@ use std::io::Write;
 use serde::{Serialize, Deserialize};
 
 /// # Returned by markov steps
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum ErStepC {
     /// nothing was changed
@@ -174,24 +174,24 @@ impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
-    fn undo_step(&mut self, step: ErStepC) -> ErStepC {
+    fn undo_step(&mut self, step: &ErStepC) -> ErStepC {
         match step {
             ErStepC::AddedEdge(edge)     => {
                 let res = self.graph.remove_edge(edge.0, edge.1);
                 match res {
                     Err(err)        => ErStepC::GError(err),
-                    Ok(_)           => ErStepC::RemovedEdge(edge),
+                    Ok(_)           => ErStepC::RemovedEdge(*edge),
                 }
             },
             ErStepC::RemovedEdge(edge)   => {
                 let res = self.graph.add_edge(edge.0, edge.1);
                 match res {
                     Err(err)     => ErStepC::GError(err),
-                    Ok(_)        => ErStepC::AddedEdge(edge),
+                    Ok(_)        => ErStepC::AddedEdge(*edge),
                 }
             },
             ErStepC::Nothing |
-            ErStepC::GError(_)   => step,
+            ErStepC::GError(_)   => *step,
         }
     }
 
@@ -201,7 +201,7 @@ impl<T, R> MarkovChain<ErStepC, ErStepC> for ErEnsembleC<T, R>
     /// ## Important:
     /// Restored graph is the same as before the random step **except** the order of nodes
     /// in the adjacency list might be shuffled!
-    fn undo_step_quiet(&mut self, step: ErStepC) {
+    fn undo_step_quiet(&mut self, step: &ErStepC) {
         match step {
             ErStepC::AddedEdge(edge)     => {
                 let res = self.graph.remove_edge(edge.0, edge.1);

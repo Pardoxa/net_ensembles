@@ -14,15 +14,16 @@ where
 
     e = init();
     let m_step_name = format!("m_steps_{}_{}", step_size, name);
-    c.bench_function(&m_step_name, |b| b.iter(|| e.m_steps(step_size) ));
+    c.bench_function(&m_step_name, |b| b.iter(|| e.m_steps_quiet(step_size) ));
 
     e = init();
     let m_step_undo_name = format!("m_step_and_undo_{}_{}", step_size, name);
+    let mut steps = Vec::with_capacity(step_size);
     c.bench_function(&m_step_undo_name, |b| {
         b.iter(||
             {
-                let steps = e.m_steps(step_size);
-                e.undo_steps_quiet(steps);
+                e.m_steps(step_size, &mut steps);
+                e.undo_steps_quiet(&steps);
             });
     });
 }
@@ -36,11 +37,12 @@ where
     F: FnMut() -> E
 {
     let name_q_core = format!("measure_{}_m_step_{}_4_core", name, step_size);
+  
     c.bench_function(&name_q_core, |b| {
             let mut e = init();
             b.iter(||
                 {
-                    e.m_steps(step_size);
+                    e.m_steps_quiet(step_size);
                     e.q_core(4);
                 });
 
@@ -53,7 +55,7 @@ where
             let mut e = init();
             b.iter(||
                 {
-                    e.m_steps(step_size);
+                    e.m_steps_quiet(step_size);
                     black_box(e.diameter());
                 });
 
@@ -66,7 +68,7 @@ where
             let mut e = init();
             b.iter(||
                 {
-                    e.m_steps(step_size);
+                    e.m_steps_quiet(step_size);
                     e.transitivity();
                 });
 
@@ -79,7 +81,7 @@ where
             let mut e = init();
             b.iter(||
                 {
-                    e.m_steps(step_size);
+                    e.m_steps_quiet(step_size);
                     e.vertex_load(true);
                 });
 
@@ -93,7 +95,7 @@ where
             let mut e = init();
             b.iter(||
                 {
-                    e.m_steps(step_size);
+                    e.m_steps_quiet(step_size);
                     e.vertex_biconnected_components(true);
                 });
 

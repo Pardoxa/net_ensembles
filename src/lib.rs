@@ -199,12 +199,14 @@
 //! }
 //!
 //! // Create marcov chain, e.g., of connected graphs
+//! // only need to create step vector once
+//! let mut steps = Vec::with_capacity(10);
 //! for _ in 0..100 {
-//!     let steps = e.m_steps(10);
+//!     e.m_steps(10, &mut steps);
 //!
 //!     // reject, if the resulting graph is not connected
 //!     if !e.graph().is_connected().unwrap() {
-//!         e.undo_steps_quiet(steps);
+//!         e.undo_steps_quiet(&steps);
 //!     }
 //!     // mesure whatever you want
 //! }

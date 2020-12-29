@@ -17,7 +17,7 @@ where Self: Clone + SerdeStateConform {
 
 
 /// Error messages
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum GraphErrors{
     /// ### somehow, the existing of the edge is a problem

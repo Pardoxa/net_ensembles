@@ -14,12 +14,14 @@ fn step_test() {
     let mut config_change = config.clone();
     config.sort_adj();
 
+    let mut steps = Vec::new();
+    let mut undone_steps = Vec::new();
     for i in 0..=200 {
-        let steps = config_change.m_steps(i);
+        config_change.m_steps(i, &mut steps);
         if i % 2 == 0{
-            config_change.undo_steps_quiet(steps);
+            config_change.undo_steps_quiet(&steps);
         } else {
-            config_change.undo_steps(steps);
+            config_change.undo_steps(&steps, &mut undone_steps);
         }
 
         config_change.sort_adj();

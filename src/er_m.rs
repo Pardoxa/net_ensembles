@@ -17,7 +17,7 @@ use std::io::Write;
 use serde::{Serialize, Deserialize};
 
 /// Storing the information about which edges were deleted or added
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct ErStepM{
     /// removed edge
@@ -28,11 +28,21 @@ pub struct ErStepM{
 }
 
 impl ErStepM{
+    #[allow(unused)]
     fn invert(&mut self){
         std::mem::swap(
             &mut self.removed,
             &mut self.inserted
         );
+    }
+
+    fn inverted(&self) -> Self{
+        Self{
+            removed: self.inserted,
+            inserted: self.removed,
+            i_inserted: self.i_inserted,
+            i_removed: self.i_removed,
+        }
     }
 }
 
@@ -170,16 +180,16 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
     /// * undo a markov step, return result-state
     /// * if you want to undo more than one step
     /// see [`undo_steps`](#method.undo_steps)
-    fn undo_step(&mut self, mut step: ErStepM) -> ErStepM {
-        step.invert();
+    fn undo_step(&mut self, step: &ErStepM) -> ErStepM {
+        let step = step.inverted();
         self.step(&step);
         step
     }
 
     /// * undo a markov step, **panic** on invalid result state
     /// * for undoing multiple steps see [`undo_steps_quiet`](#method.undo_steps_quiet)
-    fn undo_step_quiet(&mut self, mut step: ErStepM) {
-        step.invert();
+    fn undo_step_quiet(&mut self, step: &ErStepM) {
+        let step = step.inverted();
         self.step(&step);
     }
 

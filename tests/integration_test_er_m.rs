@@ -30,9 +30,14 @@ fn serde_json_test() {
     let mut e2: ErEnsembleM::<EmptyNode, Pcg64> = serde_json::from_str(&serialized).unwrap();
 
     equal_graphs(e.graph(), e2.graph());
+    let mut steps = Vec::new();
 
-    e.m_steps(300);
-    e2.m_steps(300);
+    e.m_steps(300, &mut steps);
+    e2.m_steps(300, &mut steps);
+    equal_graphs(e.graph(), e2.graph());
+
+    e.m_steps_quiet(374);
+    e2.m_steps_quiet(374);
     equal_graphs(e.graph(), e2.graph());
 }
 
@@ -43,9 +48,10 @@ fn step_test() {
     let mut e_0 = e.clone();
     e_0.sort_adj();
 
+    let mut steps = Vec::new();
     for i in 0..=200 {
-        let steps = e.m_steps(i);
-        e.undo_steps_quiet(steps);
+        e.m_steps(i, &mut steps);
+        e.undo_steps_quiet(&steps);
 
         e.sort_adj();
         equal_graphs(&e_0.graph(), &e.graph());

@@ -114,7 +114,7 @@ where   T: Node + SerdeStateConform,
 }
 
 /// # Returned by markov steps
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum SpacialStep {
     /// nothing was changed
@@ -164,13 +164,13 @@ where
         }
     }
 
-    fn undo_step(&mut self, step: SpacialStep) -> SpacialStep {
+    fn undo_step(&mut self, step: &SpacialStep) -> SpacialStep {
         match step {
             SpacialStep::AddedEdge(edge) => {
                 let res = self.graph
                     .remove_edge(edge.0, edge.1);
                 match res {
-                    Ok(_) => SpacialStep::RemovedEdge(edge),
+                    Ok(_) => SpacialStep::RemovedEdge(*edge),
                     _ => SpacialStep::Error,
                 }
             },
@@ -178,18 +178,18 @@ where
                 let res = self.graph
                     .add_edge(edge.0, edge.1);
                 match res {
-                    Ok(_) => SpacialStep::AddedEdge(edge),
+                    Ok(_) => SpacialStep::AddedEdge(*edge),
                     _ => SpacialStep::Error,
                 }
             },
-            SpacialStep::Nothing | SpacialStep::Error => step,
+            SpacialStep::Nothing | SpacialStep::Error => *step,
             
         }
     }
 
     /// * panics if `step` is error, or cannot be undone
     /// The latter means, you are undoing the steps in the wrong order
-    fn undo_step_quiet(&mut self, step: SpacialStep) {
+    fn undo_step_quiet(&mut self, step: &SpacialStep) {
         match step {
             SpacialStep::AddedEdge(edge) =>
             {

@@ -374,7 +374,7 @@ where T: Node,
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 /// Markov step of configuration model
 pub enum ConfigurationModelStep {
@@ -461,19 +461,19 @@ impl<T, R> MarkovChain<ConfigurationModelStep, Result<(), UndoStepErrorCM>> for 
     /// # Error
     /// If an error is encountered, this will revert the graph to the state, before trying to undo
     /// the step. The returned Error gives a hint for why this did not succeed.
-    fn undo_step(&mut self, step: ConfigurationModelStep) -> Result<(), UndoStepErrorCM> {
+    fn undo_step(&mut self, step: &ConfigurationModelStep) -> Result<(), UndoStepErrorCM> {
         let (edge1, edge2) = match step {
             ConfigurationModelStep::Error => return Ok(()),
             ConfigurationModelStep::Added(edge1, edge2) => (edge1, edge2)
         };
         
         match self.graph.add_edge(edge2.0, edge2.1) {
-            Err(error) => return Err(UndoStepErrorCM::UnableToAddEdge(edge2, error)),
+            Err(error) => return Err(UndoStepErrorCM::UnableToAddEdge(*edge2, error)),
             Ok(..) => {
                 match self.graph.add_edge(edge1.0, edge1.1) {
                     Err(error) => {
                         self.graph.remove_edge(edge2.0, edge2.1).unwrap();
-                        return Err(UndoStepErrorCM::UnableToAddEdge(edge1, error))
+                        return Err(UndoStepErrorCM::UnableToAddEdge(*edge1, error))
                     },
                     Ok(..) => {
                         match self.graph.remove_edge(edge1.1, edge2.1){
@@ -507,7 +507,7 @@ impl<T, R> MarkovChain<ConfigurationModelStep, Result<(), UndoStepErrorCM>> for 
     /// * as long as you know, that you undo the steps in the correct order,
     ///  this is the prefered method as this more efficent
     /// * **panics** if an Error is encountered
-    fn undo_step_quiet(&mut self, step: ConfigurationModelStep) {
+    fn undo_step_quiet(&mut self, step: &ConfigurationModelStep) {
         let (edge1, edge2) = match step {
             ConfigurationModelStep::Error => return,
             ConfigurationModelStep::Added(edge1, edge2) => (edge1, edge2)
