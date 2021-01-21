@@ -197,8 +197,8 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
     /// * use this to perform a markov step
     /// * for doing multiple mc steps at once, use [`m_steps`](#method.m_steps)
     fn m_step(&mut self) -> ErStepM{
-        let index_current   = self.rng.gen_range(0, self.current_edges.len());
-        let index_possible  = self.rng.gen_range(0, self.possible_edges.len());
+        let index_current   = self.rng.gen_range(0..self.current_edges.len());
+        let index_possible  = self.rng.gen_range(0..self.possible_edges.len());
 
         let step = ErStepM{
             removed:  self.current_edges[index_current],

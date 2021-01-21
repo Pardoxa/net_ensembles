@@ -275,7 +275,7 @@ impl <T, R> SwEnsemble<T, R>
 
     /// draw number <= high but not index
     fn draw_remaining(&mut self, index: usize, high: usize) -> usize {
-        let num = self.rng.gen_range(0, high);
+        let num = self.rng.gen_range(0..high);
 
         if num < index {
             num
@@ -314,7 +314,7 @@ impl <T, R> SwEnsemble<T, R>
     pub fn draw_edge(&mut self) -> (usize, usize) {
         // each vertex has the same number of root nodes
         // the root nodes have an order -> adjecency lists
-        let rng_num = self.rng.gen_range(0, self.graph.edge_count());
+        let rng_num = self.rng.gen_range(0..self.graph.edge_count());
         let v_index = rng_num / ROOT_EDGES_PER_VERTEX;
         let e_index = rng_num % ROOT_EDGES_PER_VERTEX;
 

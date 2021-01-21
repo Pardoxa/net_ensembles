@@ -342,8 +342,8 @@ where   T: Node + SerdeStateConform,
 /// high is exclusive
 #[inline]
 pub(crate) fn draw_two_from_range<T: rand::Rng>(rng: &mut T, high: usize) -> (usize, usize){
-    let first = rng.gen_range(0, high);
-    let second = rng.gen_range(0, high - 1);
+    let first = rng.gen_range(0..high);
+    let second = rng.gen_range(0..high - 1);
 
     if second < first {
         (first, second)
