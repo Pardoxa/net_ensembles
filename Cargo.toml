@@ -35,7 +35,7 @@ num-traits = "^0.2"
 transpose = "^0.2"
 average = { version = "^0.10", optional = true }
 #sampling = { path = "../sampling" }
-sampling = { git = "https://github.com/Pardoxa/sampling.git", rev = "73433db02bff66a0cd9aa3c67b3f7c33a4ee549a" }
+sampling = { git = "https://github.com/Pardoxa/sampling.git", rev = "4924a0f76122401806e1257bfe55d7e4b1d78dfd" }
 
 [dev-dependencies]
 rand_pcg = { version = "0.3.0", features = ["serde1"]}

@@ -113,6 +113,12 @@ pub trait AdjContainer<T: Node>
         -> Result<(), GraphErrors>;
 }
 
+/// Get the adjacency list of a AdjContainer
+pub trait AdjList<Edge>
+{
+    fn edges(&self) -> &[Edge];
+}
+
 
 /// Trait for measuring topological properties of a Graph
 pub trait MeasurableGraphQuantities<G>

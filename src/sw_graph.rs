@@ -6,15 +6,17 @@ use core::iter::FusedIterator;
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone)]
+/// # Edge of small world network
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub(crate) struct SwEdge {
+pub struct SwEdge {
     to: usize,
     originally_to: Option<usize>,
 }
 
 impl SwEdge {
-    pub(crate) fn to(&self) -> &usize {
+    /// Where does the edge point to, i.e., to which node does it connect?
+    pub fn to(&self) -> &usize {
         &self.to
     }
 
@@ -22,7 +24,10 @@ impl SwEdge {
         &self.originally_to
     }
 
-    pub(crate) fn is_root(&self) -> bool {
+    /// # Is the edge a root edge?
+    /// A root edge is an edge which will allways be connected to the current node.
+    /// Where it connects to can change, where it connects from cannot.
+    pub fn is_root(&self) -> bool {
         self.originally_to.is_some()
     }
 
@@ -34,7 +39,15 @@ impl SwEdge {
         self.to = other_id;
     }
 
-    fn is_at_root(&self) -> bool {
+    /// # Is the edge at its root position?
+    /// A root edge is an edge which will allways be connected to the current node.
+    /// Where it connects to can change, where it connects from cannot.
+    /// 
+    /// A root edge can be reset (i.e., where it connects to is reset) to its original neighbor
+    /// (the next, or second next neighbor)
+    ///
+    /// This checks, if the edge still connects to where it would be reset to anyway
+    pub fn is_at_root(&self) -> bool {
         self
             .originally_to
             .map_or(false, |val| val == self.to)
@@ -121,6 +134,14 @@ pub struct SwContainer<T: Node> {
     id: usize,
     adj: Vec<SwEdge>,
     node: T,
+}
+
+impl<T> AdjList<SwEdge> for SwContainer<T>
+where T: Node
+{
+    fn edges(&self) -> &[SwEdge] {
+        &self.adj
+    }
 }
 
 impl<T> AdjContainer<T> for SwContainer<T>

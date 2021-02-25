@@ -5,6 +5,7 @@
 mod graph_traits;
 pub use graph_traits::Node;
 pub use graph_traits::AdjContainer;
+pub use graph_traits::AdjList;
 pub use graph_traits::MeasurableGraphQuantities;
 pub use graph_traits::GraphErrors;
 
