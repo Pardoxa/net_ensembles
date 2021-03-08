@@ -2,6 +2,7 @@
 
 use crate::{step_structs::*, GenericGraph, traits::*};
 use core::iter::FusedIterator;
+use std::vec;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -51,6 +52,13 @@ impl SwEdge {
         self
             .originally_to
             .map_or(false, |val| val == self.to)
+    }
+
+    /// # checks root edge it it is long ranging
+    /// * is it a root edge and if yes, is it a long ranging root edge?
+    pub fn is_long_ranging_root(&self) -> bool {
+        self.originally_to
+            .map_or(false, |val| val != self.to)
     }
 
 }
@@ -270,6 +278,13 @@ where T: Node + SerdeStateConform
 
 impl<T: Node + SerdeStateConform> SwContainer<T> {
 
+     /// returns iterator over indices of neighbors
+     /// * Iterator returns the same items as `self.neigbors()`, though
+     /// it might be more efficient. It will never be less efficient
+     pub fn neighbors_sw(&self) -> SwEdgeIterNeighbors {
+        SwEdgeIterNeighbors::new(self.adj.as_slice())
+    }
+
     fn adj_position(&self, elem: usize) -> Option<usize> {
         SwEdgeIterNeighbors::new(self.adj.as_slice())
             .position(|&x| x == elem)
@@ -458,6 +473,31 @@ where T: Node + SerdeStateConform {
             self.add_edge(i, (i + 2) % n)
                 .unwrap();
         }
+    }
+
+    /// # How many nodes have long ranging edges?
+    /// * counts how many nodes have long ranging edges
+    pub fn count_nodes_with_long_ranging_edges(&self) -> usize
+    {
+        let mut has_long_ranging_edge = vec![false; self.vertex_count()];
+        self.container_iter()
+            .enumerate()
+            .for_each(
+                |(index, c)|
+                c.iter_raw_edges()
+                    .filter(|e| e.is_long_ranging_root())
+                    .for_each(
+                        |e|
+                        {
+                            has_long_ranging_edge[index] = true;
+                            has_long_ranging_edge[*e.to()] = true;
+                        }
+                    )
+            );
+
+        has_long_ranging_edge.into_iter()
+            .filter(|long_ranging_edge| *long_ranging_edge)
+            .count()
     }
 }
 
