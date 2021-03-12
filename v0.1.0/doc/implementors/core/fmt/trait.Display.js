@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["net_ensembles"] = [{"text":"impl&lt;T:&nbsp;Node, A:&nbsp;AdjContainer&lt;T&gt;&gt; Display for GenericGraph&lt;T, A&gt;","synthetic":false,"types":[]},{"text":"impl&lt;T:&nbsp;Node&gt; Display for NodeContainer&lt;T&gt;","synthetic":false,"types":[]},{"text":"impl Display for GraphErrors","synthetic":false,"types":[]},{"text":"impl&lt;T:&nbsp;Node&gt; Display for SwContainer&lt;T&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

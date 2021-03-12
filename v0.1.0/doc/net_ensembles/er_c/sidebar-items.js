@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ErStepC","Returned by Monte Carlo Steps"]],"struct":[["ErEnsembleC","Implements Erdős-Rényi graph ensemblevariable number of edgestargets a connectivity"]]});

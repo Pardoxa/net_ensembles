@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["coin_flips","Example Coin flipsLets assume we do n Coinflips and want to measure the probability for the number of times, this results in Head. This means, the number of times the coin flip returned head is the `energy`"]]});

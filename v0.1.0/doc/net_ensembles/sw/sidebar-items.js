@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["SwEnsemble","Implements small-world graph ensemblefor more details look at documentation of module `sw`for topology functions look at `GenericGraph`SamplingSimple sampling and/or monte carlo steps?look at Ensemble traitAccess or manipulate RNG?look at EnsembleRng traitMinimal example"]]});

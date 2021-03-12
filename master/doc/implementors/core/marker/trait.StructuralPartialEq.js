@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["sampling"] = [{"text":"impl StructuralPartialEq for WangLandauMode","synthetic":false,"types":[]},{"text":"impl StructuralPartialEq for HistErrors","synthetic":false,"types":[]},{"text":"impl StructuralPartialEq for CoinFlip","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

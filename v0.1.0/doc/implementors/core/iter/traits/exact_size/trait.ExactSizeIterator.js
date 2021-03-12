@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["net_ensembles"] = [{"text":"impl&lt;'a&gt; ExactSizeIterator for SwEdgeIterNeighbors&lt;'a&gt;","synthetic":false,"types":[]},{"text":"impl&lt;'a&gt; ExactSizeIterator for IterWrapper&lt;'a&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

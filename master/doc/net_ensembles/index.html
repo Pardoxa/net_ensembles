@@ -1,0 +1,308 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `net_ensembles` crate."><meta name="keywords" content="rust, rustlang, rust-lang, net_ensembles"><title>net_ensembles - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings"></script><script src="../storage.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../net_ensembles/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><p class="location">Crate net_ensembles</p><div class="block version"><p>Version 0.5.0</p></div><div class="sidebar-elems"><a id="all-types" href="all.html"><p>See all net_ensembles's items</p></a><div class="block items"><ul><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#macros">Macros</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li></ul></div><p class="location"></p><script>window.sidebarCurrent = {name: "net_ensembles", ty: "mod", relpath: "../"};</script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/net_ensembles/lib.rs.html#1-312" title="goto source code">[src]</a></span><span class="in-band">Crate <a class="mod" href="">net_ensembles</a></span></h1><div class="docblock"><h1 id="this-lib-is-intended-for-scientific-simulations" class="section-header"><a href="#this-lib-is-intended-for-scientific-simulations">This lib is intended for scientific simulations</a></h1>
+<ul>
+<li>you probably want to take a look at <a href="generic_graph/struct.GenericGraph.html"><code>GenericGraph</code></a>.</li>
+<li>take a look at the module <a href="er_c/index.html"><code>er_c</code></a>
+or <a href="er_m/index.html"><code>er_m</code></a> if you want to do something with an <strong>Erdős-Rényi</strong> ensemble</li>
+<li>if you want to work with a <strong>small-world</strong> ensemble, look at module <a href="sw/index.html"><code>sw</code></a></li>
+<li>an example for implementing your own Node can be found <a href="graph/type.Graph.html#example-2">here</a>.
+Note that the defined Node can be used in the Graph ensembles</li>
+<li>Note: The ensembles implement the trait <a href="./traits/trait.GraphIterators.html"><code>GraphIterators</code></a>,
+therefore calling, e.g., <code>ensemble.graph().dfs(0)</code> is equivalent
+to <code>ensemble.dfs(0)</code> as long as you used
+<code>use::net_ensembles::traits::*</code></li>
+<li>See also: <a href="./traits/trait.GraphIteratorsMut.html"><code>GraphIteratorsMut</code></a></li>
+<li>Note: the ensembles implement the trait
+<a href="./traits/trait.MeasurableGraphQuantities.html"><code>MeasurableGraphQuantities</code></a>,
+therefore, e.g., <code>ensemble.graph().transitivity()</code> and <code>ensemble.transitivity()</code>
+are equivalent</li>
+<li>for <strong>sampling</strong> the ensemble, take a look at this <a href="sampling/index.html">module</a> and <a href="./sampling/traits/index.html">these traits</a></li>
+</ul>
+<h1 id="example-1" class="section-header"><a href="#example-1">Example 1</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::{<span class="ident">ErEnsembleC</span>, <span class="ident">EmptyNode</span>, <span class="ident">rand</span>::<span class="ident">SeedableRng</span>};
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::<span class="ident">traits</span>::{<span class="ident">WithGraph</span>, <span class="ident">SimpleSample</span>, <span class="ident">Dot</span>};
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::{<span class="ident">dot_options</span>, <span class="ident">dot_constants</span>::<span class="kw-2">*</span>};
+<span class="comment">// Note: you might have to enable serde for rand_pcg</span>
+<span class="comment">// to do that, write the following in your Cargo.toml:</span>
+<span class="comment">// rand_pcg = { version = &quot;*&quot;, features = [&quot;serde1&quot;]}</span>
+<span class="kw">use</span> <span class="ident">rand_pcg</span>::<span class="ident">Pcg64</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">File</span>;
+
+<span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">Pcg64</span>::<span class="ident">seed_from_u64</span>(<span class="number">75676526</span>);
+<span class="comment">// create graph with 50 vertices and target connectivity of 2.7</span>
+<span class="comment">// using Pcg64 as random number generator</span>
+<span class="comment">// NOTE: you can exchange `EmptyNode` with anything implementing the `Node` trait</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">er</span> <span class="op">=</span> <span class="ident">ErEnsembleC</span>::<span class="op">&lt;</span><span class="ident">EmptyNode</span>, <span class="kw">_</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="number">50</span>, <span class="number">2.7</span>, <span class="ident">rng</span>);
+
+<span class="comment">// create dot file to visualize the graph</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">f</span> <span class="op">=</span> <span class="ident">File</span>::<span class="ident">create</span>(<span class="string">&quot;50.dot&quot;</span>)
+                   .<span class="ident">expect</span>(<span class="string">&quot;Unable to create file&quot;</span>);
+<span class="comment">// look at Dot trait</span>
+<span class="ident">er</span>.<span class="ident">graph</span>().<span class="ident">dot</span>(
+     <span class="ident">f</span>,
+     <span class="string">&quot;&quot;</span> <span class="comment">// you do not have to use dot_options</span>
+ ).<span class="ident">unwrap</span>();
+
+<span class="comment">// randomize the graph, uses SimpleSample trait</span>
+<span class="ident">er</span>.<span class="ident">randomize</span>();
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">f</span> <span class="op">=</span> <span class="ident">File</span>::<span class="ident">create</span>(<span class="string">&quot;50_1.dot&quot;</span>)
+                   .<span class="ident">expect</span>(<span class="string">&quot;Unable to create file&quot;</span>);
+<span class="ident">er</span>.<span class="ident">graph</span>().<span class="ident">dot_with_indices</span>(
+    <span class="ident">f</span>,
+    <span class="macro">dot_options</span><span class="macro">!</span>(<span class="ident">NO_OVERLAP</span>, <span class="ident">MARGIN_0</span>)
+).<span class="ident">unwrap</span>();
+
+<span class="comment">// Note, you can also create a String this way:</span>
+<span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span>  <span class="ident">er</span>.<span class="ident">graph</span>().<span class="ident">dot_string</span>(<span class="string">&quot;&quot;</span>);</pre></div>
+<p>To visualize, you can use something like</p>
+<pre><code class="language-dot">twopi 50.dot -Tpdf &gt; 50.pdf
+circo 50_1.dot -Tpdf &gt; 50_1.pdf
+</code></pre>
+<p>You can also try some of the other <a href="https://www.graphviz.org/">roadmaps</a>.</p>
+<h1 id="example-2" class="section-header"><a href="#example-2">Example 2</a></h1>
+<p>You can also compute different measurable quantities, look at
+<a href="generic_graph/struct.GenericGraph.html"><code>GenericGraph</code></a> for more.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::{<span class="ident">traits</span>::<span class="kw-2">*</span>, <span class="ident">EmptyNode</span>, <span class="ident">ErEnsembleC</span>};
+<span class="kw">use</span> <span class="ident">rand_pcg</span>::<span class="ident">Pcg64</span>;
+<span class="kw">use</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span>;
+
+<span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">Pcg64</span>::<span class="ident">seed_from_u64</span>(<span class="number">26</span>);
+<span class="comment">// create graph with 50 vertices and target connectivity of 2.7</span>
+<span class="comment">// using Pcg64 as random number generator</span>
+<span class="kw">let</span> <span class="ident">er</span> <span class="op">=</span> <span class="ident">ErEnsembleC</span>::<span class="op">&lt;</span><span class="ident">EmptyNode</span>, <span class="ident">Pcg64</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="number">50</span>, <span class="number">2.7</span>, <span class="ident">rng</span>);
+<span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Number of vertices: {}&quot;</span>,      <span class="ident">er</span>.<span class="ident">vertex_count</span>());
+<span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Number of edges: {}&quot;</span>,         <span class="ident">er</span>.<span class="ident">edge_count</span>());
+<span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Average degree: {}&quot;</span>,          <span class="ident">er</span>.<span class="ident">average_degree</span>());
+<span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;connected components: {:?}&quot;</span>,  <span class="ident">er</span>.<span class="ident">connected_components</span>());
+<span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;transitivity: {}&quot;</span>,            <span class="ident">er</span>.<span class="ident">transitivity</span>());</pre></div>
+<p><strong>Note:</strong> Also works for small-world ensemble, i.e. for
+<a href="sw/struct.SwEnsemble.html"><code>SwEnsemble</code></a></p>
+<h1 id="example-3" class="section-header"><a href="#example-3">Example 3</a></h1><h2 id="simple-sample-for-small-world-ensemble" class="section-header"><a href="#simple-sample-for-small-world-ensemble">Simple sample for small-world ensemble</a></h2>
+<ul>
+<li><strong>Note:</strong> simple sampling also works for <a href="er_c/struct.ErEnsembleC.html"><code>ErEnsembleC</code></a>
+and <a href="er_m/struct.ErEnsembleM.html"><code>ErEnsembleM</code></a></li>
+<li>see trait <a href="./sampling/traits/trait.SimpleSample.html"><code>SimpleSample</code></a></li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::{<span class="ident">SwEnsemble</span>, <span class="ident">EmptyNode</span>};
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::<span class="ident">traits</span>::<span class="kw-2">*</span>; <span class="comment">// I recommend always using this</span>
+<span class="kw">use</span> <span class="ident">rand_pcg</span>::<span class="ident">Pcg64</span>; <span class="comment">//or whatever you want to use as rng</span>
+<span class="kw">use</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span>; <span class="comment">// I use this to seed my rng, but you can use whatever</span>
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">File</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">io</span>::{<span class="ident">BufWriter</span>, <span class="ident">Write</span>};
+
+<span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">Pcg64</span>::<span class="ident">seed_from_u64</span>(<span class="number">1822</span>);
+
+<span class="comment">// now create small-world ensemble with 100 nodes</span>
+<span class="comment">// and a rewiring probability of 0.3 for each edge</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sw_ensemble</span> <span class="op">=</span> <span class="ident">SwEnsemble</span>::<span class="op">&lt;</span><span class="ident">EmptyNode</span>, <span class="ident">Pcg64</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="number">100</span>, <span class="number">0.3</span>, <span class="ident">rng</span>);
+
+<span class="comment">// setup file for writing</span>
+<span class="kw">let</span> <span class="ident">f</span> <span class="op">=</span> <span class="ident">File</span>::<span class="ident">create</span>(<span class="string">&quot;simple_sample_sw.dat&quot;</span>)
+    .<span class="ident">expect</span>(<span class="string">&quot;Unable to create file&quot;</span>);
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">f</span> <span class="op">=</span> <span class="ident">BufWriter</span>::<span class="ident">new</span>(<span class="ident">f</span>);
+<span class="ident">f</span>.<span class="ident">write_all</span>(<span class="string">b&quot;#diameter bi_connect_max average_degree\n&quot;</span>)
+    .<span class="ident">unwrap</span>();
+
+<span class="comment">// simple sample for 10 steps</span>
+<span class="ident">sw_ensemble</span>.<span class="ident">simple_sample</span>(<span class="number">10</span>,
+    <span class="op">|</span><span class="ident">ensemble</span><span class="op">|</span>
+    {
+        <span class="kw">let</span> <span class="ident">diameter</span> <span class="op">=</span> <span class="ident">ensemble</span>
+            .<span class="ident">diameter</span>()
+            .<span class="ident">unwrap</span>();
+
+        <span class="kw">let</span> <span class="ident">bi_connect_max</span> <span class="op">=</span> <span class="ident">ensemble</span>.<span class="ident">graph</span>().<span class="ident">clone</span>()
+            .<span class="ident">vertex_biconnected_components</span>(<span class="bool-val">false</span>)[<span class="number">0</span>];
+
+        <span class="kw">let</span> <span class="ident">average_degree</span> <span class="op">=</span> <span class="ident">ensemble</span>.<span class="ident">graph</span>()
+            .<span class="ident">average_degree</span>();
+
+        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{} {} {}\n&quot;</span>, <span class="ident">diameter</span>, <span class="ident">bi_connect_max</span>, <span class="ident">average_degree</span>)
+            .<span class="ident">unwrap</span>();
+    }
+);
+
+<span class="comment">// or just collect this into a vector to print or do whatever</span>
+<span class="kw">let</span> <span class="ident">vec</span> <span class="op">=</span> <span class="ident">sw_ensemble</span>.<span class="ident">simple_sample_vec</span>(<span class="number">10</span>,
+    <span class="op">|</span><span class="ident">ensemble</span><span class="op">|</span>
+    {
+        <span class="kw">let</span> <span class="ident">diameter</span> <span class="op">=</span> <span class="ident">ensemble</span>.<span class="ident">graph</span>()
+            .<span class="ident">diameter</span>()
+            .<span class="ident">unwrap</span>();
+
+        <span class="kw">let</span> <span class="ident">transitivity</span> <span class="op">=</span> <span class="ident">ensemble</span>.<span class="ident">graph</span>()
+            .<span class="ident">transitivity</span>();
+        (<span class="ident">diameter</span>, <span class="ident">transitivity</span>)
+    }
+);
+<span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">vec</span>);</pre></div>
+<h1 id="example-4-save-and-load" class="section-header"><a href="#example-4-save-and-load">Example 4: Save and load</a></h1>
+<ul>
+<li>only works if feature <code>&quot;serde_support&quot;</code> is enabled</li>
+<li>Note: <code>&quot;serde_support&quot;</code> is enabled by default</li>
+<li>I need the <code>#[cfg(feature = &quot;serde_support&quot;)]</code> to ensure the example does compile if
+you opt out of the default feature</li>
+<li>you do not have to use <code>serde_json</code>, look <a href="https://docs.serde.rs/serde/">here</a> for more info</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::<span class="ident">traits</span>::<span class="kw-2">*</span>; <span class="comment">// I recommend always using this</span>
+<span class="kw">use</span> <span class="ident">serde_json</span>;
+<span class="kw">use</span> <span class="ident">rand_pcg</span>::<span class="ident">Pcg64</span>;
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::{<span class="ident">ErEnsembleC</span>, <span class="ident">EmptyNode</span>, <span class="ident">rand</span>::<span class="ident">SeedableRng</span>};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">File</span>;
+
+<span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">Pcg64</span>::<span class="ident">seed_from_u64</span>(<span class="number">95</span>);
+<span class="comment">// create Erdős-Rényi ensemble</span>
+<span class="kw">let</span> <span class="ident">ensemble</span> <span class="op">=</span> <span class="ident">ErEnsembleC</span>::<span class="op">&lt;</span><span class="ident">EmptyNode</span>, <span class="ident">Pcg64</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="number">200</span>, <span class="number">3.1</span>, <span class="ident">rng</span>);
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde_support&quot;</span>)]</span>
+{
+    <span class="comment">// storing the ensemble in a file:</span>
+
+    <span class="kw">let</span> <span class="ident">er_file</span> <span class="op">=</span> <span class="ident">File</span>::<span class="ident">create</span>(<span class="string">&quot;erC_save.dat&quot;</span>)
+          .<span class="ident">expect</span>(<span class="string">&quot;Unable to create file&quot;</span>);
+
+    <span class="comment">// or serde_json::to_writer(er_file, &amp;ensemble);</span>
+    <span class="ident">serde_json</span>::<span class="ident">to_writer_pretty</span>(<span class="ident">er_file</span>, <span class="kw-2">&amp;</span><span class="ident">ensemble</span>);
+
+    <span class="comment">// loading ensemble from file:</span>
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">read</span> <span class="op">=</span> <span class="ident">File</span>::<span class="ident">open</span>(<span class="string">&quot;erC_save.dat&quot;</span>)
+        .<span class="ident">expect</span>(<span class="string">&quot;Unable to open file&quot;</span>);
+
+    <span class="kw">let</span> <span class="ident">er</span>: <span class="ident">ErEnsembleC</span>::<span class="op">&lt;</span><span class="ident">EmptyNode</span>, <span class="ident">Pcg64</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_reader</span>(<span class="ident">read</span>).<span class="ident">unwrap</span>();
+}</pre></div>
+<h1 id="example-5-marcov-chain" class="section-header"><a href="#example-5-marcov-chain">Example 5: Marcov Chain</a></h1>
+<ul>
+<li>example for a Marcov chain of connected graphs</li>
+<li>you can also create a Marcov chain with unconnected graphs if you want</li>
+<li>see trait <a href="./sampling/traits/trait.MarkovChain.html"><code>MarcovChain</code></a></li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::{<span class="ident">EmptyNode</span>, <span class="ident">ErEnsembleM</span>, <span class="ident">traits</span>::<span class="kw-2">*</span>};
+<span class="kw">use</span> <span class="ident">rand_pcg</span>::<span class="ident">Pcg64</span>;
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::<span class="ident">rand</span>::<span class="ident">SeedableRng</span>; <span class="comment">// rand is reexported</span>
+
+<span class="comment">// first create the ensemble</span>
+<span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">Pcg64</span>::<span class="ident">seed_from_u64</span>(<span class="number">8745</span>);
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">e</span> <span class="op">=</span> <span class="ident">ErEnsembleM</span>::<span class="op">&lt;</span><span class="ident">EmptyNode</span>, <span class="ident">Pcg64</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="number">30</span>, <span class="number">70</span>, <span class="ident">rng</span>);
+
+<span class="comment">// ensure initial graph is connected</span>
+<span class="kw">while</span> <span class="op">!</span><span class="ident">e</span>.<span class="ident">graph</span>()
+    .<span class="ident">is_connected</span>().<span class="ident">unwrap</span>() {
+    <span class="ident">e</span>.<span class="ident">randomize</span>();
+}
+
+<span class="comment">// Create marcov chain, e.g., of connected graphs</span>
+<span class="comment">// only need to create step vector once</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">steps</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">with_capacity</span>(<span class="number">10</span>);
+<span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">100</span> {
+    <span class="ident">e</span>.<span class="ident">m_steps</span>(<span class="number">10</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">steps</span>);
+
+    <span class="comment">// reject, if the resulting graph is not connected</span>
+    <span class="kw">if</span> <span class="op">!</span><span class="ident">e</span>.<span class="ident">graph</span>().<span class="ident">is_connected</span>().<span class="ident">unwrap</span>() {
+        <span class="ident">e</span>.<span class="ident">undo_steps_quiet</span>(<span class="kw-2">&amp;</span><span class="ident">steps</span>);
+    }
+    <span class="comment">// mesure whatever you want</span>
+}</pre></div>
+<h1 id="example-6-define-your-own-data" class="section-header"><a href="#example-6-define-your-own-data">Example 6: Define your own Data</a></h1>
+<ul>
+<li>Note: You will not need the cfg parts, though you have to
+use <code>#[derive(Serialize, Deserialize)]</code> if you use the
+default features of <code>net_ensembles</code></li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">net_ensembles</span>::{<span class="ident">traits</span>::<span class="kw-2">*</span>, <span class="ident">rand</span>::<span class="ident">SeedableRng</span>, <span class="ident">SwEnsemble</span>};
+<span class="kw">use</span> <span class="ident">rand_pcg</span>::<span class="ident">Pcg64</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde_support&quot;</span>)]</span>
+<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>};
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde_support&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SirState</span>{
+    <span class="ident">Susceptible</span>,
+    <span class="ident">Infective</span>,
+    <span class="ident">Removed</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">SirState</span> {
+    <span class="kw">fn</span> <span class="ident">setState</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">state</span>: <span class="self">Self</span>) {
+        <span class="kw-2">*</span><span class="self">self</span> <span class="op">=</span> <span class="ident">state</span>;
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">Node</span> <span class="kw">for</span> <span class="ident">SirState</span> {
+    <span class="kw">fn</span> <span class="ident">new_from_index</span>(<span class="ident">index</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="ident">SirState</span>::<span class="ident">Susceptible</span>
+    }
+}
+
+<span class="comment">// create the rng:</span>
+<span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">Pcg64</span>::<span class="ident">seed_from_u64</span>(<span class="number">45</span>);
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ensemble</span> <span class="op">=</span> <span class="ident">SwEnsemble</span>::<span class="op">&lt;</span><span class="ident">SirState</span>, <span class="ident">Pcg64</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="number">10</span>, <span class="number">0.1</span>, <span class="ident">rng</span>);
+
+<span class="comment">// you can access or change your additional information, e.g., at vertex 0</span>
+<span class="ident">ensemble</span>
+    .<span class="ident">at_mut</span>(<span class="number">0</span>)
+    .<span class="ident">setState</span>(<span class="ident">SirState</span>::<span class="ident">Infective</span>);
+
+<span class="comment">// you can also iterate over your additional information:</span>
+<span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="ident">ensemble</span>
+    .<span class="ident">contained_iter</span>()
+    .<span class="ident">filter</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">state</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">state</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SirState</span>::<span class="ident">Susceptible</span>)
+    .<span class="ident">count</span>();
+<span class="macro">assert</span><span class="macro">!</span>(<span class="ident">count</span> <span class="op">=</span><span class="op">=</span> <span class="number">9</span>);
+
+<span class="comment">// or count how many Susceptible nodes are connected to a specific node, i.e., to node 0</span>
+<span class="kw">let</span> <span class="ident">s_count</span> <span class="op">=</span> <span class="ident">ensemble</span>
+    .<span class="ident">contained_iter_neighbors</span>(<span class="number">0</span>)
+    .<span class="ident">filter</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">state</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">state</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SirState</span>::<span class="ident">Susceptible</span>)
+    .<span class="ident">count</span>();
+
+<span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">s_count</span>);
+
+<span class="comment">// or advance the states:</span>
+<span class="kw">for</span> <span class="ident">state</span> <span class="kw">in</span> <span class="ident">ensemble</span>.<span class="ident">contained_iter_mut</span>() {
+    <span class="kw">match</span> <span class="kw-2">*</span><span class="ident">state</span> {
+        <span class="ident">SirState</span>::<span class="ident">Infective</span>     <span class="op">=</span><span class="op">&gt;</span> { <span class="kw-2">*</span><span class="ident">state</span> <span class="op">=</span> <span class="ident">SirState</span>::<span class="ident">Removed</span> },
+        <span class="kw">_</span>                       <span class="op">=</span><span class="op">&gt;</span> { },
+    };
+}</pre></div>
+</div><h2 id="reexports" class="section-header"><a href="#reexports">Re-exports</a></h2>
+<table><tr><td><code>pub use sw::<a class="struct" href="../net_ensembles/sw/struct.SwEnsemble.html" title="struct net_ensembles::sw::SwEnsemble">SwEnsemble</a>;</code></td></tr><tr><td><code>pub use sw_graph::<a class="type" href="../net_ensembles/sw_graph/type.SwGraph.html" title="type net_ensembles::sw_graph::SwGraph">SwGraph</a>;</code></td></tr><tr><td><code>pub use er_m::<a class="struct" href="../net_ensembles/er_m/struct.ErEnsembleM.html" title="struct net_ensembles::er_m::ErEnsembleM">ErEnsembleM</a>;</code></td></tr><tr><td><code>pub use er_c::<a class="struct" href="../net_ensembles/er_c/struct.ErEnsembleC.html" title="struct net_ensembles::er_c::ErEnsembleC">ErEnsembleC</a>;</code></td></tr><tr><td><code>pub use graph::<a class="type" href="../net_ensembles/graph/type.Graph.html" title="type net_ensembles::graph::Graph">Graph</a>;</code></td></tr><tr><td><code>pub use generic_graph::<a class="struct" href="../net_ensembles/generic_graph/struct.GenericGraph.html" title="struct net_ensembles::generic_graph::GenericGraph">GenericGraph</a>;</code></td></tr><tr><td><code>pub use example_nodes::<a class="struct" href="../net_ensembles/example_nodes/struct.EmptyNode.html" title="struct net_ensembles::example_nodes::EmptyNode">EmptyNode</a>;</code></td></tr><tr><td><code>pub use <a class="mod" href="../net_ensembles/traits/index.html" title="mod net_ensembles::traits">traits</a>::*;</code></td></tr><tr><td><code>pub use iter::<a class="enum" href="../net_ensembles/iter/enum.IterWrapper.html" title="enum net_ensembles::iter::IterWrapper">IterWrapper</a>;</code></td></tr><tr><td><code>pub use <a class="mod" href="../net_ensembles/step_structs/index.html" title="mod net_ensembles::step_structs">step_structs</a>::*;</code></td></tr><tr><td><code>pub use <a class="mod" href="https://rust-random.github.io/rand/rand/index.html" title="mod rand">rand</a>;</code></td></tr></table><h2 id="modules" class="section-header"><a href="#modules">Modules</a></h2>
+<table><tr class="module-item"><td><a class="mod" href="dot_constants/index.html" title="net_ensembles::dot_constants mod">dot_constants</a></td><td class="docblock-short"><p>constants for dot options</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="er_c/index.html" title="net_ensembles::er_c mod">er_c</a></td><td class="docblock-short"><p>Erdős-Rényi ensemble with target connectivity</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="er_m/index.html" title="net_ensembles::er_m mod">er_m</a></td><td class="docblock-short"><p>Erdős-Rényi with constant number of edges</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="example_nodes/index.html" title="net_ensembles::example_nodes mod">example_nodes</a></td><td class="docblock-short"><p>Example nodes implementing trait <code>Node</code></p>
+</td></tr><tr class="module-item"><td><a class="mod" href="generic_graph/index.html" title="net_ensembles::generic_graph mod">generic_graph</a></td><td class="docblock-short"><p>Generic implementation for Topology</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="graph/index.html" title="net_ensembles::graph mod">graph</a></td><td class="docblock-short"><p>Topology</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="iter/index.html" title="net_ensembles::iter mod">iter</a></td><td class="docblock-short"><p>Contains definitions of a few iterators. Not All of them though.</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="sampling/index.html" title="net_ensembles::sampling mod">sampling</a></td><td class="docblock-short"><p>For sampling ensembles</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="spacial/index.html" title="net_ensembles::spacial mod">spacial</a></td><td class="docblock-short"><p>Spacial ensemble</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="step_structs/index.html" title="net_ensembles::step_structs mod">step_structs</a></td><td class="docblock-short"><p>The structs returned by the mc steps</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="sw/index.html" title="net_ensembles::sw mod">sw</a></td><td class="docblock-short"><p>Small-world ensemble</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="sw_graph/index.html" title="net_ensembles::sw_graph mod">sw_graph</a></td><td class="docblock-short"><p>Topology for SwEnsemble</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="traits/index.html" title="net_ensembles::traits mod">traits</a></td><td class="docblock-short"><p>You should <code>use net_ensembles::traits::*</code></p>
+</td></tr></table><h2 id="macros" class="section-header"><a href="#macros">Macros</a></h2>
+<table><tr class="module-item"><td><a class="macro" href="macro.dot_options.html" title="net_ensembles::dot_options macro">dot_options</a></td><td class="docblock-short"><p>You can chain/combine options with the <code>dot_options!</code> macro:</p>
+</td></tr></table><h2 id="structs" class="section-header"><a href="#structs">Structs</a></h2>
+<table><tr class="module-item"><td><a class="struct" href="struct.BAensemble.html" title="net_ensembles::BAensemble struct">BAensemble</a></td><td class="docblock-short"><p>Implements a Barabási-Albert Graph ensemble</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.ConfigurationModel.html" title="net_ensembles::ConfigurationModel struct">ConfigurationModel</a></td><td class="docblock-short"><p>Generate networks with a given degree distribution</p>
+</td></tr></table><h2 id="enums" class="section-header"><a href="#enums">Enums</a></h2>
+<table><tr class="module-item"><td><a class="enum" href="enum.ConfigurationModelStep.html" title="net_ensembles::ConfigurationModelStep enum">ConfigurationModelStep</a></td><td class="docblock-short"><p>Markov step of configuration model</p>
+</td></tr><tr class="module-item"><td><a class="enum" href="enum.GraphErrors.html" title="net_ensembles::GraphErrors enum">GraphErrors</a></td><td class="docblock-short"><p>Error messages</p>
+</td></tr><tr class="module-item"><td><a class="enum" href="enum.UndoStepErrorCM.html" title="net_ensembles::UndoStepErrorCM enum">UndoStepErrorCM</a></td><td class="docblock-short"><p>Result of undoing a step via Markov Chain method of ConfigurationModel</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../";window.currentCrate = "net_ensembles";</script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>

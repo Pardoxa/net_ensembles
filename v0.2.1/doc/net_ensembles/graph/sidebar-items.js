@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["NodeContainer","Used for accessing neighbor information from graphcontains Adjacency list and internal id (normally the index in the graph).also contains user specified data, i.e, `T` from `NodeContainer<T>`see trait `AdjContainer`"]],"type":[["Graph","Contains the topology and implements functions for analyzing topologyused for graph ensembles"]]});

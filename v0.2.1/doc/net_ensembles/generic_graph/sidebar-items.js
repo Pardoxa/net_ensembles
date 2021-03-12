@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Bfs","Breadth first search Iterator with index and depth of corresponding nodesiterator returns tuple: `(index, node, depth)`"],["Dfs","Depth first search Iterator"],["DfsWithIndex","Depth first search Iterator with index of corresponding nodes"],["GenericGraph","Generic graph implementationcontains multiple measurable quantities"]]});

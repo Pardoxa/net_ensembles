@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["bootstrap","returns reduced value + estimated error (as sqrt of variance)"],["bootstrap_copyable","Similar to `bootstrap` but for stuff that implements `Copy`. Likely more effient in these cases returns reduced value + estimated error (as sqrt of variance)"]]});

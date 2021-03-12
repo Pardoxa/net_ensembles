@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["EmptyNode","Use this, if you do not need to store extra information"]]});
