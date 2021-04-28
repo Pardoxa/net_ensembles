@@ -231,7 +231,7 @@ where T: Node + SerdeStateConform,
             &mut self.possible_edges[step.i_inserted]
         );
     }
-
+    
     /// # Initialize
     /// create new ErEnsembleM graph with:
     /// * `n` vertices
@@ -247,14 +247,12 @@ where T: Node + SerdeStateConform,
         // panic, if you try to create a graph with to many edges
         assert!(
             m <= p_edges,
-            format!(
-                "A complete graph with {} vertices has {} edges. \
-                 You requested {} edges, i.e., to many. Panic at function `new` of struct {}",
-                n,
-                p_edges,
-                m,
-                std::any::type_name::<Self>(),
-            )
+            "A complete graph with {} vertices has {} edges. \
+             You requested {} edges, i.e., to many. Panic at function `new` of struct {}",
+            n,
+            p_edges,
+            m,
+            std::any::type_name::<Self>()
         );
 
         let mut vec = Vec::with_capacity(p_edges);

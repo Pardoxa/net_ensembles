@@ -533,7 +533,7 @@ where   T: Node + SerdeStateConform,
             SwChangeState::Nothing |
             SwChangeState::BlockedByExistingEdge => (),
             SwChangeState::InvalidAdjecency      => panic!("undo_step - {:?} - corrupt step?", step),
-            SwChangeState::GError(error)         => panic!(format!("undo_step - GError {} - corrupt step?", error))
+            SwChangeState::GError(error)         => panic!("undo_step - GError {} - corrupt step?", error)
         }
     }
 }

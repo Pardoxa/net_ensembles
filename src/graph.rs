@@ -357,7 +357,7 @@ mod tests {
         // create edge -> should not result in error!
         let res = unsafe { c.push(&mut c2) };
         if let Err(e) = res {
-            panic!(format!("error: {}", e));
+            panic!("error: {}", e);
         }
         // now edge exists, should not be able to add it again:
         let res = unsafe { c.push(&mut c2) };

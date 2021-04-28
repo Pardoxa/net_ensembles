@@ -213,13 +213,13 @@ where T: Node,
         debug_assert!(
             index0 < self.next_id &&
             index1 < self.next_id,
-            format!("net_ensembles - panic - index out of bounds! \
-                    vertex_count: {}, index_0: {}, index1: {} - \
-                    error probably results from trying to add or remove edges",
-                    self.vertex_count(),
-                    index0,
-                    index1
-            )
+            "net_ensembles - panic - index out of bounds! \
+                vertex_count: {}, index_0: {}, index1: {} - \
+                error probably results from trying to add or remove edges",
+            self.vertex_count(),
+            index0,
+            index1
+            
         );
 
         debug_assert!(
