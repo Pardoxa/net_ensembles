@@ -51,7 +51,7 @@ impl fmt::Display for GraphErrors {
 
 /// Defines methods all adjecency containers should have
 /// such that `GenericGraph` can use it
-pub trait AdjContainer<T: Node>
+pub trait AdjContainer<T>
 {
     /// Create new instance with id
     fn new(id: usize, node: T) -> Self;

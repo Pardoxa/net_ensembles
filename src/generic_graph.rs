@@ -37,6 +37,11 @@ where T: Node,
             phantom: PhantomData,
         }
     }
+}
+
+impl<T, A> GenericGraph<T, A>
+where A: AdjContainer<T>
+{
 
     /// # removes all edges from the graph
     /// * inexpensive O(1), if there are no edges to begin with
@@ -1131,7 +1136,6 @@ where T: Node,
 
 impl<T, A> DotExtra<T, A> for GenericGraph<T, A>
 where
-    T: Node,
     A: AdjContainer<T>,
 {
     fn dot_from_container_index<F, S1, S2, W>(&self, mut writer: W, dot_options: S1, mut f: F)
@@ -1220,7 +1224,7 @@ where T: Node,
 /// * iterator returns tuple: `(index, node, depth)`
 /// * iterator uses filter to decide, if a vertex should be considered
 pub struct BfsFiltered<'a, 'b, T, A, F>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>,
         F: FnMut(&T, usize) -> bool,
 {
@@ -1233,7 +1237,7 @@ where   T: 'a + Node,
 }
 
 impl<'a, 'b, T, A, F>  BfsFiltered<'a, 'b, T, A, F>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>,
         F: 'b + FnMut(&T, usize) -> bool,
 {
@@ -1293,7 +1297,7 @@ where   T: 'a + Node,
 }
 
 impl<'a, 'b, T, A, F> Iterator for BfsFiltered<'a, 'b, T, A, F>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>,
         F: 'b + FnMut(&T, usize) -> bool,
 {
@@ -1329,7 +1333,7 @@ where   T: 'a + Node,
 /// # Breadth first search Iterator with **index** and **depth** of corresponding nodes
 /// * iterator returns tuple: `(index, node, depth)`
 pub struct Bfs<'a, T, A>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>
 {
         graph: &'a GenericGraph<T, A>,
@@ -1340,7 +1344,7 @@ where   T: 'a + Node,
 }
 
 impl<'a, T, A> Bfs<'a, T, A>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>
 {
         fn new(graph: &'a GenericGraph<T, A>, index: usize) -> Self {
@@ -1380,7 +1384,7 @@ where   T: 'a + Node,
 /// # Iterator
 /// - returns tuple: `(index, node, depth)`
 impl<'a, T, A> Iterator for Bfs<'a, T, A>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>
 {
         type Item = (usize, &'a T, usize);
@@ -1411,7 +1415,7 @@ where   T: 'a + Node,
 
 /// Depth first search Iterator with **index** of corresponding nodes
 pub struct DfsWithIndex<'a, T, A>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>
 {
         graph: &'a GenericGraph<T, A>,
@@ -1420,7 +1424,7 @@ where   T: 'a + Node,
 }
 
 impl<'a, T, A> DfsWithIndex<'a, T, A>
-    where   T: 'a + Node,
+    where   T: 'a,
             A: AdjContainer<T>
 {
 
@@ -1444,7 +1448,7 @@ impl<'a, T, A> DfsWithIndex<'a, T, A>
 }
 
 impl<'a, T, A> Iterator for DfsWithIndex<'a, T, A>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>
 {
         type Item = (usize, &'a T);
@@ -1468,7 +1472,7 @@ where   T: 'a + Node,
 
 /// Depth first search Iterator
 pub struct Dfs<'a, T, A>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>
 {
         graph: &'a GenericGraph<T, A>,
@@ -1478,7 +1482,7 @@ where   T: 'a + Node,
 
 
 impl<'a, T, A> Dfs<'a, T, A>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>
 {
     fn new(graph: &'a GenericGraph<T, A>, index: usize) -> Self {
@@ -1500,7 +1504,7 @@ where   T: 'a + Node,
 }
 
 impl<'a, T, A> Iterator for Dfs<'a, T, A>
-where   T: 'a + Node,
+where   T: 'a,
         A: AdjContainer<T>
 {
     type Item = &'a T;

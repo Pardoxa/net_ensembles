@@ -95,8 +95,7 @@ impl<'a> IterWrapper<'a> {
 
 /// Iterator over additional data stored at each vertex in order of indices
 pub struct ContainedIter<'a, T, A>
-where T: Node,
-      A: AdjContainer<T>
+where A: AdjContainer<T>
 {
     vertex_slice: &'a[A],
     phantom: PhantomData<T>
@@ -104,8 +103,7 @@ where T: Node,
 }
 
 impl<'a, T, A> ContainedIter<'a, T, A>
-where T: Node,
-      A: AdjContainer<T>
+where A: AdjContainer<T>
 {
     /// Create new iterator over vertex slice
     pub(crate) fn new(vertex_slice: &'a[A]) -> Self {
@@ -188,7 +186,7 @@ where T: 'a + Node,
 ///////////////////////////
 /// Iterator over each vertex directly connected with start vertex in adjecency list of vertex index
 pub struct NContainerIter<'a, T, A>
-where T: Node,
+where
       A: AdjContainer<T>
 {
     vertex_slice:   &'a[A],
@@ -198,7 +196,7 @@ where T: Node,
 }
 
 impl<'a, T, A> NContainerIter<'a, T, A>
-where T: Node,
+where
       A: AdjContainer<T>
 {
     /// Create new iterator
@@ -267,7 +265,7 @@ where T: 'a + Node,
 /// Iterator over additional information stored at vertices
 /// that are directly connected to specific vertex
 pub struct NContainedIter<'a, T, A>
-where T: Node,
+where
       A: AdjContainer<T>
 {
     vertex_slice:   &'a[A],
@@ -282,7 +280,7 @@ where T: Node + 'a,
 {     }
 
 impl<'a, T, A> NContainedIter<'a, T, A>
-where T: Node,
+where
       A: AdjContainer<T>
 {
     /// Create new iterator
@@ -346,7 +344,7 @@ where T: 'a + Node,
 /// Iterator over additional information + indices stored at vertices
 /// that are directly connected to specific vertex
 pub struct NIContainedIter<'a, T, A>
-where T: Node,
+where
       A: AdjContainer<T>
 {
     vertex_slice:   &'a[A],
@@ -361,7 +359,7 @@ where T: Node + 'a,
 {     }
 
 impl<'a, T, A> NIContainedIter<'a, T, A>
-where T: Node,
+where 
       A: AdjContainer<T>
 {
     /// Create new iterator
@@ -427,7 +425,7 @@ where T: 'a + Node,
 /// * Iterator over mutable additional information stored at vertices
 /// that are directly connected to specific vertex
 pub struct NContainedIterMut<'a, T, A>
-where T: Node,
+where
       A: AdjContainer<T>
 {
     vertex_slice:   &'a mut [A],
@@ -437,7 +435,7 @@ where T: Node,
 }
 
 impl<'a, T, A> NContainedIterMut<'a, T, A>
-where T: Node,
+where
       A: AdjContainer<T>
 {
     /// Create new iterator
@@ -526,7 +524,7 @@ where T: 'a + Node,
 /// * Iterator over mutable additional information stored at vertices
 /// that are directly connected to specific vertex
 pub struct INContainedIterMut<'a, T, A>
-where T: Node,
+where
       A: AdjContainer<T>
 {
     vertex_slice:   &'a mut [A],
@@ -536,7 +534,7 @@ where T: Node,
 }
 
 impl<'a, T, A> INContainedIterMut<'a, T, A>
-where T: Node,
+where
       A: AdjContainer<T>
 {
     /// Create new iterator
@@ -619,8 +617,8 @@ where T: 'a + Node,
 /// * same as ContainedIter but mutable
 /// * Iterator over mutable additional information stored at vertices
 pub struct ContainedIterMut<'a, T, A>
-where T: Node,
-      A: AdjContainer<T>
+where
+    A: AdjContainer<T>
 {
     vertex_iter:   core::slice::IterMut::<'a, A>,
     phantom:       PhantomData<T>
@@ -629,7 +627,6 @@ where T: Node,
 
 impl<'a, T, A> ContainedIterMut<'a, T, A>
 where
-    T: Node,
     A: AdjContainer<T>,
 {
     pub(crate) fn new(vertex_iter: core::slice::IterMut::<'a, A>) -> Self {
