@@ -1,27 +1,28 @@
 //! Implementation of a Barabási-Albert Model
 
-
 use crate::graph::Graph;
+use crate::graph::NodeContainer;
+use crate::iter::{ContainedIterMut, INContainedIterMut, NContainedIterMut};
+use crate::traits::*;
 use crate::GenericGraph;
 use crate::Node;
-use crate::traits::*;
-use crate::iter::{INContainedIterMut, NContainedIterMut, ContainedIterMut};
-use crate::graph::NodeContainer;
-use std::borrow::Borrow;
-use std::convert::AsRef;
-use rand::seq::SliceRandom;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
+use rand::seq::SliceRandom;
+use std::borrow::Borrow;
+use std::convert::AsRef;
 
 #[cfg(feature = "serde_support")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Implements a Barabási-Albert Graph ensemble
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct BAensemble<T, R>
-where T: Node,
-      R: rand::Rng {
+where
+    T: Node,
+    R: rand::Rng,
+{
     source_graph: Graph<T>,
     ba_graph: Graph<T>,
     rng: R,
@@ -30,18 +31,20 @@ where T: Node,
 }
 
 impl<T, R> AsRef<Graph<T>> for BAensemble<T, R>
-where T: Node,
-      R: rand::Rng
+where
+    T: Node,
+    R: rand::Rng,
 {
     #[inline]
-    fn as_ref(&self) -> &Graph<T>{
+    fn as_ref(&self) -> &Graph<T> {
         &self.ba_graph
     }
 }
 
 impl<T, R> Borrow<Graph<T>> for BAensemble<T, R>
-where T: Node,
-      R: rand::Rng
+where
+    T: Node,
+    R: rand::Rng,
 {
     #[inline]
     fn borrow(&self) -> &Graph<T> {
@@ -50,8 +53,9 @@ where T: Node,
 }
 
 impl<T, R> WithGraph<T, Graph<T>> for BAensemble<T, R>
-where   T: Node + SerdeStateConform,
-        R: rand::Rng
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
     fn at(&self, index: usize) -> &T {
         self.ba_graph.at(index)
@@ -71,19 +75,20 @@ where   T: Node + SerdeStateConform,
 }
 
 impl<T, R> BAensemble<T, R>
-where T: Node + SerdeStateConform,
-      R: rand::Rng
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
     /// # Initialize
-    /// * create simplest form of Barabási-Albert graph 
+    /// * create simplest form of Barabási-Albert graph
     /// * `m` = 1
     /// * `n`: Number of nodes, `n > 1` has to be true *panics* otherwise
     /// * `rng`:  Rng to use
-    /// 
+    ///
     pub fn new(n: usize, rng: R, m: usize, source_n: usize) -> Self {
         assert!(source_n >= 2);
         assert!(n > source_n);
-        let source_graph: Graph::<T> = Graph::complete_graph(source_n);
+        let source_graph: Graph<T> = Graph::complete_graph(source_n);
         let ba_graph: Graph<T> = Graph::new(n);
         let mut e = BAensemble {
             ba_graph,
@@ -101,11 +106,15 @@ where T: Node + SerdeStateConform,
     /// * `m`: how many edges should each newly added vertex have originally
     /// * `rng`: Random number generator
     /// * `n`: Number of nodes, `n > source_graph.vertex_count()` has to be true *panics* otherwise
-    pub fn new_from_graph<B>(n:usize, rng: R, m: usize, source_graph: B) -> Self
-    where B: Borrow<Graph<T>>
+    pub fn new_from_graph<B>(n: usize, rng: R, m: usize, source_graph: B) -> Self
+    where
+        B: Borrow<Graph<T>>,
     {
         assert!(
-            source_graph.borrow().container_iter().all(|container| container.degree() > 0),
+            source_graph
+                .borrow()
+                .container_iter()
+                .all(|container| container.degree() > 0),
             "Source graph is not allowed to contain any vertices without edges!"
         );
         assert!(n > source_graph.borrow().vertex_count());
@@ -129,13 +138,21 @@ where T: Node + SerdeStateConform,
     /// * `m`: how many edges should each newly added vertex have originally
     /// * `rng`: Random number generator
     /// * `n`: Number of nodes, `n > source_graph.vertex_count()` has to be true *panics* otherwise
-    pub fn new_from_generic_graph<A2, B>(n:usize, rng: R, m: usize, generic_source_graph: B) -> Self
+    pub fn new_from_generic_graph<A2, B>(
+        n: usize,
+        rng: R,
+        m: usize,
+        generic_source_graph: B,
+    ) -> Self
     where
         A2: AdjContainer<T>,
-        B: Borrow<GenericGraph<T, A2>>
+        B: Borrow<GenericGraph<T, A2>>,
     {
         assert!(
-            generic_source_graph.borrow().container_iter().all(|container| container.degree() > 0),
+            generic_source_graph
+                .borrow()
+                .container_iter()
+                .all(|container| container.degree() > 0),
             "Source graph is not allowed to contain any vertices without edges!"
         );
         assert!(n > generic_source_graph.borrow().vertex_count());
@@ -153,52 +170,54 @@ where T: Node + SerdeStateConform,
         };
         e.randomize();
         e
-
     }
 
     /// get reference to original graph, which is at the core of the BA graph
-    pub fn source_graph(&self) -> &Graph<T>
-    {
+    pub fn source_graph(&self) -> &Graph<T> {
         &self.source_graph
     }
 }
 
 impl<T, R> GraphIteratorsMut<T, Graph<T>, NodeContainer<T>> for BAensemble<T, R>
-where   T: Node + SerdeStateConform,
-        R: rand::Rng
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
-    fn contained_iter_neighbors_mut(&mut self, index: usize) ->
-        NContainedIterMut<T, NodeContainer<T>>
-    {
+    fn contained_iter_neighbors_mut(
+        &mut self,
+        index: usize,
+    ) -> NContainedIterMut<T, NodeContainer<T>> {
         self.ba_graph.contained_iter_neighbors_mut(index)
     }
 
-    fn contained_iter_neighbors_mut_with_index(&mut self, index: usize)
-        -> INContainedIterMut<'_, T, NodeContainer<T>>
-    {
+    fn contained_iter_neighbors_mut_with_index(
+        &mut self,
+        index: usize,
+    ) -> INContainedIterMut<'_, T, NodeContainer<T>> {
         self.ba_graph.contained_iter_neighbors_mut_with_index(index)
     }
 
-    fn contained_iter_mut(&mut self) ->  ContainedIterMut<T, NodeContainer<T>> {
+    fn contained_iter_mut(&mut self) -> ContainedIterMut<T, NodeContainer<T>> {
         self.ba_graph.contained_iter_mut()
     }
 }
 
 impl<T, R> SimpleSample for BAensemble<T, R>
-where   T: Node + SerdeStateConform,
-        R: rand::Rng,
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
     /// # Randomizes the Barabási-Albert (BA) graph
     /// * this essentially deletes the BA graph and creates a new one using the initial graph
     fn randomize(&mut self) {
         self.ba_graph.reset_from_graph(&self.source_graph);
-        
-        let mut random_order: Vec<_> = (self.source_graph.vertex_count()..self.ba_graph.vertex_count()).collect();
+
+        let mut random_order: Vec<_> =
+            (self.source_graph.vertex_count()..self.ba_graph.vertex_count()).collect();
         random_order.shuffle(&mut self.rng);
 
-
         // init weights
-        for i in 0..self.source_graph.vertex_count(){
+        for i in 0..self.source_graph.vertex_count() {
             self.weights[i] = self.source_graph.vertices[i].degree();
         }
         for i in self.source_graph.vertex_count()..self.ba_graph.vertex_count() {
@@ -207,8 +226,7 @@ where   T: Node + SerdeStateConform,
 
         for i in random_order {
             let dist = WeightedIndex::new(&self.weights).unwrap();
-            while self.ba_graph.container(i).degree() < self.m
-            {
+            while self.ba_graph.container(i).degree() < self.m {
                 let index = dist.sample(&mut self.rng);
                 // try to add the edge
                 let _ = self.ba_graph.add_edge(i, index);
@@ -223,31 +241,92 @@ where   T: Node + SerdeStateConform,
     }
 }
 
+impl<T, R> MeasurableGraphQuantities<Graph<T>> for BAensemble<T, R>
+where
+    T: Node,
+    R: rand::Rng,
+{
+    fn average_degree(&self) -> f32 {
+        self.as_ref().average_degree()
+    }
+
+    fn degree(&self, index: usize) -> Option<usize> {
+        self.as_ref().degree(index)
+    }
+
+    fn connected_components(&self) -> Vec<usize> {
+        self.as_ref().connected_components()
+    }
+
+    fn diameter(&self) -> Option<usize> {
+        self.as_ref().diameter()
+    }
+
+    fn edge_count(&self) -> usize {
+        self.as_ref().edge_count()
+    }
+
+    fn is_connected(&self) -> Option<bool> {
+        self.as_ref().is_connected()
+    }
+
+    fn leaf_count(&self) -> usize {
+        self.as_ref().leaf_count()
+    }
+
+    fn longest_shortest_path_from_index(&self, index: usize) -> Option<usize> {
+        self.as_ref().longest_shortest_path_from_index(index)
+    }
+
+    fn q_core(&self, q: usize) -> Option<usize> {
+        self.as_ref().q_core(q)
+    }
+
+    fn transitivity(&self) -> f64 {
+        self.as_ref().transitivity()
+    }
+
+    fn vertex_biconnected_components(&self, alternative_definition: bool) -> Vec<usize> {
+        let clone = (*self.as_ref()).clone();
+        clone.vertex_biconnected_components(alternative_definition)
+    }
+
+    fn vertex_count(&self) -> usize {
+        self.as_ref().vertex_count()
+    }
+
+    fn vertex_load(&self, include_endpoints: bool) -> Vec<f64> {
+        self.as_ref().vertex_load(include_endpoints)
+    }
+}
+
 #[cfg(test)]
 mod testing {
     use super::*;
-    use rand_pcg::Pcg64;
     use crate::*;
     use rand::SeedableRng;
+    use rand_pcg::Pcg64;
 
     #[test]
     fn creation() {
         let rng = Pcg64::seed_from_u64(12);
-        let _e: BAensemble<EmptyNode, _> =  BAensemble::new(100, rng, 1, 2);
+        let _e: BAensemble<EmptyNode, _> = BAensemble::new(100, rng, 1, 2);
         let rng = Pcg64::seed_from_u64(122321232);
         let mut er: ErEnsembleC<EmptyNode, _> = ErEnsembleC::new(10, 3.0, rng);
         // create valid graph
-        while er.graph().container_iter().any(|container| container.degree() < 1) {
+        while er
+            .graph()
+            .container_iter()
+            .any(|container| container.degree() < 1)
+        {
             er.randomize();
         }
         let rng = Pcg64::seed_from_u64(1878321232);
         let _ba = BAensemble::new_from_graph(20, rng, 2, er.graph());
-        
 
-        let rng= Pcg64::seed_from_u64(1878321232);
+        let rng = Pcg64::seed_from_u64(1878321232);
         let sw: SwEnsemble<EmptyNode, _> = SwEnsemble::new(10, 0.1, rng);
-        let rng= Pcg64::seed_from_u64(78321232);
+        let rng = Pcg64::seed_from_u64(78321232);
         let _ba2 = BAensemble::new_from_generic_graph(50, rng, 2, sw);
-        
     }
 }

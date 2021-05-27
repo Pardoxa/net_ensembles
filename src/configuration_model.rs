@@ -520,6 +520,65 @@ impl<T, R> MarkovChain<ConfigurationModelStep, Result<(), UndoStepErrorCM>> for 
 
 }
 
+impl<T, R> MeasurableGraphQuantities<Graph<T>> for ConfigurationModel<T, R>
+where
+    T: Node,
+    R: rand::Rng,
+{
+    fn average_degree(&self) -> f32 {
+        self.as_ref().average_degree()
+    }
+
+    fn degree(&self, index: usize) -> Option<usize> {
+        self.as_ref().degree(index)
+    }
+
+    fn connected_components(&self) -> Vec<usize> {
+        self.as_ref().connected_components()
+    }
+
+    fn diameter(&self) -> Option<usize> {
+        self.as_ref().diameter()
+    }
+
+    fn edge_count(&self) -> usize {
+        self.as_ref().edge_count()
+    }
+
+    fn is_connected(&self) -> Option<bool> {
+        self.as_ref().is_connected()
+    }
+
+    fn leaf_count(&self) -> usize {
+        self.as_ref().leaf_count()
+    }
+
+    fn longest_shortest_path_from_index(&self, index: usize) -> Option<usize> {
+        self.as_ref().longest_shortest_path_from_index(index)
+    }
+
+    fn q_core(&self, q: usize) -> Option<usize>{
+        self.as_ref().q_core(q)
+    }
+
+    fn transitivity(&self) -> f64 {
+        self.as_ref().transitivity()
+    }
+
+    fn vertex_biconnected_components(&self, alternative_definition: bool) -> Vec<usize> {
+        let clone = (*self.as_ref()).clone();
+        clone.vertex_biconnected_components(alternative_definition)
+    }
+
+    fn vertex_count(&self) -> usize {
+        self.as_ref().vertex_count()
+    }
+
+    fn vertex_load(&self, include_endpoints: bool) -> Vec<f64> {
+        self.as_ref().vertex_load(include_endpoints)
+    }
+}
+
 #[cfg(test)]
 mod testing {
     use super::*;

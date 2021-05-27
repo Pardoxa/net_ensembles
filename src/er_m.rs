@@ -14,12 +14,12 @@ use std::convert::AsRef;
 use std::io::Write;
 
 #[cfg(feature = "serde_support")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Storing the information about which edges were deleted or added
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct ErStepM{
+pub struct ErStepM {
     /// removed edge
     pub(crate) removed: (usize, usize),
     pub(crate) i_removed: usize,
@@ -27,17 +27,14 @@ pub struct ErStepM{
     pub(crate) i_inserted: usize,
 }
 
-impl ErStepM{
+impl ErStepM {
     #[allow(unused)]
-    fn invert(&mut self){
-        std::mem::swap(
-            &mut self.removed,
-            &mut self.inserted
-        );
+    fn invert(&mut self) {
+        std::mem::swap(&mut self.removed, &mut self.inserted);
     }
 
-    fn inverted(&self) -> Self{
-        Self{
+    fn inverted(&self) -> Self {
+        Self {
             removed: self.inserted,
             inserted: self.removed,
             i_inserted: self.i_inserted,
@@ -95,8 +92,7 @@ impl ErStepM{
 ///
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct ErEnsembleM<T: Node, R>
-{
+pub struct ErEnsembleM<T: Node, R> {
     graph: Graph<T>,
     m: usize,
     rng: R,
@@ -105,20 +101,21 @@ pub struct ErEnsembleM<T: Node, R>
     current_edges: Vec<(usize, usize)>,
 }
 
-
 impl<T, R> AsRef<Graph<T>> for ErEnsembleM<T, R>
-where T: Node,
-      R: rand::Rng
+where
+    T: Node,
+    R: rand::Rng,
 {
     #[inline]
-    fn as_ref(&self) -> &Graph<T>{
+    fn as_ref(&self) -> &Graph<T> {
         &self.graph
     }
 }
 
 impl<T, R> Borrow<Graph<T>> for ErEnsembleM<T, R>
-where T: Node,
-      R: rand::Rng
+where
+    T: Node,
+    R: rand::Rng,
 {
     #[inline]
     fn borrow(&self) -> &Graph<T> {
@@ -127,8 +124,9 @@ where T: Node,
 }
 
 impl<T, R> HasRng<R> for ErEnsembleM<T, R>
-    where   T: Node,
-            R: rand::Rng,
+where
+    T: Node,
+    R: rand::Rng,
 {
     /// # Access RNG
     /// If, for some reason, you want access to the internal random number generator: Here you go
@@ -144,14 +142,15 @@ impl<T, R> HasRng<R> for ErEnsembleM<T, R>
 }
 
 impl<T, R> SimpleSample for ErEnsembleM<T, R>
-    where   T: Node + SerdeStateConform,
-            R: rand::Rng,
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
     /// # Randomizes self according to  model
     /// * this is intended for creation of initial sample
     /// * used in [`simple_sample`](#method.simple_sample)
     /// and [`simple_sample_vec`](#method.simple_sample_vec)
-    fn randomize(&mut self){
+    fn randomize(&mut self) {
         self.graph.clear_edges();
 
         self.shuffle_all_edges();
@@ -160,11 +159,8 @@ impl<T, R> SimpleSample for ErEnsembleM<T, R>
         self.current_edges
             .copy_from_slice(&self.all_edges[..self.m]);
 
-        for edge in self.current_edges.iter()
-        {
-            self.graph
-                .add_edge(edge.0, edge.1)
-                .unwrap();
+        for edge in self.current_edges.iter() {
+            self.graph.add_edge(edge.0, edge.1).unwrap();
         }
 
         // uses mem-copy
@@ -173,9 +169,10 @@ impl<T, R> SimpleSample for ErEnsembleM<T, R>
     }
 }
 
-impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
-    where   T: Node + SerdeStateConform,
-            R: rand::Rng,
+impl<T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
     /// * undo a markov step, return result-state
     /// * if you want to undo more than one step
@@ -196,15 +193,15 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
     /// # Markov step
     /// * use this to perform a markov step
     /// * for doing multiple mc steps at once, use [`m_steps`](#method.m_steps)
-    fn m_step(&mut self) -> ErStepM{
-        let index_current   = self.rng.gen_range(0..self.current_edges.len());
-        let index_possible  = self.rng.gen_range(0..self.possible_edges.len());
+    fn m_step(&mut self) -> ErStepM {
+        let index_current = self.rng.gen_range(0..self.current_edges.len());
+        let index_possible = self.rng.gen_range(0..self.possible_edges.len());
 
-        let step = ErStepM{
-            removed:  self.current_edges[index_current],
+        let step = ErStepM {
+            removed: self.current_edges[index_current],
             i_removed: index_current,
             inserted: self.possible_edges[index_possible],
-            i_inserted: index_possible
+            i_inserted: index_possible,
         };
 
         self.step(&step);
@@ -214,10 +211,11 @@ impl <T, R> MarkovChain<ErStepM, ErStepM> for ErEnsembleM<T, R>
 }
 
 impl<T, R> ErEnsembleM<T, R>
-where T: Node + SerdeStateConform,
-      R: rand::Rng
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
-    fn step(&mut self, step: &ErStepM){
+    fn step(&mut self, step: &ErStepM) {
         self.graph
             .remove_edge(step.removed.0, step.removed.1)
             .unwrap();
@@ -228,10 +226,9 @@ where T: Node + SerdeStateConform,
 
         std::mem::swap(
             &mut self.current_edges[step.i_removed],
-            &mut self.possible_edges[step.i_inserted]
+            &mut self.possible_edges[step.i_inserted],
         );
     }
-    
     /// # Initialize
     /// create new ErEnsembleM graph with:
     /// * `n` vertices
@@ -257,7 +254,7 @@ where T: Node + SerdeStateConform,
 
         let mut vec = Vec::with_capacity(p_edges);
         for i in 0..n {
-            for j in i+1..n {
+            for j in i + 1..n {
                 vec.push((i, j));
             }
         }
@@ -267,7 +264,7 @@ where T: Node + SerdeStateConform,
             m,
             rng,
             all_edges: vec,
-            possible_edges: vec![(0, 0); p_edges - m],   // randomize will mem_copy - slice needs to be big enough
+            possible_edges: vec![(0, 0); p_edges - m], // randomize will mem_copy - slice needs to be big enough
             current_edges: vec![(0, 0); m], // randomize will mem_copy - slice needs to be big enough
         };
         e.randomize();
@@ -284,42 +281,44 @@ where T: Node + SerdeStateConform,
     }
 
     fn shuffle_all_edges(&mut self) {
-        self.all_edges
-            .shuffle(&mut self.rng);
+        self.all_edges.shuffle(&mut self.rng);
     }
-
 }
 
 impl<T, R> GraphIteratorsMut<T, Graph<T>, NodeContainer<T>> for ErEnsembleM<T, R>
-where   T: Node + SerdeStateConform,
-        R: rand::Rng
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
-    fn contained_iter_neighbors_mut(&mut self, index: usize) ->
-        NContainedIterMut<T, NodeContainer<T>>
-    {
+    fn contained_iter_neighbors_mut(
+        &mut self,
+        index: usize,
+    ) -> NContainedIterMut<T, NodeContainer<T>> {
         self.graph.contained_iter_neighbors_mut(index)
     }
 
-    fn contained_iter_neighbors_mut_with_index(&mut self, index: usize)
-        -> INContainedIterMut<'_, T, NodeContainer<T>>
-    {
+    fn contained_iter_neighbors_mut_with_index(
+        &mut self,
+        index: usize,
+    ) -> INContainedIterMut<'_, T, NodeContainer<T>> {
         self.graph.contained_iter_neighbors_mut_with_index(index)
     }
 
-    fn contained_iter_mut(&mut self) ->  ContainedIterMut<T, NodeContainer<T>> {
+    fn contained_iter_mut(&mut self) -> ContainedIterMut<T, NodeContainer<T>> {
         self.graph.contained_iter_mut()
     }
 }
 
 impl<T, R> WithGraph<T, Graph<T>> for ErEnsembleM<T, R>
-where   T: Node + SerdeStateConform,
-        R: rand::Rng
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
-    fn at(&self, index: usize) -> &T{
+    fn at(&self, index: usize) -> &T {
         self.graph.at(index)
     }
 
-    fn at_mut(&mut self, index: usize) -> &mut T{
+    fn at_mut(&mut self, index: usize) -> &mut T {
         self.graph.at_mut(index)
     }
 
@@ -340,30 +339,36 @@ where   T: Node + SerdeStateConform,
 }
 
 impl<T, R> Dot for ErEnsembleM<T, R>
-where T: Node
+where
+    T: Node,
 {
-    fn dot_from_indices<F, W, S1, S2>(&self, writer: W, dot_options: S1, f: F)
-        -> Result<(), std::io::Error>
+    fn dot_from_indices<F, W, S1, S2>(
+        &self,
+        writer: W,
+        dot_options: S1,
+        f: F,
+    ) -> Result<(), std::io::Error>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
         W: Write,
-        F: FnMut(usize) -> S2 {
-        self.graph
-            .dot_from_indices(writer, dot_options, f)
+        F: FnMut(usize) -> S2,
+    {
+        self.graph.dot_from_indices(writer, dot_options, f)
     }
 
     fn dot<S, W>(&self, writer: W, dot_options: S) -> Result<(), std::io::Error>
     where
         S: AsRef<str>,
-        W: Write {
-        self.graph
-            .dot(writer, dot_options)
+        W: Write,
+    {
+        self.graph.dot(writer, dot_options)
     }
 
     fn dot_string<S>(&self, dot_options: S) -> String
     where
-        S: AsRef<str> {
+        S: AsRef<str>,
+    {
         self.graph.dot_string(dot_options)
     }
 
@@ -371,26 +376,82 @@ where T: Node
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
-        F: FnMut(usize) -> S2 {
-        self.graph
-            .dot_string_from_indices(dot_options, f)
+        F: FnMut(usize) -> S2,
+    {
+        self.graph.dot_string_from_indices(dot_options, f)
     }
 
     fn dot_string_with_indices<S>(&self, dot_options: S) -> String
     where
-        S: AsRef<str> {
-        self.graph
-            .dot_string_with_indices(dot_options)
+        S: AsRef<str>,
+    {
+        self.graph.dot_string_with_indices(dot_options)
     }
 
-    fn dot_with_indices<S, W>(
-            &self, writer: W,
-            dot_options: S
-        ) -> Result<(), std::io::Error>
+    fn dot_with_indices<S, W>(&self, writer: W, dot_options: S) -> Result<(), std::io::Error>
     where
         S: AsRef<str>,
-        W: Write {
-        self.graph
-            .dot_with_indices(writer, dot_options)
+        W: Write,
+    {
+        self.graph.dot_with_indices(writer, dot_options)
+    }
+}
+
+impl<T, R> MeasurableGraphQuantities<Graph<T>> for ErEnsembleM<T, R>
+where
+    T: Node,
+    R: rand::Rng,
+{
+    fn average_degree(&self) -> f32 {
+        self.as_ref().average_degree()
+    }
+
+    fn degree(&self, index: usize) -> Option<usize> {
+        self.as_ref().degree(index)
+    }
+
+    fn connected_components(&self) -> Vec<usize> {
+        self.as_ref().connected_components()
+    }
+
+    fn diameter(&self) -> Option<usize> {
+        self.as_ref().diameter()
+    }
+
+    fn edge_count(&self) -> usize {
+        self.as_ref().edge_count()
+    }
+
+    fn is_connected(&self) -> Option<bool> {
+        self.as_ref().is_connected()
+    }
+
+    fn leaf_count(&self) -> usize {
+        self.as_ref().leaf_count()
+    }
+
+    fn longest_shortest_path_from_index(&self, index: usize) -> Option<usize> {
+        self.as_ref().longest_shortest_path_from_index(index)
+    }
+
+    fn q_core(&self, q: usize) -> Option<usize> {
+        self.as_ref().q_core(q)
+    }
+
+    fn transitivity(&self) -> f64 {
+        self.as_ref().transitivity()
+    }
+
+    fn vertex_biconnected_components(&self, alternative_definition: bool) -> Vec<usize> {
+        let clone = (*self.as_ref()).clone();
+        clone.vertex_biconnected_components(alternative_definition)
+    }
+
+    fn vertex_count(&self) -> usize {
+        self.as_ref().vertex_count()
+    }
+
+    fn vertex_load(&self, include_endpoints: bool) -> Vec<f64> {
+        self.as_ref().vertex_load(include_endpoints)
     }
 }
