@@ -464,16 +464,10 @@ where T: Node + SerdeStateConform {
     /// * every node is connected with its
     /// next and second next neighbors
     pub(crate) fn init_ring_2(&mut self) {
-        self.clear_edges();
-        let n = self.vertex_count();
-
-        for i in 0..n {
-            self.add_edge(i, (i + 1) % n)
-                .unwrap();
-            self.add_edge(i, (i + 2) % n)
-                .unwrap();
-        }
+        self.init_ring(2)
+            .expect("unable to init Ring");
     }
+
 
     /// # How many nodes have long ranging edges?
     /// * counts how many nodes have long ranging edges

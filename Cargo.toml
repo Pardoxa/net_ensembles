@@ -36,6 +36,7 @@ transpose = "^0.2"
 average = { version = "^0.12", optional = true }
 #sampling = { path = "../sampling" }
 sampling = { git = "https://github.com/Pardoxa/sampling.git", rev = "83c6fbea76ad2d877d1b7b7359f8829f88060664" }
+permutation = "^0.2.5"
 
 [dev-dependencies]
 rand_pcg = { version = "0.3.0", features = ["serde1"]}

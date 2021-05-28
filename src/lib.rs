@@ -291,6 +291,7 @@ pub mod sw_graph;
 pub mod iter;
 pub mod step_structs;
 pub mod sampling;
+pub mod watts_strogatz;
 
 pub mod spacial;
 mod configuration_model;

@@ -55,6 +55,30 @@ where A: AdjContainer<T>
         }
     }
 
+
+    /// # initialize Ring
+    /// * every node is connected with its neighbors, which are
+    /// not more than distance away
+    pub(crate) fn init_ring(&mut self, distance: usize) -> Result<(), GraphErrors>
+    {
+        self.clear_edges();
+        let n = self.vertex_count();
+
+        for i in 0..n
+        {
+            for add in 1..=distance{
+                let sum = i + add;
+                let index2 = if sum >= n {
+                    sum - n
+                } else {
+                    sum
+                };
+                self.add_edge(i, index2)?
+            }
+        }
+        Ok(())
+    }
+
     /// # Sort adjecency lists
     /// If you depend on the order of the adjecency lists, you can sort them
     /// # Performance
