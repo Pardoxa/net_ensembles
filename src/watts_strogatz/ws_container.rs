@@ -1,3 +1,5 @@
+use std::mem::swap;
+
 use crate::{AdjContainer, GraphErrors, IterWrapper};
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -6,8 +8,31 @@ use permutation;
 #[derive(Debug,Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub(crate) struct OriginalEdge{
-    from: u32,
-    to: u32,
+    pub from: u32,
+    pub to: u32,
+    pub is_at_origin: bool
+}
+
+impl OriginalEdge{
+    pub fn is_at_origin(&self) -> bool 
+    {
+        self.is_at_origin
+    }
+
+    pub fn to(&self) -> usize
+    {
+        self.to as usize
+    }
+
+    pub fn from(&self) -> usize
+    {
+        self.from as usize
+    }
+
+    pub fn swap_direction(&mut self)
+    {
+        swap(&mut self.from, &mut self.to)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -28,12 +53,25 @@ impl<T> WSContainer<T>{
             .expect("Fatal error in get_index")
     }
 
-    fn swap_remove_elem(&mut self, elem: usize)
+    pub(crate) fn swap_remove_elem(&mut self, elem: usize)
     {
         let index = self.get_index(elem);
         self.to.swap_remove(index);
         self.original.swap_remove(index);
     }
+
+    //pub(crate) fn iter_original_edges(&self) -> impl Iterator<Item=&OriginalEdge>
+    //{
+    //    self.original
+    //        .iter()
+    //        .filter(|e| e.is_at_origin)
+    //}
+
+    pub(crate) fn edges_mut(&mut self) -> (&mut Vec<usize>, &mut Vec<OriginalEdge>)
+    {
+        (&mut self.to, &mut self.original)
+    }
+
 
 }
 
@@ -93,13 +131,15 @@ impl<T> AdjContainer<T> for WSContainer<T>
             self.original.push(
                 OriginalEdge{
                     from: self.id as u32,
-                    to: other.id as u32
+                    to: other.id as u32,
+                    is_at_origin: true
                 }
             );
             other.original.push(
                 OriginalEdge{
                     from: other.id as u32,
-                    to: self.id as u32
+                    to: self.id as u32,
+                    is_at_origin: true
                 }
             );
 

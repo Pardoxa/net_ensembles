@@ -1,12 +1,16 @@
 use std::mem::swap;
 use std::num::NonZeroUsize;
 use rand::Rng;
+use rand::distributions::{Uniform, Distribution};
 
+use crate::AdjContainer;
 use crate::Node;
 use crate::GenericGraph;
 use crate::watts_strogatz::WSContainer;
 use crate::WithGraph;
 use crate::{HasRng, SimpleSample};
+
+use super::OriginalEdge;
 
 pub type WSGraph<T> = GenericGraph<T,WSContainer<T>>;
 
@@ -43,12 +47,13 @@ where T: Node,
     R: Rng
 {
     pub fn new(
-        n: usize,
+        n: u32,
         neigbor_distance: NonZeroUsize,
         rewire_probability: f64,
         rng: R
     ) -> Result<Self, WSCreationError>
     {
+        let n = n as usize;
         let minimum_n = 1 + 2 * neigbor_distance.get();
         if n < minimum_n {
             return Err(WSCreationError::ImpossibleRequest);
@@ -70,6 +75,70 @@ where T: Node,
         Ok(
             s
         )
+    }
+}
+
+impl<T, R> WS<T, R>
+where R: Rng
+{
+    // Adding a random edge, that does not exist right now and is not "originalEdge"
+    fn add_random_edge(&mut self, original_edge: OriginalEdge)
+    {
+        let n = self.graph.vertex_count();
+        let die = Uniform::from(0..n as u32);
+        let mut first = die.sample(self.rng());
+        let mut second = die.sample(self.rng());
+        loop{
+            // no self loops
+            // not the same edge again!
+            // no existing edge
+            if first == second ||
+                (first == original_edge.from && second == original_edge.to)
+                || (first == original_edge.to && second == original_edge.from)
+                || self.graph.get_mut_unchecked(first as usize)
+                    .is_adjacent(second as usize)
+            {
+                first = die.sample(self.rng());
+                second = die.sample(self.rng());
+            } else {
+                break;
+            }
+
+        }
+
+        let mut create_edge = |from: u32, to: u32| {
+            let mut edge = OriginalEdge{
+                from, 
+                to,
+                is_at_origin: false
+            };
+            let from_usize = edge.from();
+            let to_usize = edge.to();
+            let (vertex_from, vertex_to) = self.graph
+                .get_2_mut(from_usize, to_usize);
+            
+            // create edge from --> to
+            let (vec_to, vec_original) = vertex_from.edges_mut();
+            vec_to.push(to_usize);
+            vec_original.push(edge);
+            // create edge to --> from
+            let (vec_to, vec_original) = vertex_to.edges_mut();
+            edge.swap_direction();
+            vec_to.push(from_usize);
+            vec_original.push(edge)
+        };
+
+        if first == original_edge.from {
+            create_edge(first, second)
+        } else if first == original_edge.to {
+            create_edge(second, first)
+        } else if second == original_edge.from {
+            create_edge(second, first)
+        } else if second == original_edge.to {
+            create_edge(first, second)
+        } else {
+            create_edge(first, second)
+        }
     }
 }
 
@@ -108,7 +177,118 @@ where R: Rng
 impl<T, R> SimpleSample for WS<T, R>
 where R: Rng
 {
+
+
     fn randomize(&mut self) {
-        unimplemented!()
+        let n = self.graph.vertex_count();
+        let mut rewire_vec = Vec::with_capacity(2 * self.neigbor_distance.get());
+
+        for i in 0..n{
+            let vertex = self.graph
+                .get_mut_unchecked(i);
+            
+            let (i_to, i_original_edges) = vertex.edges_mut();
+            let len = i_original_edges.len();
+            debug_assert!(len == i_to.len());
+            
+            for j in (0..len).rev()
+            {
+                if i_original_edges[j].is_at_origin() 
+                    && self.rng.gen::<f64>() <= self.rewire_prob
+                {
+                    // remove (one direction of) edge to be rewired
+                    let edge = i_original_edges.swap_remove(j);
+                    rewire_vec.push(edge);
+                    i_to.swap_remove(j);
+                }
+            }
+
+            // remove other direction of all edges that are to be rewired
+            rewire_vec.iter()
+                .for_each(
+                    |edge|
+                    {
+                        let to = edge.to();
+                        let vertex = self.graph.get_mut_unchecked(to);
+                        let from = edge.from();
+                        vertex.swap_remove_elem(from);
+                    }
+                );
+
+            rewire_vec.iter()
+                .for_each(|&edge| self.add_random_edge(edge));
+            
+            rewire_vec.clear();
+        }
+        
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand_pcg::Pcg64;
+    use rand::SeedableRng;
+    use crate::EmptyNode;
+    use crate::WithGraph;
+
+    #[test]
+    fn creation()
+    {
+        let sys_size = 300;
+        let mut rng_rng = Pcg64::seed_from_u64(925859072932);
+
+        for n in 1..10 {
+            let rng = Pcg64::from_rng(&mut rng_rng)
+                .unwrap();
+            let mut ensemble = WS::<EmptyNode, _>::new(
+                sys_size,
+                unsafe{NonZeroUsize::new_unchecked(n)},
+                0.1,
+                rng
+            ).unwrap();
+            assert_eq!(
+                ensemble.graph().average_degree(),
+                (2 * n) as f32
+            );
+            for _ in 0..20 {
+                ensemble.randomize();
+                assert_eq!(
+                    ensemble.graph().average_degree(),
+                    (2 * n) as f32
+                );
+                for i in 0..sys_size {
+                    let v = ensemble.graph.get_mut_unchecked(i as usize);
+                    let (to, origin) = v.edges_mut();
+                    assert_eq!(to.len(), origin.len());
+                    to.iter()
+                        .zip(origin.iter())
+                        .for_each(
+                            |(&to, edge)|
+                            {
+                                if edge.is_at_origin(){
+                                    assert_eq!(
+                                        edge.from,
+                                        i
+                                    );
+                                    assert_eq!(
+                                        edge.to,
+                                        to as u32
+                                    );
+                                }else {
+                                    println!("{:?}",edge);
+                                    println!("i: {}, to: {}", i, to);
+                                    assert!(
+                                        edge.from != i || 
+                                            edge.to != to as u32
+                                    );
+                                }
+                            }
+                        )
+                }
+            }
+
+        }
+        
     }
 }

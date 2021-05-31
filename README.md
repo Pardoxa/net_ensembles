@@ -44,7 +44,7 @@ with all following versions, though no guarantees are made.
 
 ### Note
 
-On a 64 bit system drawing an usize consumes more than on a 32 bit system, 
+On a 64 bit system drawing an usize consumes more randomness than on a 32 bit system, 
 therefore ensembles drawn etc. are affected by the size of `usize`.
 
 ## Graph
