@@ -82,7 +82,7 @@ impl<T, R> WS<T, R>
 where R: Rng
 {
     // Adding a random edge, that does not exist right now and is not "originalEdge"
-    fn add_random_edge(&mut self, original_edge: OriginalEdge)
+    fn add_random_edge(&mut self, mut original_edge: OriginalEdge)
     {
         let n = self.graph.vertex_count();
         let die = Uniform::from(0..n as u32);
@@ -106,14 +106,10 @@ where R: Rng
 
         }
 
-        let mut create_edge = |from: u32, to: u32| {
-            let mut edge = OriginalEdge{
-                from, 
-                to,
-                is_at_origin: false
-            };
-            let from_usize = edge.from();
-            let to_usize = edge.to();
+        let mut create_edge = |from: u32, to: u32, mut edge: OriginalEdge| {
+            edge.set_origin_false();
+            let from_usize = from as usize;
+            let to_usize = to as usize;
             let (vertex_from, vertex_to) = self.graph
                 .get_2_mut(from_usize, to_usize);
             
@@ -128,16 +124,11 @@ where R: Rng
             vec_original.push(edge)
         };
 
-        if first == original_edge.from {
-            create_edge(first, second)
-        } else if first == original_edge.to {
-            create_edge(second, first)
-        } else if second == original_edge.from {
-            create_edge(second, first)
-        } else if second == original_edge.to {
-            create_edge(first, second)
+        if first == original_edge.to || second == original_edge.from {
+            original_edge.swap_direction();
+            create_edge(second, first, original_edge)
         } else {
-            create_edge(first, second)
+            create_edge(first, second, original_edge)
         }
     }
 }

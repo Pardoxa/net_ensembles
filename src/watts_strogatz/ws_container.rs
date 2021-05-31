@@ -33,6 +33,11 @@ impl OriginalEdge{
     {
         swap(&mut self.from, &mut self.to)
     }
+
+    pub fn set_origin_false(&mut self)
+    {
+        self.is_at_origin = false;
+    }
 }
 
 #[derive(Debug, Clone)]
