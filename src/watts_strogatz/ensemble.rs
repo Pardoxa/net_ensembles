@@ -2,7 +2,7 @@ use std::mem::swap;
 use std::num::*;
 use rand::Rng;
 use rand::distributions::{Uniform, Distribution};
-
+use std::convert::AsRef;
 use crate::AdjContainer;
 use crate::Node;
 use crate::GenericGraph;
@@ -212,6 +212,16 @@ where R: Rng
             rewire_vec.clear();
         }
         
+    }
+}
+
+impl<T, R> AsRef<WSGraph<T>> for WS<T, R>
+where T: Node,
+      R: rand::Rng
+{
+    #[inline]
+    fn as_ref(&self) -> &WSGraph<T>{
+        self.graph()
     }
 }
 
