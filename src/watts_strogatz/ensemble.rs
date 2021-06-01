@@ -1,5 +1,5 @@
 use std::mem::swap;
-use std::num::NonZeroUsize;
+use std::num::*;
 use rand::Rng;
 use rand::distributions::{Uniform, Distribution};
 
@@ -19,16 +19,16 @@ pub struct SmallWorldWS<T, R>
     graph: WSGraph<T>,
     rewire_prob: f64,
     rng: R,
-    neigbor_distance: NonZeroUsize
+    neighbor_distance: NonZeroU32
 }
 
 pub type WS<T, R> = SmallWorldWS<T, R>;
 
 impl<T, R> WS<T, R>
 {
-    pub fn neigbor_distance(&self) -> NonZeroUsize
+    pub fn neighbor_distance(&self) -> NonZeroU32
     {
-        self.neigbor_distance
+        self.neighbor_distance
     }
 
     pub fn rewire_prob(&self) -> f64
@@ -48,25 +48,25 @@ where T: Node,
 {
     pub fn new(
         n: u32,
-        neigbor_distance: NonZeroUsize,
+        neighbor_distance: NonZeroU32,
         rewire_probability: f64,
         rng: R
     ) -> Result<Self, WSCreationError>
     {
-        let n = n as usize;
-        let minimum_n = 1 + 2 * neigbor_distance.get();
+        let n = n;
+        let minimum_n = 1 + 2 * neighbor_distance.get();
         if n < minimum_n {
             return Err(WSCreationError::ImpossibleRequest);
         }
-        let mut graph = WSGraph::new(n);
-        let res = graph.init_ring(neigbor_distance.get());
+        let mut graph = WSGraph::new(n as usize);
+        let res = graph.init_ring(neighbor_distance.get() as usize);
         if res.is_err() {
             return Err(WSCreationError::ImpossibleRequest);
         }
         let mut s = 
             Self
             {
-                neigbor_distance,
+                neighbor_distance,
                 rng,
                 rewire_prob: rewire_probability,
                 graph
@@ -172,7 +172,7 @@ where R: Rng
 
     fn randomize(&mut self) {
         let n = self.graph.vertex_count();
-        let mut rewire_vec = Vec::with_capacity(2 * self.neigbor_distance.get());
+        let mut rewire_vec = Vec::with_capacity(2 * self.neighbor_distance.get() as usize);
 
         for i in 0..n{
             let vertex = self.graph
@@ -234,7 +234,7 @@ mod tests {
                 .unwrap();
             let mut ensemble = WS::<EmptyNode, _>::new(
                 sys_size,
-                unsafe{NonZeroUsize::new_unchecked(n)},
+                unsafe{NonZeroU32::new_unchecked(n)},
                 0.1,
                 rng
             ).unwrap();
