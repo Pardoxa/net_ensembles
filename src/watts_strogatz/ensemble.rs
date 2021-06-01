@@ -9,11 +9,17 @@ use crate::GenericGraph;
 use crate::watts_strogatz::WSContainer;
 use crate::WithGraph;
 use crate::{HasRng, SimpleSample};
+use crate::{GraphIteratorsMut, GraphIterators, SerdeStateConform, iter::*, generic_graph::*};
+
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
 
 use super::OriginalEdge;
 
 pub type WSGraph<T> = GenericGraph<T,WSContainer<T>>;
 
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SmallWorldWS<T, R>
 {
     graph: WSGraph<T>,
@@ -222,6 +228,64 @@ where T: Node,
     #[inline]
     fn as_ref(&self) -> &WSGraph<T>{
         self.graph()
+    }
+}
+
+impl<T, R> GraphIteratorsMut<T, WSGraph<T>, WSContainer<T>> for WS<T, R>
+where   T: Node + SerdeStateConform,
+        R: rand::Rng
+{
+    fn contained_iter_neighbors_mut(&mut self, index: usize) ->
+        NContainedIterMut<T, WSContainer<T>>
+    {
+        self.graph.contained_iter_neighbors_mut(index)
+    }
+
+    fn contained_iter_neighbors_mut_with_index(&mut self, index: usize)
+        -> INContainedIterMut<'_, T, WSContainer<T>>
+    {
+        self.graph.contained_iter_neighbors_mut_with_index(index)
+    }
+
+    fn contained_iter_mut(&mut self) ->  ContainedIterMut<T, WSContainer<T>> {
+        self.graph.contained_iter_mut()
+    }
+}
+
+impl<T, R> GraphIterators<T, WSGraph<T>, WSContainer<T>> for WS<T, R>
+where   T: Node + SerdeStateConform,
+        R: rand::Rng
+{
+    fn contained_iter(&self) -> ContainedIter<'_, T, WSContainer<T>> {
+        self.graph().contained_iter()
+    }
+
+    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, WSContainer<T>> {
+        self.graph.contained_iter_neighbors(index)   
+    }
+
+    fn contained_iter_neighbors_with_index(&self, index: usize) -> NIContainedIter<T, WSContainer<T>> {
+        self.graph.contained_iter_neighbors_with_index(index)
+    }
+
+    fn container_iter(&self) -> core::slice::Iter<'_, WSContainer<T>> {
+        self.graph.container_iter()
+    }
+
+    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, WSContainer<T>> {
+        self.graph.container_iter_neighbors(index)
+    }
+
+    fn dfs(&self, index: usize) -> Dfs<'_, T, WSContainer<T>> {
+        self.graph.dfs(index)
+    }
+
+    fn dfs_with_index(&self, index: usize) -> DfsWithIndex<'_, T, WSContainer<T>> {
+        self.graph.dfs_with_index(index)
+    }
+
+    fn bfs_index_depth(&self, index: usize) -> Bfs<'_, T, WSContainer<T>> {
+        self.graph.bfs_index_depth(index)   
     }
 }
 
