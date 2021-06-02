@@ -1,25 +1,25 @@
-use std::fmt;
-use crate::IterWrapper;
 use crate::sw::SwChangeState;
 use crate::traits::SerdeStateConform;
 use crate::GenericGraph;
+use crate::IterWrapper;
+use std::fmt;
 
 #[cfg(feature = "serde_support")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// What every node should be able to do
 pub trait Node
-where Self: Clone + SerdeStateConform {
+where
+    Self: Clone + SerdeStateConform,
+{
     /// how to construct a blank object
     fn new_from_index(index: usize) -> Self;
 }
 
-
-
 /// Error messages
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub enum GraphErrors{
+pub enum GraphErrors {
     /// ### somehow, the existing of the edge is a problem
     /// Did you try to add an edge, which is already present?
     EdgeExists,
@@ -30,20 +30,19 @@ pub enum GraphErrors{
 
 impl GraphErrors {
     /// get error message as `&str`, for printing etc.
-   pub fn to_str(&self) -> &'static str {
-       match self {
-           GraphErrors::EdgeExists          => &"EdgeExists",
-           GraphErrors::EdgeDoesNotExist    => &"EdgeDoesNotExist",
-       }
-   }
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            GraphErrors::EdgeExists => &"EdgeExists",
+            GraphErrors::EdgeDoesNotExist => &"EdgeDoesNotExist",
+        }
+    }
 
-   pub(crate) fn convert_to_sw_state(self) -> SwChangeState {
-       SwChangeState::GError(self)
-   }
+    pub(crate) fn convert_to_sw_state(self) -> SwChangeState {
+        SwChangeState::GError(self)
+    }
 }
 
 impl fmt::Display for GraphErrors {
-
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_str())
     }
@@ -51,14 +50,12 @@ impl fmt::Display for GraphErrors {
 
 /// Defines methods all adjecency containers should have
 /// such that `GenericGraph` can use it
-pub trait AdjContainer<T>
-{
+pub trait AdjContainer<T> {
     /// Create new instance with id
     fn new(id: usize, node: T) -> Self;
 
-
     /// return reference to what the AdjContainer contains
-    fn contained(&self) -> & T;
+    fn contained(&self) -> &T;
 
     /// return mut reference to what the AdjContainer contains
     fn contained_mut(&mut self) -> &mut T;
@@ -98,8 +95,7 @@ pub trait AdjContainer<T>
     /// ## What should I do?
     /// * use members of `net_ensembles::GenericGraph` instead, that handles the logic
     #[doc(hidden)]
-    unsafe fn push(&mut self, other: &mut Self)
-        -> Result<(), GraphErrors>;
+    unsafe fn push(&mut self, other: &mut Self) -> Result<(), GraphErrors>;
 
     /// # What does it do?
     /// Removes edge in `self` and `other`s adjecency Lists
@@ -109,20 +105,16 @@ pub trait AdjContainer<T>
     /// ## What should I do?
     /// * use members of `net_ensembles::GenericGraph` instead, that handles the logic
     #[doc(hidden)]
-    unsafe fn remove(&mut self, other: &mut Self)
-        -> Result<(), GraphErrors>;
+    unsafe fn remove(&mut self, other: &mut Self) -> Result<(), GraphErrors>;
 }
 
 /// Get the adjacency list of a AdjContainer
-pub trait AdjList<Edge>
-{
+pub trait AdjList<Edge> {
     fn edges(&self) -> &[Edge];
 }
 
-
 /// Trait for measuring topological properties of a Graph
-pub trait MeasurableGraphQuantities<G>
-{
+pub trait MeasurableGraphQuantities<G> {
     /// calculates the average degree of the graph
     /// * `(2 * edge_count) / vertex_count`
     fn average_degree(&self) -> f32;
@@ -209,7 +201,6 @@ pub trait MeasurableGraphQuantities<G>
     /// returns number of vertices present in graph
     fn vertex_count(&self) -> usize;
 
-
     /// # Closely related (most of the time equal) to betweeness
     /// ## calculates vertex_load of all vertices in O(edges * vertices)
     /// * calculates the vertex_load for every vertex
@@ -228,10 +219,9 @@ pub trait MeasurableGraphQuantities<G>
     /// > M. E. J. Newman, "Erratum: Scientific collaboration networks. II. Shortest paths, weighted networks, and centrality",
     /// > Phys. Rev. E **73**, 039906, 2006, DOI: [10.1103/PhysRevE.73.039906](https://doi.org/10.1103/PhysRevE.73.039906)
     fn vertex_load(&self, include_endpoints: bool) -> Vec<f64>;
-
 }
 
-
+/*
 impl<T, A, E> MeasurableGraphQuantities<GenericGraph<T, A>> for E
 where
     T: Node,
@@ -292,3 +282,4 @@ where
         self.as_ref().vertex_load(include_endpoints)
     }
 }
+*/

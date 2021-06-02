@@ -13,11 +13,11 @@
 //! # Citations
 //! > D. J. Watts and S. H. Strogatz, "Collective dynamics on 'small-world' networks,"
 //!   Nature **393**, 440-442 (1998), DOI:&nbsp;[10.1038/30918](https://doi.org/10.1038/30918)
-use crate::{traits::*, sw_graph::*, iter::*};
+use crate::{iter::*, sw_graph::*, traits::*};
 use std::{borrow::Borrow, io::Write};
 
 #[cfg(feature = "serde_support")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 const ROOT_EDGES_PER_VERTEX: usize = 2;
 
@@ -45,7 +45,7 @@ impl SwChangeState {
     pub fn is_nothing(&self) -> bool {
         if let SwChangeState::Nothing = self {
             true
-        }else{
+        } else {
             false
         }
     }
@@ -53,18 +53,16 @@ impl SwChangeState {
     /// checks if self is `Nothing` or `BlockedByExistingEdge`
     pub fn is_nothing_or_blocked(&self) -> bool {
         match self {
-            SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge => true,
-            _                                    => false
+            SwChangeState::Nothing | SwChangeState::BlockedByExistingEdge => true,
+            _ => false,
         }
     }
 
     /// result is equal to `!self.is_nothing_or_blocked()`
     pub fn not_nothing_or_blocked(&self) -> bool {
         match self {
-            SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge => false,
-            _                                    => true
+            SwChangeState::Nothing | SwChangeState::BlockedByExistingEdge => false,
+            _ => true,
         }
     }
 
@@ -78,12 +76,11 @@ impl SwChangeState {
     /// * `SwChangeState::GError(..)`
     pub fn is_valid(&self) -> bool {
         match self {
-            SwChangeState::Rewire(..) |
-            SwChangeState::Reset(..) |
-            SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge => true,
-            SwChangeState::InvalidAdjecency |
-            SwChangeState::GError(..)            => false,
+            SwChangeState::Rewire(..)
+            | SwChangeState::Reset(..)
+            | SwChangeState::Nothing
+            | SwChangeState::BlockedByExistingEdge => true,
+            SwChangeState::InvalidAdjecency | SwChangeState::GError(..) => false,
         }
     }
 }
@@ -204,16 +201,16 @@ impl SwChangeState {
 ///
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct SwEnsemble<T: Node, R>
-{
+pub struct SwEnsemble<T: Node, R> {
     graph: SwGraph<T>,
     r_prob: f64,
     rng: R,
 }
 
-impl <T, R> SwEnsemble<T, R>
-    where   T: Node + SerdeStateConform,
-            R: rand::Rng,
+impl<T, R> SwEnsemble<T, R>
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
     /// # Initialize
     /// * create new SwEnsemble graph with `n` vertices
@@ -223,12 +220,7 @@ impl <T, R> SwEnsemble<T, R>
     pub fn new(n: usize, r_prob: f64, rng: R) -> Self {
         let mut graph = SwGraph::new(n);
         graph.init_ring_2();
-        let mut result =
-            SwEnsemble {
-                graph,
-                r_prob,
-                rng,
-            };
+        let mut result = SwEnsemble { graph, r_prob, rng };
         result.randomize();
         result
     }
@@ -237,40 +229,34 @@ impl <T, R> SwEnsemble<T, R>
     /// * resets edges, to connect the connected components
     /// * intended as starting point for a markov chain, if you require connected graphs
     /// * do **not** use this to independently (simple-) sample connected networks,
-    ///   as this will skew the statistics 
+    ///   as this will skew the statistics
     /// * **This is still experimental, this member might change the internal functionallity
     ///   resulting in different connected networks, without prior notice**
     /// * **This member might be removed in braking releases**
-    pub fn make_connected(&mut self)
-    {
-        while !self.is_connected().unwrap_or(true){
+    pub fn make_connected(&mut self) {
+        while !self.is_connected().unwrap_or(true) {
             let (num, ids) = self.graph.connected_components_ids();
             let mut new_connection = vec![false; num];
             let vc_usize = self.vertex_count();
 
-            for index in  0..vc_usize {
+            for index in 0..vc_usize {
                 let min = ids[index].min(ids[(index + 1) % vc_usize]);
                 if !new_connection[min as usize] && ids[index] != ids[(index + 1) % vc_usize] {
                     // find out, where the desired edge is pointing to right now
                     new_connection[min as usize] = true;
-                    let to = *self.graph.container_mut(index)
+                    let to = *self
+                        .graph
+                        .container_mut(index)
                         .iter_raw_edges()
-                        .find(
-                            |edge|
+                        .find(|edge| {
                             edge.originally_to().map(|c| c) == Some((index + 1) % vc_usize)
-                        )
+                        })
                         .unwrap()
                         .to();
-                    self.graph.reset_edge(
-                        index,
-                        to
-                    );
+                    self.graph.reset_edge(index, to);
                 }
             }
         }
-
-
-
     }
 
     /// draw number <= high but not index
@@ -289,10 +275,9 @@ impl <T, R> SwEnsemble<T, R>
         let vertex_count = self.graph.vertex_count();
 
         if self.rng.gen::<f64>() <= self.r_prob {
-            let rewire_index = self.
-            draw_remaining(index0, vertex_count - 1);
+            let rewire_index = self.draw_remaining(index0, vertex_count - 1);
             self.graph.rewire_edge(index0, index1, rewire_index)
-        }else {
+        } else {
             self.graph.reset_edge(index0, index1)
         }
     }
@@ -300,9 +285,9 @@ impl <T, R> SwEnsemble<T, R>
     /// sanity check performed in debug mode
     fn debug_error_check(state: SwChangeState) -> bool {
         match state {
-            SwChangeState::GError(_)                => panic!("GError"),
-            SwChangeState::InvalidAdjecency         => panic!("InvalidAdjecency"),
-            _                                       => true
+            SwChangeState::GError(_) => panic!("GError"),
+            SwChangeState::InvalidAdjecency => panic!("InvalidAdjecency"),
+            _ => true,
         }
     }
 
@@ -318,15 +303,13 @@ impl <T, R> SwEnsemble<T, R>
         let v_index = rng_num / ROOT_EDGES_PER_VERTEX;
         let e_index = rng_num % ROOT_EDGES_PER_VERTEX;
 
-        let mut iter = self.graph
+        let mut iter = self
+            .graph
             .container(v_index)
             .iter_raw_edges()
             .filter(|x| x.is_root());
 
-        let &to = iter
-            .nth(e_index)
-            .unwrap()
-            .to();
+        let &to = iter.nth(e_index).unwrap().to();
 
         (v_index, to)
     }
@@ -347,43 +330,48 @@ impl <T, R> SwEnsemble<T, R>
     /// * retuns `GenericGraph::contained_iter_neighbors_mut`
     /// * otherwise you would not have access to this function, since no mut access to
     ///   the graph is allowed
-    pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, SwContainer<T>>
-    {
-            self.graph.contained_iter_neighbors_mut(index)
+    pub fn contained_iter_neighbors_mut(
+        &mut self,
+        index: usize,
+    ) -> NContainedIterMut<T, SwContainer<T>> {
+        self.graph.contained_iter_neighbors_mut(index)
     }
 }
 
 impl<T, R> GraphIteratorsMut<T, SwGraph<T>, SwContainer<T>> for SwEnsemble<T, R>
-where   T: Node + SerdeStateConform,
-        R: rand::Rng
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
-    fn contained_iter_neighbors_mut(&mut self, index: usize) ->
-        NContainedIterMut<T, SwContainer<T>>
-    {
+    fn contained_iter_neighbors_mut(
+        &mut self,
+        index: usize,
+    ) -> NContainedIterMut<T, SwContainer<T>> {
         self.graph.contained_iter_neighbors_mut(index)
     }
 
-    fn contained_iter_neighbors_mut_with_index(&mut self, index: usize)
-        -> INContainedIterMut<'_, T, SwContainer<T>>
-    {
+    fn contained_iter_neighbors_mut_with_index(
+        &mut self,
+        index: usize,
+    ) -> INContainedIterMut<'_, T, SwContainer<T>> {
         self.graph.contained_iter_neighbors_mut_with_index(index)
     }
 
-    fn contained_iter_mut(&mut self) ->  ContainedIterMut<T, SwContainer<T>> {
+    fn contained_iter_mut(&mut self) -> ContainedIterMut<T, SwContainer<T>> {
         self.graph.contained_iter_mut()
     }
 }
 
-
 impl<T, R> WithGraph<T, SwGraph<T>> for SwEnsemble<T, R>
-where   T: Node + SerdeStateConform,
-        R: rand::Rng
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
     fn at(&self, index: usize) -> &T {
         self.graph.at(index)
     }
 
-    fn at_mut(&mut self, index: usize) -> &mut T{
+    fn at_mut(&mut self, index: usize) -> &mut T {
         self.graph.at_mut(index)
     }
 
@@ -403,20 +391,21 @@ where   T: Node + SerdeStateConform,
     }
 }
 
-
 impl<T, R> AsRef<SwGraph<T>> for SwEnsemble<T, R>
-where T: Node,
-      R: rand::Rng
+where
+    T: Node,
+    R: rand::Rng,
 {
     #[inline]
-    fn as_ref(&self) -> &SwGraph<T>{
+    fn as_ref(&self) -> &SwGraph<T> {
         &self.graph
     }
 }
 
 impl<T, R> Borrow<SwGraph<T>> for SwEnsemble<T, R>
-where T: Node,
-      R: rand::Rng
+where
+    T: Node,
+    R: rand::Rng,
 {
     #[inline]
     fn borrow(&self) -> &SwGraph<T> {
@@ -425,8 +414,9 @@ where T: Node,
 }
 
 impl<T, R> HasRng<R> for SwEnsemble<T, R>
-where   T: Node + SerdeStateConform,
-        R: rand::Rng
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
     /// # Access RNG
     /// If, for some reason, you want access to the internal random number generator: Here you go
@@ -442,20 +432,19 @@ where   T: Node + SerdeStateConform,
 }
 
 impl<T, R> SimpleSample for SwEnsemble<T, R>
-where   T: Node + SerdeStateConform,
-        R: rand::Rng
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
 {
     /// # Randomizes the edges according to small-world model
     /// * this is used by `SwEnsemble::new` to create the initial topology
     /// * you can use this for sampling the ensemble
     /// * runs in `O(vertices)`
-    fn randomize(&mut self){
-        let count = self.graph
-            .vertex_count();
+    fn randomize(&mut self) {
+        let count = self.graph.vertex_count();
 
         for i in 0..count {
-            let vertex = self.graph
-                .get_mut_unchecked(i);
+            let vertex = self.graph.get_mut_unchecked(i);
 
             let mut root_iter = vertex
                 .iter_raw_edges()
@@ -464,8 +453,8 @@ where   T: Node + SerdeStateConform,
 
             debug_assert_eq!(ROOT_EDGES_PER_VERTEX, 2);
 
-            let first   = *root_iter.next().unwrap();
-            let second  = *root_iter.next().unwrap();
+            let first = *root_iter.next().unwrap();
+            let second = *root_iter.next().unwrap();
             debug_assert!(root_iter.next().is_none());
 
             let state = self.randomize_edge(i, first);
@@ -473,16 +462,15 @@ where   T: Node + SerdeStateConform,
 
             let state = self.randomize_edge(i, second);
             debug_assert!(Self::debug_error_check(state));
-
         }
     }
 }
 
 impl<T, R> MarkovChain<SwChangeState, SwChangeState> for SwEnsemble<T, R>
-where   T: Node + SerdeStateConform,
-        R: rand::Rng
-        {
-
+where
+    T: Node + SerdeStateConform,
+    R: rand::Rng,
+{
     /// # Markov step
     /// * use this to perform a markov step
     /// * keep in mind, that it is not unlikely for a step to do `Nothing` as it works by
@@ -504,12 +492,14 @@ where   T: Node + SerdeStateConform,
     /// in the adjacency list might be shuffled!
     fn undo_step(&mut self, step: &SwChangeState) -> SwChangeState {
         match step {
-            SwChangeState::Rewire(root, old_to, new_to) |
-            SwChangeState::Reset (root, old_to, new_to)  => self.graph.rewire_edge(*root, *new_to, *old_to), // swap old to and new to in rewire
-            SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge |
-            SwChangeState::InvalidAdjecency |
-            SwChangeState::GError(_)                     => *step
+            SwChangeState::Rewire(root, old_to, new_to)
+            | SwChangeState::Reset(root, old_to, new_to) => {
+                self.graph.rewire_edge(*root, *new_to, *old_to)
+            } // swap old to and new to in rewire
+            SwChangeState::Nothing
+            | SwChangeState::BlockedByExistingEdge
+            | SwChangeState::InvalidAdjecency
+            | SwChangeState::GError(_) => *step,
         }
     }
 
@@ -522,29 +512,27 @@ where   T: Node + SerdeStateConform,
     /// in the adjacency list might be shuffled!
     fn undo_step_quiet(&mut self, step: &SwChangeState) {
         match step {
-            SwChangeState::Rewire(root, old_to, new_to) |
-            SwChangeState::Reset (root, old_to, new_to)  => {
+            SwChangeState::Rewire(root, old_to, new_to)
+            | SwChangeState::Reset(root, old_to, new_to) => {
                 // swap old to and new to in rewire to undo step
                 let state = self.graph.rewire_edge(*root, *new_to, *old_to);
                 if !state.is_valid() {
                     panic!("undo step - rewire error: {:?}", state);
                 }
-            },
-            SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge => (),
-            SwChangeState::InvalidAdjecency      => panic!("undo_step - {:?} - corrupt step?", step),
-            SwChangeState::GError(error)         => panic!("undo_step - GError {} - corrupt step?", error)
+            }
+            SwChangeState::Nothing | SwChangeState::BlockedByExistingEdge => (),
+            SwChangeState::InvalidAdjecency => panic!("undo_step - {:?} - corrupt step?", step),
+            SwChangeState::GError(error) => panic!("undo_step - GError {} - corrupt step?", error),
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::EmptyNode;
-    use rand_pcg::Pcg64;
     use rand::SeedableRng;
+    use rand_pcg::Pcg64;
 
     #[test]
     #[ignore]
@@ -554,56 +542,58 @@ mod tests {
         e.set_r_prob(0.2);
 
         // the following code creates 3 connected components
-        while e.is_connected().unwrap(){
+        while e.is_connected().unwrap() {
             e.m_steps_quiet(10);
         }
 
         let mut comp = e.connected_components();
         let mut steps = Vec::new();
-        while comp.len() < 3{
+        while comp.len() < 3 {
             e.m_steps(10, &mut steps);
             comp = e.connected_components();
 
-            if  comp.len() < 2{
+            if comp.len() < 2 {
                 e.undo_steps_quiet(&steps);
             }
-
         }
 
         // now I reconnect them
         e.make_connected();
         assert!(e.is_connected().unwrap());
     }
-
-
 }
 
-
 impl<T, R> Dot for SwEnsemble<T, R>
-where T: Node
+where
+    T: Node,
 {
-    fn dot_from_indices<F, W, S1, S2>(&self, writer: W, dot_options: S1, f: F)
-        -> Result<(), std::io::Error>
+    fn dot_from_indices<F, W, S1, S2>(
+        &self,
+        writer: W,
+        dot_options: S1,
+        f: F,
+    ) -> Result<(), std::io::Error>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
         W: Write,
-        F: FnMut(usize) -> S2 {
-        self.graph
-            .dot_from_indices(writer, dot_options, f)
+        F: FnMut(usize) -> S2,
+    {
+        self.graph.dot_from_indices(writer, dot_options, f)
     }
 
     fn dot<S, W>(&self, writer: W, dot_options: S) -> Result<(), std::io::Error>
     where
         S: AsRef<str>,
-        W: Write {
-        self.graph
-            .dot(writer, dot_options)
+        W: Write,
+    {
+        self.graph.dot(writer, dot_options)
     }
 
     fn dot_string<S>(&self, dot_options: S) -> String
     where
-        S: AsRef<str> {
+        S: AsRef<str>,
+    {
         self.graph.dot_string(dot_options)
     }
 
@@ -611,26 +601,82 @@ where T: Node
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
-        F: FnMut(usize) -> S2 {
-        self.graph
-            .dot_string_from_indices(dot_options, f)
+        F: FnMut(usize) -> S2,
+    {
+        self.graph.dot_string_from_indices(dot_options, f)
     }
 
     fn dot_string_with_indices<S>(&self, dot_options: S) -> String
     where
-        S: AsRef<str> {
-        self.graph
-            .dot_string_with_indices(dot_options)
+        S: AsRef<str>,
+    {
+        self.graph.dot_string_with_indices(dot_options)
     }
 
-    fn dot_with_indices<S, W>(
-            &self, writer: W,
-            dot_options: S
-        ) -> Result<(), std::io::Error>
+    fn dot_with_indices<S, W>(&self, writer: W, dot_options: S) -> Result<(), std::io::Error>
     where
         S: AsRef<str>,
-        W: Write {
-        self.graph
-            .dot_with_indices(writer, dot_options)
+        W: Write,
+    {
+        self.graph.dot_with_indices(writer, dot_options)
+    }
+}
+
+impl<T, R> MeasurableGraphQuantities<SwGraph<T>> for SwEnsemble<T, R>
+where
+    T: Node,
+    R: rand::Rng,
+{
+    fn average_degree(&self) -> f32 {
+        self.as_ref().average_degree()
+    }
+
+    fn degree(&self, index: usize) -> Option<usize> {
+        self.as_ref().degree(index)
+    }
+
+    fn connected_components(&self) -> Vec<usize> {
+        self.as_ref().connected_components()
+    }
+
+    fn diameter(&self) -> Option<usize> {
+        self.as_ref().diameter()
+    }
+
+    fn edge_count(&self) -> usize {
+        self.as_ref().edge_count()
+    }
+
+    fn is_connected(&self) -> Option<bool> {
+        self.as_ref().is_connected()
+    }
+
+    fn leaf_count(&self) -> usize {
+        self.as_ref().leaf_count()
+    }
+
+    fn longest_shortest_path_from_index(&self, index: usize) -> Option<usize> {
+        self.as_ref().longest_shortest_path_from_index(index)
+    }
+
+    fn q_core(&self, q: usize) -> Option<usize> {
+        self.as_ref().q_core(q)
+    }
+
+    fn transitivity(&self) -> f64 {
+        self.as_ref().transitivity()
+    }
+
+    fn vertex_biconnected_components(&self, alternative_definition: bool) -> Vec<usize> {
+        let clone = (*self.as_ref()).clone();
+        clone.vertex_biconnected_components(alternative_definition)
+    }
+
+    fn vertex_count(&self) -> usize {
+        self.as_ref().vertex_count()
+    }
+
+    fn vertex_load(&self, include_endpoints: bool) -> Vec<f64> {
+        self.as_ref().vertex_load(include_endpoints)
     }
 }
