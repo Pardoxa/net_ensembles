@@ -119,6 +119,31 @@ pub trait AdjList<Edge>
     fn edges(&self) -> &[Edge];
 }
 
+/// Trait for types that have an underlying graph with nodes which each contain some `T`.
+/// Used to access said `T`
+pub trait Contained<T>
+{
+    /// Returns a reference to the element stored in the specified node or `None` if out of Bounds
+    fn get_contained(&self, index: usize) -> Option<&T>;
+
+    /// Returns a mutable reference to the element stored in the specified node or `None` if out of Bounds
+    fn get_contained_mut(&mut self, index: usize) -> Option<&mut T>;
+    
+    // Returns a reference to the element stored in the specified node
+    ///
+    /// For a save alternative see [get_contained](`Self::get_contained`)
+    /// # Safety
+    /// Calling this method with an out-of-bounds index is [undefined behavior](https://doc.rust-lang.org/reference/behavior-considered-undefined.html) even if the resulting reference is not used.
+    unsafe fn get_contained_unchecked(&self, index: usize) -> &T;
+    
+
+    /// Returns a mutable reference to the element stored in the specified node
+    ///
+    /// For a save alternative see [get_contained_mut](`Self::get_contained_mut`)
+    /// # Safety
+    /// Calling this method with an out-of-bounds index is [undefined behavior](https://doc.rust-lang.org/reference/behavior-considered-undefined.html) even if the resulting reference is not used.    
+    unsafe fn get_contained_unchecked_mut(&mut self, index: usize) -> &mut T;
+}
 
 /// Trait for measuring topological properties of a Graph
 pub trait MeasurableGraphQuantities<G>

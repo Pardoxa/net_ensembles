@@ -10,6 +10,7 @@ use crate::watts_strogatz::WSContainer;
 use crate::WithGraph;
 use crate::{HasRng, SimpleSample};
 use crate::{GraphIteratorsMut, GraphIterators, SerdeStateConform, iter::*, generic_graph::*};
+use crate::traits::*;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -387,5 +388,25 @@ mod tests {
         ).unwrap();
 
         assert!(ensemble.graph().is_connected().unwrap())
+    }
+}
+
+impl<T, R> Contained<T> for WS<T, R>
+where T: Node
+{
+    fn get_contained(&self, index: usize) -> Option<&T> {
+        self.graph.get_contained(index)
+    }
+
+    fn get_contained_mut(&mut self, index: usize) -> Option<&mut T> {
+        self.graph.get_contained_mut(index)
+    }
+
+    unsafe fn get_contained_unchecked(&self, index: usize) -> &T {
+        self.graph.get_contained_unchecked(index)
+    }
+
+    unsafe fn get_contained_unchecked_mut(&mut self, index: usize) -> &mut T {
+        self.graph.get_contained_unchecked_mut(index)
     }
 }

@@ -520,6 +520,26 @@ impl<T, R> MarkovChain<ConfigurationModelStep, Result<(), UndoStepErrorCM>> for 
 
 }
 
+impl<T, R> Contained<T> for ConfigurationModel<T, R>
+where T: Node
+{
+    fn get_contained(&self, index: usize) -> Option<&T> {
+        self.graph.get_contained(index)
+    }
+
+    fn get_contained_mut(&mut self, index: usize) -> Option<&mut T> {
+        self.graph.get_contained_mut(index)
+    }
+
+    unsafe fn get_contained_unchecked(&self, index: usize) -> &T {
+        self.graph.get_contained_unchecked(index)
+    }
+
+    unsafe fn get_contained_unchecked_mut(&mut self, index: usize) -> &mut T {
+        self.graph.get_contained_unchecked_mut(index)
+    }
+}
+
 #[cfg(test)]
 mod testing {
     use super::*;

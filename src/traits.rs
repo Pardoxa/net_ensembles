@@ -8,6 +8,7 @@ pub use graph_traits::AdjContainer;
 pub use graph_traits::AdjList;
 pub use graph_traits::MeasurableGraphQuantities;
 pub use graph_traits::GraphErrors;
+pub use graph_traits::Contained;
 
 mod ensemble_traits;
 pub use crate::sampling::traits::HasRng;
