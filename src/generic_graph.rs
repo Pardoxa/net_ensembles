@@ -304,6 +304,46 @@ where A: AdjContainer<T>
         (r1, r2, r3)
     }
 
+    /// Returns a reference to the element stored in the specified node or `None` if out of Bounds
+    pub fn get_contained(&self, index: usize) -> Option<&T>
+    {
+        self.vertices
+            .get(index)
+            .and_then(|v| Some(v.contained()))
+    }
+
+    /// Returns a mutable reference to the element stored in the specified node or `None` if out of Bounds
+    pub fn get_contained_mut(&mut self, index: usize) -> Option<&mut T>
+    {
+        self.vertices
+            .get_mut(index)
+            .and_then(|v| Some(v.contained_mut()))
+    }
+
+    /// Returns a reference to the element stored in the specified node
+    ///
+    /// For a save alternative see [get_contained](`Self::get_contained`)
+    /// # Safety
+    /// Calling this method with an out-of-bounds index is [undefined behavior](https://doc.rust-lang.org/reference/behavior-considered-undefined.html) even if the resulting reference is not used.
+    pub unsafe fn get_contained_unchecked(&self, index: usize) -> &T
+    {
+        self.vertices
+            .get_unchecked(index)
+            .contained()
+    }
+
+    /// Returns a mutable reference to the element stored in the specified node
+    ///
+    /// For a save alternative see [get_contained_mut](`Self::get_contained_mut`)
+    /// # Safety
+    /// Calling this method with an out-of-bounds index is [undefined behavior](https://doc.rust-lang.org/reference/behavior-considered-undefined.html) even if the resulting reference is not used.    
+    pub unsafe fn get_contained_unchecked_mut(&mut self, index: usize) -> &mut T
+    {
+        self.vertices
+            .get_unchecked_mut(index)
+            .contained_mut()
+    }
+
     /// Adds edge between nodes `index1` and `index2`
     /// ## ErrorCases:
     /// | Error | Reason |

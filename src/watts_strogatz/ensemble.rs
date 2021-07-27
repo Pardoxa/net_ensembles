@@ -294,8 +294,12 @@ mod tests {
     use super::*;
     use rand_pcg::Pcg64;
     use rand::SeedableRng;
+    use crate::Dot;
     use crate::EmptyNode;
     use crate::WithGraph;
+    use crate::dot_constants::*;
+    use std::fs::File;
+    use std::io::BufWriter;
 
     #[test]
     fn creation()
@@ -352,8 +356,36 @@ mod tests {
                         )
                 }
             }
+        }
+    }
 
+    #[test]
+    fn plot()
+    {
+        let sys_size = 10;
+        let n = 2;
+        let rng = Pcg64::seed_from_u64(72389458937632);
+        let mut ensemble = WS::<EmptyNode, _>::new(
+            sys_size,
+            unsafe{NonZeroU32::new_unchecked(n)},
+            0.1,
+            rng
+        ).unwrap();
+
+        let file = File::create("ws10.dot")
+            .unwrap();
+
+        for _ in 0..10 {
+            ensemble.randomize();
         }
         
+        let writer = BufWriter::new(file);
+
+        ensemble.graph().dot_with_indices(
+            writer,
+            dot_options!(NO_OVERLAP, MARGIN_0)
+        ).unwrap();
+
+        assert!(ensemble.graph().is_connected().unwrap())
     }
 }
