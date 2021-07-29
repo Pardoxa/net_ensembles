@@ -178,6 +178,7 @@ where R: Rng
 
 
     fn randomize(&mut self) {
+        self.graph.init_ring(self.neighbor_distance.get() as usize).unwrap();
         let n = self.graph.vertex_count();
         let mut rewire_vec = Vec::with_capacity(2 * self.neighbor_distance.get() as usize);
 
