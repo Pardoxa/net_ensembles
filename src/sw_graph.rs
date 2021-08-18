@@ -26,8 +26,11 @@ impl SwEdge {
     }
 
     /// # Is the edge a root edge?
-    /// A root edge is an edge which will allways be connected to the current node.
+    /// * A root edge is an edge which will allways be connected to the current node.
     /// Where it connects to can change, where it connects from cannot.
+    /// * In the original ring structure of an [`SwGraph`](`crate::sw_graph::SwGraph`)
+    /// created by the [`SwEnsemble`](`crate::sw::SwEnsemble`) every edge is rooted at a node and
+    /// every node has the same amount (2) of root edges
     pub fn is_root(&self) -> bool {
         self.originally_to.is_some()
     }
@@ -56,6 +59,11 @@ impl SwEdge {
 
     /// # checks root edge it it is long ranging
     /// * is it a root edge and if yes, is it a long ranging root edge?
+    /// * a long ranging root edge is defined as follows.
+    /// every edge can be in either of two states: root edge or not (see [`is_root`](`Self::is_root`)).
+    /// If the edge is not at its original position, it is counted as long ranging.
+    /// We can only make statements about root edges, because we are missing information otherwise.
+    /// Therefore this method will return `true` if the edge is a root edge, which is not at its original position
     pub fn is_long_ranging_root(&self) -> bool {
         self.originally_to
             .map_or(false, |val| val != self.to)
@@ -471,8 +479,8 @@ where T: Node + SerdeStateConform {
 
     /// # How many nodes have long ranging edges?
     /// * counts how many nodes have long ranging edges
-    /// * A long ranging edge is defined as an edge, where [is_at_root](`crate::sw_graph::SwEdge::is_at_root`)
-    /// returns false, i.e., which is not in ist original ring configuration
+    /// * A long ranging edge is defined as an edge, where [is_at_root](`crate::sw_graph::SwEdge::is_long_ranging_root`)
+    /// returns true, i.e., which is not in ist original ring configuration
     pub fn count_nodes_with_long_ranging_edges(&self) -> usize
     {
         let mut has_long_ranging_edge = vec![false; self.vertex_count()];
@@ -497,8 +505,8 @@ where T: Node + SerdeStateConform {
     }
 
     /// # Fraction of nodes which have long ranging edges
-    /// * A long ranging edge is defined as an edge, where [is_at_root](`crate::sw_graph::SwEdge::is_at_root`)
-    /// returns false, i.e., which is not in ist original ring configuration
+    /// * A long ranging edge is defined as an edge, where [is_at_root](`crate::sw_graph::SwEdge::is_long_ranging_root`)
+    /// returns true, i.e., which is not in ist original ring configuration
     pub fn frac_nodes_wlre(&self) -> f64
     {
         let vc = self.vertex_count();
@@ -507,8 +515,8 @@ where T: Node + SerdeStateConform {
     }
 
     /// # How many long ranging edges are there in the Graph?
-    /// * A long ranging edge is defined as an edge, where [is_at_root](`crate::sw_graph::SwEdge::is_at_root`)
-    /// returns false, i.e., which is not in ist original ring configuration
+    /// * A long ranging edge is defined as an edge, where [is_at_root](`crate::sw_graph::SwEdge::is_long_ranging_root`)
+    /// returns true, i.e., which is not in ist original ring configuration
     pub fn count_long_ranging_edges(&self) -> usize 
     {
         self.vertices
@@ -518,7 +526,7 @@ where T: Node + SerdeStateConform {
                 c.edges().iter()
             ).filter(
                 |&e|
-                !e.is_at_root()
+                e.is_long_ranging_root()
             ).count()
     }
 
@@ -546,6 +554,22 @@ mod tests {
     use rand::SeedableRng;
     #[cfg(feature = "serde_support")]
     use serde_json;
+
+    #[test]
+    fn long_ranging_edges_test()
+    {
+        let mut graph = SwGraph::<EmptyNode>::new(10);
+        graph.init_ring_2();
+        assert_eq!(graph.count_long_ranging_edges(), 0);
+        assert_eq!(graph.count_nodes_with_long_ranging_edges(), 0);
+        assert_eq!(graph.frac_long_ranging_edges(), 0.0);
+        assert_eq!(graph.frac_nodes_wlre(), 0.0);
+
+        graph.rewire_edge(0, 1, 5);
+
+        assert_eq!(graph.count_nodes_with_long_ranging_edges(), 2);
+        assert_eq!(graph.count_long_ranging_edges(), 1);
+    }
 
     #[test]
     fn sw_ring_2() {
