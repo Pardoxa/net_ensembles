@@ -471,6 +471,8 @@ where T: Node + SerdeStateConform {
 
     /// # How many nodes have long ranging edges?
     /// * counts how many nodes have long ranging edges
+    /// * A long ranging edge is defined as an edge, where [is_at_root](`crate::sw_graph::SwEdge::is_at_root`)
+    /// returns false, i.e., which is not in ist original ring configuration
     pub fn count_nodes_with_long_ranging_edges(&self) -> usize
     {
         let mut has_long_ranging_edge = vec![false; self.vertex_count()];
@@ -492,6 +494,42 @@ where T: Node + SerdeStateConform {
         has_long_ranging_edge.into_iter()
             .filter(|long_ranging_edge| *long_ranging_edge)
             .count()
+    }
+
+    /// # Fraction of nodes which have long ranging edges
+    /// * A long ranging edge is defined as an edge, where [is_at_root](`crate::sw_graph::SwEdge::is_at_root`)
+    /// returns false, i.e., which is not in ist original ring configuration
+    pub fn frac_nodes_wlre(&self) -> f64
+    {
+        let vc = self.vertex_count();
+        let lrn = self.count_nodes_with_long_ranging_edges();
+        lrn as f64 / vc as f64 
+    }
+
+    /// # How many long ranging edges are there in the Graph?
+    /// * A long ranging edge is defined as an edge, where [is_at_root](`crate::sw_graph::SwEdge::is_at_root`)
+    /// returns false, i.e., which is not in ist original ring configuration
+    pub fn count_long_ranging_edges(&self) -> usize 
+    {
+        self.vertices
+            .iter()
+            .flat_map(
+                |c| 
+                c.edges().iter()
+            ).filter(
+                |&e|
+                !e.is_at_root()
+            ).count()
+    }
+
+    /// # Fraction of long ranging edges in the Graph?
+    /// * A long ranging edge is defined as an edge, where [is_at_root](`crate::sw_graph::SwEdge::is_at_root`)
+    /// returns false, i.e., which is not in ist original ring configuration
+    /// * this is: #longranging/#total
+    pub fn frac_long_ranging_edges(&self) -> f64
+    {
+        let count = self.count_long_ranging_edges();
+        count as f64 / self.vertex_count() as f64
     }
 }
 
