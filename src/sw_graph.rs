@@ -537,7 +537,7 @@ where T: Node + SerdeStateConform {
     pub fn frac_long_ranging_edges(&self) -> f64
     {
         let count = self.count_long_ranging_edges();
-        count as f64 / self.vertex_count() as f64
+        count as f64 / self.edge_count() as f64
     }
 }
 
@@ -569,6 +569,8 @@ mod tests {
 
         assert_eq!(graph.count_nodes_with_long_ranging_edges(), 2);
         assert_eq!(graph.count_long_ranging_edges(), 1);
+        assert_eq!(graph.frac_nodes_wlre(), 2.0 / 10.0);
+        assert_eq!(graph.frac_long_ranging_edges(), 1.0 / 20.0);
     }
 
     #[test]
