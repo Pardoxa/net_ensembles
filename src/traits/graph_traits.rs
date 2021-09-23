@@ -116,6 +116,10 @@ pub trait AdjContainer<T>
 /// Get the adjacency list of a AdjContainer
 pub trait AdjList<Edge>
 {
+    /// Intended for all [AdjContainer], which store all their 
+    /// edges in a continouse slice/vector. This will return 
+    /// a reference to the edge slice, which you can use 
+    /// to iterate or do other stuff
     fn edges(&self) -> &[Edge];
 }
 

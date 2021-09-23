@@ -17,8 +17,10 @@ use serde::{Serialize, Deserialize};
 
 use super::OriginalEdge;
 
+/// # Specific [GenericGraph] used for watts-strogatz small World graph
 pub type WSGraph<T> = GenericGraph<T,WSContainer<T>>;
 
+/// # Implements small-world graph ensemble
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SmallWorldWS<T, R>
@@ -29,30 +31,56 @@ pub struct SmallWorldWS<T, R>
     neighbor_distance: NonZeroU32
 }
 
+/// short for [SmallWorldWS]
 pub type WS<T, R> = SmallWorldWS<T, R>;
 
 impl<T, R> WS<T, R>
 {
+    /// # Returns neigbor distance of the initial ring
+    /// A neighbor distance of 1 means, in the original 
+    /// ring structure every node is connected to its two nearest neigbors,
+    /// a neighbor distance of 2 means, it is connected to its 4 nearest neigbors and so on
+    ///
+    /// The graph will contain neighbor_distance * system size (i.e. graph.vertex_count())
+    /// connections
     pub fn neighbor_distance(&self) -> NonZeroU32
     {
         self.neighbor_distance
     }
 
+    /// # retunrs rewire probability the ensemble is set to
+    /// On average, a fraction of rewire_prob nodes should be rewired
     pub fn rewire_prob(&self) -> f64
     {
         self.rewire_prob
     }
 }
 
+/// # Errorvariants
+/// Possible Errors which can be encountered during the initial creation of an instance 
+/// of a [WS]
 #[derive(Debug, Clone, Copy)]
 pub enum WSCreationError{
-    ImpossibleRequest,
+    /// It is impossible to create the initial ring structure.
+    /// You have to either increase the system size of the graph (i.e., the number of nodes)
+    /// or reduce the neigbor distance!
+    ImpossibleRingRequest,
+    /// Something went wrong during the rewireing.
+    /// This should not happen. If you encounter this error,
+    /// please file a bug report on Github with a minimal example to reproduce the bug. 
+    /// Thanks!
+    ImpossibleEdgeRequest
 }
 
 impl<T, R> WS<T, R>
 where T: Node,
     R: Rng
 {
+    /// # Initialize a [WS] - a small-world ensemble
+    /// * `n` is the system size, i.e., how many nodes there should be in the created graphs
+    /// * `neighbor_distance` is needed for the initial ring structure. See also [WS::neigbor_distance](`Self::neighbor_distance`)
+    /// * `rewire_probability` - each edge will be rewired with a probability of `rewire_probability` - see also [WS::rewire_prob]
+    /// * `rng` - random number generator
     pub fn new(
         n: u32,
         neighbor_distance: NonZeroU32,
@@ -63,12 +91,12 @@ where T: Node,
         let n = n;
         let minimum_n = 1 + 2 * neighbor_distance.get();
         if n < minimum_n {
-            return Err(WSCreationError::ImpossibleRequest);
+            return Err(WSCreationError::ImpossibleRingRequest);
         }
         let mut graph = WSGraph::new(n as usize);
         let res = graph.init_ring(neighbor_distance.get() as usize);
         if res.is_err() {
-            return Err(WSCreationError::ImpossibleRequest);
+            return Err(WSCreationError::ImpossibleEdgeRequest);
         }
         let mut s = 
             Self

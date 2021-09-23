@@ -40,6 +40,10 @@ impl OriginalEdge{
     }
 }
 
+/// # Used for accessing neighbor information from a graph
+/// * Contains Adjacency list and internal id (normally the index in the graph)
+/// * also contains user specified data, i.e., `T` 
+/// * see trait [AdjContainer]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct WSContainer<T>

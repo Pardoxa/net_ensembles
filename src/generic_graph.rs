@@ -55,7 +55,6 @@ where A: AdjContainer<T>
         }
     }
 
-
     /// # initialize Ring
     /// * every node is connected with its neighbors, which are
     /// not more than distance away
