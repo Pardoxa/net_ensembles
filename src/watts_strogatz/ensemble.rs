@@ -21,6 +21,7 @@ use super::OriginalEdge;
 pub type WSGraph<T> = GenericGraph<T,WSContainer<T>>;
 
 /// # Implements small-world graph ensemble
+/// * Note the implemented traits!
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SmallWorldWS<T, R>
@@ -31,7 +32,8 @@ pub struct SmallWorldWS<T, R>
     neighbor_distance: NonZeroU32
 }
 
-/// short for [SmallWorldWS]
+/// # short for [SmallWorldWS]
+/// See [SmallWorldWS] for the implemented traits
 pub type WS<T, R> = SmallWorldWS<T, R>;
 
 impl<T, R> WS<T, R>
@@ -56,7 +58,7 @@ impl<T, R> WS<T, R>
     }
 }
 
-/// # Errorvariants
+/// # Error variants
 /// Possible Errors which can be encountered during the initial creation of an instance 
 /// of a [WS]
 #[derive(Debug, Clone, Copy)]
@@ -113,7 +115,7 @@ where T: Node,
     }
 }
 
-impl<T, R> WS<T, R>
+impl<T, R> SmallWorldWS<T, R>
 where R: Rng
 {
     // Adding a random edge, that does not exist right now and is not "originalEdge"
@@ -168,7 +170,7 @@ where R: Rng
     }
 }
 
-impl<T, R> WithGraph<T, WSGraph<T>> for WS<T, R>
+impl<T, R> WithGraph<T, WSGraph<T>> for SmallWorldWS<T, R>
 {
     fn at(&self, index: usize) -> &T
     {
@@ -180,7 +182,7 @@ impl<T, R> WithGraph<T, WSGraph<T>> for WS<T, R>
     }
 
     fn graph(&self) -> &WSGraph<T> {
-        &self.graph
+        self.as_ref()
     }
 
     fn sort_adj(&mut self) {
@@ -188,7 +190,7 @@ impl<T, R> WithGraph<T, WSGraph<T>> for WS<T, R>
     }
 }
 
-impl<T, R> HasRng<R> for WS<T, R>
+impl<T, R> HasRng<R> for SmallWorldWS<T, R>
 where R: Rng
 {
     fn swap_rng(&mut self, rng: &mut R) {
@@ -200,7 +202,7 @@ where R: Rng
     }
 }
 
-impl<T, R> SimpleSample for WS<T, R>
+impl<T, R> SimpleSample for SmallWorldWS<T, R>
 where R: Rng
 {
 
@@ -251,17 +253,15 @@ where R: Rng
     }
 }
 
-impl<T, R> AsRef<WSGraph<T>> for WS<T, R>
-where T: Node,
-      R: rand::Rng
+impl<T, R> AsRef<WSGraph<T>> for SmallWorldWS<T, R>
 {
     #[inline]
     fn as_ref(&self) -> &WSGraph<T>{
-        self.graph()
+        &self.graph
     }
 }
 
-impl<T, R> GraphIteratorsMut<T, WSGraph<T>, WSContainer<T>> for WS<T, R>
+impl<T, R> GraphIteratorsMut<T, WSGraph<T>, WSContainer<T>> for SmallWorldWS<T, R>
 where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
@@ -282,7 +282,7 @@ where   T: Node + SerdeStateConform,
     }
 }
 
-impl<T, R> GraphIterators<T, WSGraph<T>, WSContainer<T>> for WS<T, R>
+impl<T, R> GraphIterators<T, WSGraph<T>, WSContainer<T>> for SmallWorldWS<T, R>
 where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
@@ -420,7 +420,7 @@ mod tests {
     }
 }
 
-impl<T, R> Contained<T> for WS<T, R>
+impl<T, R> Contained<T> for SmallWorldWS<T, R>
 where T: Node
 {
     fn get_contained(&self, index: usize) -> Option<&T> {

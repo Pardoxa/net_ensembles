@@ -15,7 +15,8 @@ use serde::{Serialize, Deserialize};
 /// * see trait **`AdjContainer`**
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct SpacialNodeContainer<T: Node>{
+pub struct SpacialNodeContainer<T>
+{
     pub(crate) adj: Vec<usize>,
     id: usize,
     pub(crate) x: f64,
@@ -114,7 +115,7 @@ impl<T: Node + SerdeStateConform> AdjContainer<T> for SpacialNodeContainer<T> {
     }
 }
 
-impl<T: Node> SpacialNodeContainer<T> {
+impl<T> SpacialNodeContainer<T> {
 
     fn swap_remove_element(&mut self, elem: usize) {
         let index = self.adj
@@ -141,3 +142,23 @@ impl<T: Node> SpacialNodeContainer<T> {
 pub type SpacialGraph<T> = GenericGraph<T, SpacialNodeContainer<T>>;
 
 
+impl<T> SpacialGraph<T>
+{
+    /// # Euclidean distance between two vertices
+    /// * Calculates the distance between the vertices 
+    /// corresponding to the indices `i` and `j`
+    /// * `None` if any of the indices is out of bounds
+    pub fn distance(&self, i: usize, j: usize) -> Option<f64>
+    where SpacialNodeContainer<T>: AdjContainer<T>
+    {
+        let container_i = self.container_checked(i)?;
+        
+        self.container_checked(j)
+            .map(
+                |container_j|
+                {
+                    container_i.distance(container_j)
+                }
+            )
+    }
+}

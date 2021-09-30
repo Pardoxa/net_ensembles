@@ -8,5 +8,6 @@
 pub use crate::sw::SwChangeState;
 pub use crate::er_c::ErStepC;
 pub use crate::er_m::ErStepM;
+pub use crate::spacial::SpacialStep;
 /// returned by mc step of small world ensemble
 pub type SwStep = SwChangeState;

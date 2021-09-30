@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.0 &rarr; master
+## v0.4.0 &rarr; v0.5.0
 
 ### sampling
 * move sampling to new crate - sampling is reexported at old location
@@ -46,6 +46,10 @@
 * Adding `Serialize + Deserialize` for ErStepC
 * Adding `Clone + Serialize + Deserialize` for ErStepM
 * Adding `Cloone + Serialize + Deserializ` for SwChangeState
+
+### and more
+
+* I did not list all changes, you are welcome to take a look at the documentation
 
 
 ## v0.3.0 &rarr; v0.4.0

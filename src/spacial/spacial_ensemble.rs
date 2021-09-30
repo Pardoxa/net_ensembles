@@ -12,10 +12,11 @@ use serde::{Serialize, Deserialize};
 ///
 /// * You can generate a dot file which includes special information.
 /// * **NOTE** You should use **neato** for that to work 
+/// * see [module](crate::spacial) for literature
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct SpacialEnsemble<T, R> 
-where T: Node {
+{
     graph: SpacialGraph<T>,
     rng: R,
     f: f64,
@@ -34,6 +35,12 @@ impl<T, R> SpacialEnsemble<T, R>
     /// * `rng` as random number generator
     /// * `f` - see paper
     /// * `alpha` - see paper
+    /// 
+    /// # The specific model I implemented is described in
+    /// > Timo Dewenter and Alexander K. Hartmann,
+    /// > "Large-deviation properties of resilience of power grids"
+    /// > *New&nbsp;J.&nbsp;Phys.*&nbsp;**17**&nbsp;(2015),
+    /// > DOI: [10.1088/1367-2630/17/1/015005](https://doi.org/10.1088/1367-2630/17/1/015005)
     pub fn new(n: usize, mut rng: R, f: f64, alpha: f64) -> Self
     {
         let mut graph = SpacialGraph::new(n);
@@ -58,6 +65,31 @@ impl<T, R> SpacialEnsemble<T, R>
         res
     }
 
+    /// # Euclidean distance between two vertices
+    /// * Calculates the distance between the vertices 
+    /// corresponding to the indices `i` and `j`
+    /// * `None` if any of the indices is out of bounds
+    pub fn distance(&self, i: usize, j: usize) -> Option<f64>
+    {
+        self.as_ref()
+            .distance(i, j)
+    }
+
+    /// # Calculates probability
+    /// * calculates the probability for an edge between the 
+    /// vertices corresponding to the indices `i` and `j`
+    /// 
+    /// Of cause you can check if there is currently an edge, but this probability is 
+    /// the probability used when determining, if there should be an edge 
+    pub fn edge_probability(&self, i: usize, j: usize) -> Option<f64>
+    {
+        let distance = self.distance(i, j)?;
+        let prob = self.f * 
+            (1.0 + self.sqrt_n_pi * distance / self.alpha)
+            .powf(-self.alpha);
+        Some(prob.clamp(0.0, 1.0))
+    }
+
     #[inline]
     fn prob_unchecked(&self, i: usize, j: usize) -> f64
     {
@@ -71,6 +103,14 @@ impl<T, R> SpacialEnsemble<T, R>
             (1.0 + self.sqrt_n_pi * distance / self.alpha)
             .powf(-self.alpha);
         prob
+    }
+}
+
+impl<T, R> AsRef<SpacialGraph<T>> for SpacialEnsemble<T, R>
+{
+    fn as_ref(&self) -> &SpacialGraph<T>
+    {
+        &self.graph
     }
 }
 

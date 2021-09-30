@@ -98,6 +98,14 @@ where A: AdjContainer<T>
         &self.vertices[index]
     }
 
+    /// # get `AdjContainer` of vertex `index`
+    /// * `None` if index is out of bounds
+    /// * `Some(&A)` else
+    pub fn container_checked(&self, index: usize) -> Option<&A>
+    {
+        self.vertices.get(index)
+    }
+
     /// * get iterator over AdjContainer in order of the indices
     /// * iterator returns `AdjContainer<Node>`
     pub fn container_iter(&self) -> std::slice::Iter::<A> {
@@ -205,12 +213,25 @@ where A: AdjContainer<T>
 
     /// # For your calculations etc.
     /// * **read access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
+    /// ## Note
+    /// * **panics** if index out of bounds
     pub fn at(&self, index: usize) -> &T {
         self.container(index).contained()
     }
 
     /// # For your calculations etc.
+    /// * **read access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
+    /// * `None` if index is out of bounds
+    pub fn at_checked(&self, index: usize) -> Option<&T>
+    {
+        self.container_checked(index)
+            .map(|container| container.contained())
+    }
+
+    /// # For your calculations etc.
     /// * **write access** to **your struct** T, stored at **each vertex**, that implements `Node` trait
+    /// # Note    
+    /// * **panics** if index out of bounds
     pub fn at_mut(&mut self, index: usize) -> &mut T {
         self.container_mut(index).contained_mut()
     }

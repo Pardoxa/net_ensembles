@@ -1,7 +1,7 @@
 //! # Topology
 //! Implements a network.
 //!
-//! You probably want to take a look at the struct `GenericGraph`,
+//! You probably want to take a look at the struct [`GenericGraph`](crate::GenericGraph),
 //! since it contains the topology information.
 //!
 //! For Erdős-Rényi Graphs, see struct `ER`
