@@ -2,6 +2,7 @@
 //! * contains multiple measurable quantities
 //! * used by `Graph<T>` and `SwGraph<T>`
 use crate::{traits::*, iter::*, GraphErrors};
+use sampling::histogram::{HistUsizeFast, HistogramVal};
 
 use std::{convert::*, collections::*, marker::*, io::Write};
 
@@ -412,22 +413,68 @@ where A: AdjContainer<T>
         )
     }
 
+    /// # Iterator
+    /// Iterate over the degrees of each node (in the order of the indices)
+    pub fn degree_iter<'a>(&'a self) -> impl Iterator<Item=usize> + 'a
+    {
+        self.vertices
+            .iter()
+            .map(A::degree)
+    }
+
     /// # get degree vector
     /// * returns vector of length `self.vertex_count()`
     /// where each entry corresponds to the degree of the vertex with the respective index
     pub fn degree_vec(&self) -> Vec<usize>
     {
         let mut degree_vec = Vec::with_capacity(self.vertex_count());
-        degree_vec.extend(
-            self
-                .vertices
-                .iter()
-                .map(|c| c.degree())
-        );
+        degree_vec.extend(self.degree_iter());
         degree_vec
     }
 
-    
+    /// # Get a histogram of the degrees
+    /// * You can look at your degree distribution with this
+    /// ## Safety
+    /// * Assumes you have at least one node, panics otherwise
+    pub fn degree_histogram(&self) -> HistUsizeFast
+    {
+        let mut iter = self.degree_iter();
+        let mut min = iter.next()
+            .expect("Expected at least one node");
+
+        let mut max = min;
+
+        iter.for_each(
+            |val|
+            {
+                if val < min {
+                    min = val
+                } else if val > max {
+                    max = val
+                }
+            }
+        );
+
+        let mut hist = match HistUsizeFast::new_inclusive(min, max)
+        {
+            Ok(hist) => hist,
+            Err(_) => unreachable!()
+        };
+
+        self.degree_iter()
+            .for_each(
+                |entry|
+                {
+                    match hist.count_val(entry)
+                    {
+                        Ok(_) => (),
+                        Err(_) => unreachable!(),
+                    }
+                }
+            );
+
+        hist
+    }
 
     /// # returns `Iterator`
     ///
@@ -1607,5 +1654,28 @@ where   T: 'a,
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.stack.len(), Some(self.graph.vertex_count()))
+    }
+}
+
+#[cfg(test)]
+mod tests{
+    use super::*;
+    use crate::{EmptyNode, graph::NodeContainer};
+    use sampling::histogram::{Histogram, HistogramVal};
+
+    #[test]
+    fn degree_dist()
+    {
+        let mut network = GenericGraph::<EmptyNode, NodeContainer<EmptyNode>>::new(10);
+
+        network.init_ring(1).unwrap();
+
+        let hist = network.degree_histogram();
+
+        assert_eq!(hist.hist().len(), 1);
+        assert_eq!(hist.hist()[0], 10);
+        assert_eq!(hist.first_border(), 2);
+        assert_eq!(hist.second_last_border(), 2);
+
     }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.0 &rarr; master
+
+## GenericGraph
+* adding member `degree_iter`
+* adding member `degree_histogram`
+
 ## v0.4.0 &rarr; v0.5.0
 
 ### sampling
