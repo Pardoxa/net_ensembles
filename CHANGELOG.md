@@ -6,6 +6,10 @@
 * adding member `degree_iter`
 * adding member `degree_histogram`
 
+## NodeContainer
+
+* add `AdjList` trait
+
 ## v0.4.0 &rarr; v0.5.0
 
 ### sampling

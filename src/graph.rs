@@ -127,6 +127,13 @@ impl<T: Node> NodeContainer<T> {
     }
 }
 
+impl<T: Node> AdjList<usize> for NodeContainer<T>{
+    fn edges(&self) -> &[usize]
+    {
+        self.adj.as_slice()
+    }
+}
+
 /// # Contains the topology and **implements functions** for analyzing topology
 /// used for graph ensembles
 /// # Example:
