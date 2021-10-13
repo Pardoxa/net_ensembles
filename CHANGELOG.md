@@ -5,6 +5,7 @@
 ## GenericGraph
 * adding member `degree_iter`
 * adding member `degree_histogram`
+* adding member `cloned_subgraph`
 
 ## NodeContainer
 

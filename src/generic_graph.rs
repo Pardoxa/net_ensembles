@@ -5,6 +5,7 @@ use crate::{traits::*, iter::*, GraphErrors};
 use sampling::histogram::{HistUsizeFast, HistogramVal};
 
 use std::{convert::*, collections::*, marker::*, io::Write};
+use crate::graph::{NodeContainer, Graph};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -1263,6 +1264,85 @@ where A: AdjContainer<T>
         closed_path_count as f64 / path_count as f64
     }
 
+    /// # Create a subgraph
+    /// Method to create a subgraph. `node_list` should contain all the indices 
+    /// corresponding to the nodes you want to keep, the order of the indices is 
+    /// irrelevant. Duplicate indices will be ignored. 
+    /// If any index is out of bounds (or `node_list` is empty), `None` will be returned
+    /// 
+    /// All edges between nodes that are inside the `node_list` will be kept.
+    /// All other edges will be discarded. 
+    /// The nodes in the subgraph will get new indices corresponding to their new position.
+    /// The contained information (`T`) will be cloned.
+    /// ## Note
+    /// The container used will be changed to a [NodeContainer](crate::graph::NodeContainer),
+    /// since I cannot guarantee that other container would make sense here. 
+    /// E.g., if you used a [SwContainer](crate::sw_graph::SwContainer) the 
+    /// information about the root edges might become invalid, because the corresponding 
+    /// nodes might not be part of the subgraph
+    pub fn cloned_subgraph(&self, mut node_list: Vec<usize>) -> Option<Graph<T>>
+    where T: Clone + Node
+    {
+        // get correct order
+        node_list.sort_unstable();
+
+        let last = *node_list.last()?;
+        // check if biggest node is valid
+        if last >= self.vertex_count() {
+            return None;
+        }
+
+        // remove duplicates
+        node_list.dedup();
+
+
+
+
+        let map: HashMap<usize, usize> = node_list.iter()
+            .copied()
+            .zip(0..)
+            .collect();
+
+        let mut vertices = Vec::with_capacity(node_list.len());
+
+        vertices.extend(
+            node_list.into_iter()
+                .enumerate()
+                .map(
+                    |(i, node_index)|
+                    {
+                        let container = self.container(node_index);
+                        let mut adj = Vec::with_capacity(container.degree());
+            
+                        adj.extend(
+                            container.neighbors()
+                                .filter_map(|n| map.get(n))
+                                .copied()
+                            );
+                        NodeContainer{
+                            id: i,
+                            adj,
+                            node: container.contained().clone()
+                        }
+                    }
+                )
+        );
+
+        let edge_count = vertices.iter()
+            .map(|c| c.degree())
+            .sum::<usize>() / 2;
+
+
+        Some(
+            Graph{
+                next_id: vertices.len(),
+                edge_count,
+                vertices,
+                phantom: PhantomData 
+            }
+        )
+    }
+
 }
 
 impl<T, A> DotExtra<T, A> for GenericGraph<T, A>
@@ -1677,5 +1757,67 @@ mod tests{
         assert_eq!(hist.first_border(), 2);
         assert_eq!(hist.second_last_border(), 2);
 
+    }
+
+    #[test]
+    fn subgraph()
+    {
+        let graph = Graph::<EmptyNode>::complete_graph(10);
+
+        let subgraph = graph.cloned_subgraph(vec![3, 2, 1, 9, 3])
+            .unwrap();
+
+        assert_eq!(subgraph.vertex_count(), 4);
+        assert_eq!(subgraph.edge_count(), (4*3) / 2);
+
+        let c = subgraph.container(1);
+        let mut iter = c.neighbors();
+        assert_eq!(iter.next(), Some(&0));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&3));
+        assert_eq!(iter.next(), None);
+        drop(subgraph);
+        let subgraph = graph.cloned_subgraph(vec![0]).unwrap();
+        assert_eq!(subgraph.edge_count(), 0);
+        assert_eq!(subgraph.vertex_count(), 1);
+        drop(graph);
+
+        let mut graph = Graph::<EmptyNode>::new(7);
+
+        graph.add_edge(0, 3).unwrap();
+        graph.add_edge(0, 1).unwrap();
+        graph.add_edge(2, 3).unwrap();
+        graph.add_edge(0, 5).unwrap();
+
+        
+        let mut subgraph = graph.cloned_subgraph(vec![0, 1, 3])
+            .unwrap();
+        subgraph.sort_adj();
+
+        assert_eq!(subgraph.vertex_count(), 3);
+        assert_eq!(subgraph.edge_count(), 2);
+
+        let c = subgraph.container(0);
+        assert_eq!(c.degree(), 2);
+        let mut iter = c.neighbors();
+        assert_eq!(iter.next(), Some(&1));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), None);
+
+        let c = subgraph.container(1);
+        assert_eq!(c.degree(), 1);
+        
+        let mut iter = c.neighbors();
+        assert_eq!(iter.next(), Some(&0));
+        assert_eq!(iter.next(), None);
+
+        let c = subgraph.container(2);
+        let mut iter = c.neighbors();
+        assert_eq!(c.degree(), 1);
+        assert_eq!(iter.next(), Some(&0));
+        assert_eq!(iter.next(), None);
+
+        assert!(graph.cloned_subgraph(vec![]).is_none());
+        assert!(graph.cloned_subgraph(vec![199,199,329029]).is_none());
     }
 }

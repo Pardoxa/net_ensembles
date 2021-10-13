@@ -26,7 +26,7 @@ impl SwEdge {
     }
 
     /// # Is the edge a root edge?
-    /// * A root edge is an edge which will allways be connected to the current node.
+    /// * A root edge is an edge which will always be connected to the current node.
     /// Where it connects to can change, where it connects from cannot.
     /// * In the original ring structure of an [`SwGraph`](`crate::sw_graph::SwGraph`)
     /// created by the [`SwEnsemble`](`crate::sw::SwEnsemble`) every edge is rooted at a node and
@@ -44,7 +44,7 @@ impl SwEdge {
     }
 
     /// # Is the edge at its root position?
-    /// A root edge is an edge which will allways be connected to the current node.
+    /// A root edge is an edge which will always be connected to the current node.
     /// Where it connects to can change, where it connects from cannot.
     /// 
     /// A root edge can be reset (i.e., where it connects to is reset) to its original neighbor

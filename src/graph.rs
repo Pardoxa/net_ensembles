@@ -20,9 +20,9 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NodeContainer<T: Node>{
-    id: usize,
+    pub(crate) id: usize,
     pub(crate) adj: Vec<usize>,
-    node: T,
+    pub(crate) node: T,
 }
 
 
