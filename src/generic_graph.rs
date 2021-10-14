@@ -1295,9 +1295,6 @@ where A: AdjContainer<T>
         // remove duplicates
         node_list.dedup();
 
-
-
-
         let map: HashMap<usize, usize> = node_list.iter()
             .copied()
             .zip(0..)
@@ -1329,7 +1326,7 @@ where A: AdjContainer<T>
         );
 
         let edge_count = vertices.iter()
-            .map(|c| c.degree())
+            .map(NodeContainer::degree)
             .sum::<usize>() / 2;
 
 
@@ -1756,6 +1753,13 @@ mod tests{
         assert_eq!(hist.hist()[0], 10);
         assert_eq!(hist.first_border(), 2);
         assert_eq!(hist.second_last_border(), 2);
+
+        let network = GenericGraph::<EmptyNode, NodeContainer<EmptyNode>>::new(1);
+
+        let hist = network.degree_histogram();
+        let mut iter = hist.bin_hits_iter();
+        assert_eq!(iter.next(), Some((0, 1)));
+        assert_eq!(iter.next(), None);
 
     }
 

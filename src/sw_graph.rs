@@ -216,7 +216,7 @@ where T: Node + SerdeStateConform
             .any(|&x| x == other_id)
     }
 
-    /// # Sorting adjecency lists
+    /// # Sorting adjacency lists
     /// * worst case: `O(edges log(edges))`
     fn sort_adj(&mut self){
         self.adj.sort_unstable_by_key(
@@ -234,7 +234,7 @@ where T: Node + SerdeStateConform
     }
 
     /// # What does it do?
-    /// * creates edge in `self` and `other`s adjecency Lists
+    /// * creates edge in `self` and `other`s adjacency Lists
     /// * edge root is set to self
     /// # Why is it unsafe?
     /// * No logic to see, if AdjContainer are part of the same graph
@@ -265,7 +265,7 @@ where T: Node + SerdeStateConform
         }
 
     /// # What does it do?
-    /// Removes edge in `self` and `other`s adjecency Lists
+    /// Removes edge in `self` and `other`s adjacency Lists
     /// # Why is it unsafe?
     /// * No logic to see, if AdjContainer are part of the same graph
     /// * Only intended for internal usage
