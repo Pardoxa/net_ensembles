@@ -481,20 +481,41 @@ where A: AdjContainer<T>
     ///
     /// * the iterator will iterate over the vertices in depth first search order,
     /// beginning with vertex `index`.
-    /// * iterator returns `node`
+    /// * iterator returns what is contained at the corresponding vertices, i.e., `&T`
     /// * iterator always returns None if index out of bounds
     ///
     /// Order
     ///------------------------
     /// Order is guaranteed to be in DFS order, however
-    /// if this order is not unambigouse
+    /// if this order is not unambiguous
     /// adding edges and especially removing edges will shuffle the order.
     ///
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
     pub fn dfs(&self, index: usize) -> Dfs<T, A> {
-        Dfs::new(&self, index)
+        Dfs::new(self, index)
+    }
+
+    /// # returns `Iterator`
+    ///
+    /// * the iterator will iterate over the vertices in depth first search order,
+    /// beginning with vertex `index`.
+    /// * iterator returns what is contained at the corresponding vertices, i.e., `&mut T`
+    /// * iterator always returns None if index out of bounds
+    ///
+    /// Order
+    ///------------------------
+    /// Order is guaranteed to be in DFS order, however
+    /// if this order is not unambiguous
+    /// adding edges and especially removing edges will shuffle the order.
+    ///
+    /// Note:
+    /// ----------------------
+    /// Will only iterate over vertices within the connected component that contains vertex `index`
+    pub fn dfs_mut(&mut self, index: usize) -> DfsMut<T, A>
+    {
+        DfsMut::new(self, index)
     }
 
     /// # returns `Iterator`
@@ -1678,6 +1699,80 @@ where   T: 'a,
         }
 }
 
+/// # Depth first search iterator
+/// * used to iterate over what is contained in a [`GenericGraph`](crate::GenericGraph::dfs_mut)
+/// ## Borrow checker works
+/// I am using the dark arts of unsafe rust to make this 
+/// Iterator work. The following is a doc test to assert
+/// that the borrow checker still forbids double mutable access
+/// ```compile_fail
+/// use net_ensembles::{Graph, CountingNode};
+/// let mut graph = Graph::<CountingNode>::complete_graph(10);
+/// 
+/// let mut iter = graph.dfs_mut(0);
+/// 
+/// let first = iter.next().unwrap();
+/// first.index = 3;
+/// iter.next();
+/// let third = iter.next().unwrap();
+/// graph.at_mut(3).index = 4;
+/// third.index = 23;
+/// ```
+pub struct DfsMut<'a, T, A>
+where A: AdjContainer<T>
+{
+    graph: *mut A,
+    handled: Vec<bool>,
+    stack: Vec<usize>,
+    marker: PhantomData<&'a mut T>
+}
+
+impl<'a, T, A> DfsMut<'a, T, A>
+where A: AdjContainer<T>
+{
+    fn new(graph: &'a mut GenericGraph<T, A>, index: usize) -> Self
+    {
+        let mut handled = vec![false; graph.vertex_count()];
+        let mut stack: Vec<usize> = Vec::with_capacity(graph.vertex_count());
+
+        if index < handled.len()
+        {
+            stack.push(index);
+            handled[index] = true;
+        }
+
+        DfsMut{
+            graph: graph.vertices.as_mut_ptr(),
+            handled,
+            stack,
+            marker: PhantomData
+        }
+    }
+}
+
+impl<'a, T, A> Iterator for DfsMut<'a, T, A>
+where A: AdjContainer<T> + 'a,
+    T: 'a
+{
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item>
+    {
+        let index = self.stack.pop()?;
+        let container = unsafe{
+            &mut *self.graph.add(index)
+        };
+        for &i in container.neighbors() {
+            if !self.handled[i] {
+                self.handled[i] = true;
+                self.stack.push(i);
+            }
+        }
+
+        Some(container.contained_mut())
+    }
+}
+
 /// Depth first search Iterator
 pub struct Dfs<'a, T, A>
 where   T: 'a,
@@ -1737,7 +1832,7 @@ where   T: 'a,
 #[cfg(test)]
 mod tests{
     use super::*;
-    use crate::{EmptyNode, graph::NodeContainer};
+    use crate::{EmptyNode, graph::NodeContainer, CountingNode};
     use sampling::histogram::{Histogram, HistogramVal};
 
     #[test]
@@ -1823,5 +1918,20 @@ mod tests{
 
         assert!(graph.cloned_subgraph(vec![]).is_none());
         assert!(graph.cloned_subgraph(vec![199,199,329029]).is_none());
+    }
+
+    #[test]
+    fn test_dfs_mut_magic()
+    {
+        let mut graph = Graph::<CountingNode>::complete_graph(10);
+
+        let mut iter = graph.dfs_mut(0);
+
+        let first = iter.next().unwrap();
+        first.index = 3;
+        iter.next();
+        let third = iter.next().unwrap();
+        third.index = 23;
+        graph.at_mut(3).index = 4;
     }
 }

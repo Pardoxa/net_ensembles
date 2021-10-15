@@ -303,7 +303,7 @@ pub use er_c::ErEnsembleC;
 pub use barabasi_albert::*;
 pub use graph::Graph;
 pub use generic_graph::GenericGraph;
-pub use example_nodes::EmptyNode;
+pub use example_nodes::{EmptyNode, CountingNode};
 pub use traits::*;
 pub use traits::GraphErrors;
 pub use iter::IterWrapper;

@@ -14,3 +14,19 @@ impl Node for EmptyNode {
         EmptyNode { }
     }
 }
+
+/// Example node that contains a `usize` which will, if not changed, 
+/// correspond to the index of the Vertex
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+pub struct CountingNode {
+    /// Contained data
+    pub index: usize
+}
+
+impl Node for CountingNode {
+    fn new_from_index(index: usize) -> Self
+    {
+        Self{index}
+    }
+}
