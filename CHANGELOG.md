@@ -3,6 +3,8 @@
 ## v0.5.0 &rarr; master
 
 ## GenericGraph
+
+* adding `from_vec`
 * adding member `degree_iter`
 * adding member `degree_histogram`
 * adding member `cloned_subgraph`

@@ -42,6 +42,39 @@ where T: Node,
 impl<T, A> GenericGraph<T, A>
 where A: AdjContainer<T>
 {
+    /// # create a new graph
+    /// * graph will contain `contained.len()` vertices, which will contain the corresponding entries
+    /// of the vector `contained`
+    /// * graph will not contain any edges upon creation
+    /// ```
+    /// use net_ensembles::{GenericGraph, graph::NodeContainer};
+    /// 
+    /// let graph = GenericGraph::<_, NodeContainer::<_>>::from_vec(vec!["first", "second", "third"]);
+    /// assert_eq!(graph.at(0), &"first");
+    /// assert_eq!(graph.at(1), &"second");
+    /// assert_eq!(graph.at(2), &"third");
+    /// assert_eq!(graph.vertex_count(), 3);
+    /// assert_eq!(graph.edge_count(), 0);
+    /// ```
+    pub fn from_vec(contained: Vec<T>) -> Self
+    {
+        let vertices: Vec<_> = contained.into_iter()
+            .enumerate()
+            .map(|(index, t)| A::new(index, t))
+            .collect();
+        
+        Self{
+            next_id: vertices.len(),
+            vertices,
+            edge_count: 0,
+            phantom: PhantomData
+        }
+    }
+}
+
+impl<T, A> GenericGraph<T, A>
+where A: AdjContainer<T>
+{
 
     /// # removes all edges from the graph
     /// * inexpensive O(1), if there are no edges to begin with
@@ -1326,7 +1359,7 @@ where A: AdjContainer<T>
     /// information about the root edges might become invalid, because the corresponding 
     /// nodes might not be part of the subgraph
     pub fn cloned_subgraph(&self, mut node_list: Vec<usize>) -> Option<Graph<T>>
-    where T: Clone + Node
+    where T: Clone
     {
         // get correct order
         node_list.sort_unstable();

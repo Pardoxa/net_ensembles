@@ -19,14 +19,14 @@ use serde::{Serialize, Deserialize};
 /// * see trait **`AdjContainer`**
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct NodeContainer<T: Node>{
+pub struct NodeContainer<T>{
     pub(crate) id: usize,
     pub(crate) adj: Vec<usize>,
     pub(crate) node: T,
 }
 
 
-impl<T: Node + SerdeStateConform> AdjContainer<T> for NodeContainer<T> {
+impl<T> AdjContainer<T> for NodeContainer<T> {
 
     /// Create new instance with id
     fn new(id: usize, node: T) -> Self {
@@ -114,7 +114,7 @@ impl<T: Node + SerdeStateConform> AdjContainer<T> for NodeContainer<T> {
     }
 }
 
-impl<T: Node> NodeContainer<T> {
+impl<T> NodeContainer<T> {
 
     fn swap_remove_element(&mut self, elem: usize) {
         let index = self.adj
@@ -127,7 +127,7 @@ impl<T: Node> NodeContainer<T> {
     }
 }
 
-impl<T: Node> AdjList<usize> for NodeContainer<T>{
+impl<T> AdjList<usize> for NodeContainer<T>{
     fn edges(&self) -> &[usize]
     {
         self.adj.as_slice()
