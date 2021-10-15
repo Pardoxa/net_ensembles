@@ -11,6 +11,10 @@
 * adding iterator `dfs_mut`
 * adding iterator `bfs_index_depth_mut`
 
+## Graph
+
+* implemented `FromIterator` trait
+
 ## NodeContainer
 
 * add `AdjList` trait

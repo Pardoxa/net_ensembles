@@ -8,6 +8,7 @@
 use crate::{traits::*, GraphErrors, GenericGraph};
 use std::marker::PhantomData;
 use std::convert::From;
+use core::iter::FromIterator;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
@@ -282,7 +283,33 @@ impl<T> AdjList<usize> for NodeContainer<T>{
 /// ```
 /// Now you can use `circo` or similar programs to create a pdf from that.
 /// Search for **graphviz** for more info.
+/// # Note
+/// You can also use collect to create a new graph:
+/// ```
+/// use net_ensembles::Graph;
+/// 
+/// let mut graph: Graph<_> = (0..3).collect();
+/// // you have to add the edges yourself
+/// graph.add_edge(0, 1).unwrap();
+/// ```
 pub type Graph<T> = GenericGraph<T, NodeContainer<T>>;
+
+impl<T> FromIterator<T> for Graph<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self 
+    {
+        let vertices: Vec<_> = iter.into_iter()
+            .enumerate()
+            .map(|(index, t)| NodeContainer::new(index, t))
+            .collect();    
+
+        Graph{
+            next_id: vertices.len(),
+            vertices,
+            edge_count: 0,
+            phantom: PhantomData
+        }
+    }
+}
 
 impl<T> Graph<T>
 where T: Node
