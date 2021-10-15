@@ -7,6 +7,7 @@
 * adding member `degree_histogram`
 * adding member `cloned_subgraph`
 * adding iterator `dfs_mut`
+* adding iterator `bfs_index_depth_mut`
 
 ## NodeContainer
 
