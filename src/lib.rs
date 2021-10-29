@@ -277,6 +277,7 @@
 //! }
 //! ```
 #![deny(missing_docs, warnings)]
+//#![deny(elided_lifetimes_in_paths)]
 pub mod generic_graph;
 pub mod example_nodes;
 pub mod graph;
