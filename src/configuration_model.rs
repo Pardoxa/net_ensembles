@@ -557,6 +557,7 @@ mod testing {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn assert_degree_vec() {
         let mut rng = Pcg64::seed_from_u64(12);
         let mut sw: SwEnsemble<EmptyNode, _> = SwEnsemble::new(1000, 0.1, Pcg64::from_rng(&mut rng).unwrap());
