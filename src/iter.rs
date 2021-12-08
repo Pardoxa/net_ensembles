@@ -210,12 +210,12 @@ where
 }
 
 impl<'a, T, A> FusedIterator for NContainerIter<'a, T, A>
-where T: Node + 'a,
+where T: 'a,
       A: AdjContainer<T>
 {     }
 
 impl<'a, T, A> Iterator for NContainerIter<'a, T, A>
-where T: 'a + Node,
+where T: 'a,
       A: AdjContainer<T>
 {
     type Item = &'a A;
@@ -239,7 +239,7 @@ where T: 'a + Node,
 }
 
 impl<'a, T, A> DoubleEndedIterator for NContainerIter<'a, T, A>
-where T: 'a + Node,
+where T: 'a,
       A: AdjContainer<T>
 {
     #[inline]
@@ -250,7 +250,7 @@ where T: 'a + Node,
 }
 
 impl<'a, T, A> ExactSizeIterator for NContainerIter<'a, T, A>
-where T: 'a + Node,
+where T: 'a,
       A: AdjContainer<T>
 {
     #[inline]
@@ -275,7 +275,7 @@ where
 }
 
 impl<'a, T, A> FusedIterator for NContainedIter<'a, T, A>
-where T: Node + 'a,
+where T: 'a,
       A: AdjContainer<T>
 {     }
 
@@ -294,7 +294,7 @@ where
 }
 
 impl<'a, T, A> Iterator for NContainedIter<'a, T, A>
-where T: 'a + Node,
+where T: 'a,
       A: AdjContainer<T>
 {
     type Item = &'a T;
@@ -318,7 +318,7 @@ where T: 'a + Node,
 }
 
 impl<'a, T, A> DoubleEndedIterator for NContainedIter<'a, T, A>
-where T: 'a + Node,
+where T: 'a,
       A: AdjContainer<T>
 {
     #[inline]
@@ -329,7 +329,7 @@ where T: 'a + Node,
 }
 
 impl<'a, T, A> ExactSizeIterator for NContainedIter<'a, T, A>
-where T: 'a + Node,
+where T: 'a,
       A: AdjContainer<T>
 {
 

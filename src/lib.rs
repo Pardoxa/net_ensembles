@@ -276,7 +276,7 @@
 //!     };
 //! }
 //! ```
-#![deny(missing_docs, warnings)]
+//#![deny(missing_docs, warnings)]
 //#![deny(elided_lifetimes_in_paths)]
 pub mod generic_graph;
 pub mod example_nodes;
@@ -296,6 +296,8 @@ pub mod watts_strogatz;
 
 pub mod spacial;
 mod configuration_model;
+
+pub mod dual_graph;
 
 pub use sw::SwEnsemble;
 pub use sw_graph::SwGraph;

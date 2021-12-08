@@ -2,6 +2,9 @@
 
 ## v0.5.0 &rarr; master
 
+* Remove unneeded trait bounds for Graph iterators
+* adding module `dual_graph`
+
 ## GenericGraph
 
 * adding `from_vec`
