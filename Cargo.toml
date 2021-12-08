@@ -2,7 +2,7 @@
 name = "net_ensembles"
 version = "0.5.1"
 authors = ["Yannick Feld"]
-edition = "2018"
+edition = "2021"
 readme = "README.md"
 description = "Erdős-Rényi and small world ensembles. For simple sampling, Markov chains etc."
 repository = "https://github.com/Pardoxa/net_ensembles"
