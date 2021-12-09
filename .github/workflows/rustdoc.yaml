@@ -61,6 +61,7 @@ jobs:
 
     - name: Redirect
       run: |
+       git checkout master
        mv index.html ./versions
 
     - name: Deploy Docs
