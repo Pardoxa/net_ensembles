@@ -192,6 +192,7 @@ where A: AdjContainer<T>,
 {
     type Item = &'a T;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item>
     {
         let (first, rest) = self.index_iter.split_first()?;
@@ -200,6 +201,18 @@ where A: AdjContainer<T>,
             self.vertex_slice[*first]
                 .contained()
         )
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>)
+    {
+        (self.index_iter.len(), Some(self.index_iter.len()))
+    }
+
+    #[inline]
+    fn count(self) -> usize
+    {
+        self.index_iter.len()
     }
 }
 

@@ -59,6 +59,10 @@ jobs:
        cargo doc --all --no-deps
        mv ./target/doc ./versions/v0.2.2
 
+    - name: Redirect
+      run: |
+       mv index.html ./versions
+
     - name: Deploy Docs
       uses: peaceiris/actions-gh-pages@25ae83ba65b483195e2a1b7b9a5198c271d0d84c #v3.6.0
       with:
