@@ -34,6 +34,11 @@ impl Adj{
         self.adj.push(other_index);
         true
     }
+
+    pub fn iter(&self) -> impl Iterator<Item=&usize>
+    {
+        self.adj.iter()
+    }
 }
 
 impl<'a, T1, A1, T2, A2> DualGraph<'a, T1, A1, T2, A2>{
@@ -159,6 +164,116 @@ where A: AdjContainer<T>
                     self.adj_2[index].adj.as_slice()
                 )
             )
+    }
+
+    pub fn dfs_1(&self, index_graph_1: usize) -> DfsDual<T, A>
+    {
+        DfsDual::new(self, DualIndex::Graph1(index_graph_1))
+    }
+}
+
+pub enum DualIndex
+{
+    Graph1(usize),
+    Graph2(usize)
+}
+
+pub struct DfsDual<'a, T, A>
+{
+    vertices_graph_1: &'a [A],
+    vertices_graph_2: &'a [A],
+    adj_1: &'a [Adj],
+    adj_2: &'a [Adj],
+    handled_1: Vec<bool>,
+    handled_2: Vec<bool>,
+    stack: Vec<DualIndex>,
+    marker: PhantomData::<T>
+}
+
+impl<'a, T, A> DfsDual<'a, T, A> {
+    pub(crate) fn new(
+        dual_graph: &'a DualGraph<'a, T, A, T, A>,
+        index: DualIndex
+    ) -> Self
+    {
+        let vertices_graph_1 = &dual_graph.graph_1.vertices;
+        let vertices_graph_2 = &dual_graph.graph_2.vertices;
+        let mut handled_1 = vec![false; vertices_graph_1.len()];
+        let mut handled_2 = vec![false; vertices_graph_2.len()];
+        let mut stack: Vec<DualIndex> = Vec::with_capacity(handled_1.len() + handled_2.len());
+
+        match index {
+            DualIndex::Graph1(idx) if idx < handled_1.len() => {
+                stack.push(index);
+                handled_1[idx] = true;
+            },
+            DualIndex::Graph2(idx) if idx < handled_2.len() => {
+                stack.push(index);
+                handled_2[idx] = true;
+            },
+            _ => ()
+        };
+
+        Self{
+            vertices_graph_1,
+            vertices_graph_2,
+            handled_1,
+            handled_2,
+            adj_1: dual_graph.adj_1.as_slice(),
+            adj_2: dual_graph.adj_2.as_slice(),
+            stack,
+            marker: PhantomData::<T>
+        }
+    }
+}
+
+impl<'a, T, A> Iterator for DfsDual<'a, T, A>
+where T: 'a,
+    A: AdjContainer<T>
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item>
+    {
+        match self.stack.pop()?
+        {
+            DualIndex::Graph1(idx) => {
+                let vertex = &self.vertices_graph_1[idx];
+                for &i in vertex.neighbors()
+                {
+                    if !self.handled_1[i] {
+                        self.handled_1[i] = true;
+                        self.stack.push(DualIndex::Graph1(i));
+                    }
+                }
+                for &i in self.adj_1[idx].iter() {
+                    if !self.handled_2[i] {
+                        self.handled_2[i] = true;
+                        self.stack.push(DualIndex::Graph2(i));
+                    }
+                }
+
+                Some(vertex.contained())
+            },
+            DualIndex::Graph2(idx) => {
+                let vertex = &self.vertices_graph_2[idx];
+                for &i in vertex.neighbors()
+                {
+                    if !self.handled_2[i] {
+                        self.handled_2[i] = true;
+                        self.stack.push(DualIndex::Graph2(i));
+                    }
+                }
+                for &i in self.adj_2[idx].iter() {
+                    if !self.handled_1[i] {
+                        self.handled_1[i] = true;
+                        self.stack.push(DualIndex::Graph1(i));
+                    }
+                }
+
+                Some(vertex.contained())
+            }
+        }
     }
 }
 
