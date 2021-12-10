@@ -24,6 +24,13 @@ pub struct CountingNode {
     pub index: usize
 }
 
+impl CountingNode {
+    pub fn number(&self) -> usize
+    {
+        self.index
+    }
+}
+
 impl Node for CountingNode {
     fn new_from_index(index: usize) -> Self
     {
