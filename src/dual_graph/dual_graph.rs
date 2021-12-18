@@ -82,6 +82,7 @@ impl<'a, T1, A1, T2, A2> DualGraph<'a, T1, A1, T2, A2>{
     {
         self.graph_1.vertices.len() + self.graph_2.vertices.len()
     }
+
 }
 
 impl<'a, T1, A1, T2, A2> DualGraph<'a, T1, A1, T2, A2>
@@ -135,6 +136,11 @@ where A1: AdjContainer<T1>,
         self.dfs_index(DualIndex::Graph2(index))
     }
 
+    pub fn bfs_index(&'a self, index: DualIndex) -> impl 'a + Iterator<Item=(DualIndex, usize)>
+    {
+        BfsDualIndex::new(&self, index)
+    }
+
     pub fn is_connected(&self) -> bool
     {
         let v1 = self.graph_1.vertex_count() == 0;
@@ -155,6 +161,70 @@ where A1: AdjContainer<T1>,
             }
         } else {
             self.dfs_1_index(0).count() == self.total_vertices()
+        }
+    }
+
+    /// * returns `None` **if** graph not connected **or** does not contain any vertices
+    /// * uses repeated breadth first search
+    pub fn diameter(&self) -> Option<usize>
+    {
+        if self.total_vertices() == 0 {
+            None
+        } else if !self.is_connected() {
+            // This could be further optimized by using the first consumtion of the 
+            // bfs Iterator to also check if the network is connected,
+            // however I did not bother to
+            None
+        } else {
+            let mut max_depth = 0;
+            // only one of the vertex counts can be 0, otherwise the total vertex count would be zero
+            // also, we have a connected graph
+            // Though, which one i choose here does not matter, as I reuse the Iterator before its first use anyway 
+            let mut bfs = BfsDualIndex::new(&self, DualIndex::Graph1(0));
+
+
+            for i in 0..self.graph_1.vertex_count() {
+                bfs.reuse(DualIndex::Graph1(i));
+                let consumable = &mut bfs;
+                let depth = match consumable.last(){
+                    Some((.., depth)) => depth,
+                    None => {
+                        // safety: The Iterator will return at least one element as it was "reused"
+                        // with a valid index. Therefore "last" cannot return None
+                        #[cfg(debug_assertions)]
+                        {
+                            unreachable!()
+                        }
+                        #[cfg(not(debug_assertions))]
+                        unsafe{
+                            std::hint::unreachable_unchecked()
+                        }
+                    }
+                };
+                max_depth = max_depth.max(depth);
+            }
+            // I can ignore one node here, as the last iteration would be redundant
+            for i in 1..self.graph_2.vertex_count() {
+                bfs.reuse(DualIndex::Graph2(i));
+                let consumable = &mut bfs;
+                let depth = match consumable.last() {
+                    Some((.., depth)) => depth,
+                    None => {
+                        // safety: The Iterator will return at least one element as it was "reused"
+                        // with a valid index. Therefore "last" cannot return None
+                        #[cfg(debug_assertions)]
+                        {
+                            unreachable!()
+                        }
+                        #[cfg(not(debug_assertions))]
+                        unsafe{
+                            std::hint::unreachable_unchecked()
+                        }
+                    }
+                };
+                max_depth = max_depth.max(depth);
+            }
+            Some(max_depth)
         }
     }
 }
@@ -324,5 +394,59 @@ mod testing {
             .sum();
         
         assert_eq!(sum_1 + sum_2, sum_of_sum);
+    }
+
+    #[test]
+    fn dual_graph_bfs_test()
+    {
+        let is_connected = |dual_graph: &DualGraph<_, _, _, _>| {
+            dual_graph.bfs_index(DualIndex::Graph1(0)).count() == dual_graph.total_vertices()
+        };
+
+        
+        let mut graph_1 = Graph::<EmptyNode>::new(5);
+        graph_1.add_edge(0, 1).unwrap();
+        graph_1.add_edge(1, 2).unwrap();
+        graph_1.add_edge(3, 4).unwrap();
+
+        assert_eq!(graph_1.is_connected(), Some(false));
+
+        let mut graph_2 = SwGraph::<CountingNode>::new(5);
+
+        graph_2.init_ring_2();
+        assert_eq!(graph_2.is_connected(), Some(true));
+
+        let mut dual = DualGraph::new(&graph_1, &graph_2);
+        
+        assert!(!is_connected(&dual));
+        is_connected(&dual);
+
+        dual.add_edge(1, 0).unwrap();
+        assert!(!is_connected(&dual));
+
+        dual.add_edge(3, 4).unwrap();
+        // now it should be connected
+        assert!(is_connected(&dual));
+
+    }
+
+    #[test]
+    fn dual_graph_bfs_depth_test()
+    {
+        let mut graph_1 = Graph::<EmptyNode>::new(6);
+        graph_1.init_ring(1).unwrap();
+        let graph_2 = graph_1.clone();
+
+        let mut dual = DualGraph::new(&graph_1, &graph_2);
+
+        // connect them
+        dual.add_edge(0, 0).unwrap();
+
+        let depth = dual.bfs_index(DualIndex::Graph1(3)).last().unwrap().1;
+        assert!(dual.is_connected());
+        assert_eq!(depth, 7);
+
+        assert_eq!(dual.diameter(), Some(7));
+
     }
 }

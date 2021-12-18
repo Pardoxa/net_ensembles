@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, collections::VecDeque};
 use super::*;
 use crate::AdjContainer;
 
@@ -253,5 +253,140 @@ where A: AdjContainer<T>,
     fn count(self) -> usize
     {
         self.index_iter.len()
+    }
+}
+
+pub struct BfsDualIndex<'a, T1, T2, A1, A2>
+{
+    vertices_graph_1: &'a [A1],
+    vertices_graph_2: &'a [A2],
+    adj_1: &'a [Adj],
+    adj_2: &'a [Adj],
+    not_handled_1: Vec<bool>,
+    not_handled_2: Vec<bool>,
+    depth: usize,
+    queue_0: VecDeque<DualIndex>,
+    queue_1: VecDeque<DualIndex>,
+    marker_t1: PhantomData::<T1>,
+    marker_t2: PhantomData::<T2>
+}
+
+impl<'a, T1, T2, A1, A2> BfsDualIndex<'a, T1, T2, A1, A2>
+{
+    pub(crate) fn new(dual_graph: &'a DualGraph<'a, T1, A1, T2, A2>, index: DualIndex) -> Self
+    {
+        let vertices_graph_1 = &dual_graph.graph_1.vertices;
+        let vertices_graph_2 = &dual_graph.graph_2.vertices;
+        let mut not_handled_1 = vec![true; vertices_graph_1.len()];
+        let mut not_handled_2 = vec![true; vertices_graph_2.len()];
+        let mut queue_0 = VecDeque::new();
+
+        // check if index is in range, only push if it is
+        match index {
+            DualIndex::Graph1(i) => {
+                if i < vertices_graph_1.len()
+                {
+                    not_handled_1[i] = false;
+                    queue_0.push_back(index);
+                }
+            },
+            DualIndex::Graph2(i) => {
+                if i < vertices_graph_2.len() {
+                    not_handled_2[i] = false;
+                    queue_0.push_back(index);
+                }
+            }
+        }
+
+        Self{
+            depth: 0,
+            marker_t1: PhantomData,
+            marker_t2: PhantomData,
+            vertices_graph_1,
+            vertices_graph_2,
+            not_handled_1,
+            not_handled_2,
+            queue_0,
+            queue_1: VecDeque::new(),
+            adj_1: &dual_graph.adj_1,
+            adj_2: &dual_graph.adj_2
+        }
+    }
+
+    pub fn reuse(&mut self, index: DualIndex){
+        self.not_handled_1.fill(true);
+        self.not_handled_2.fill(true);
+        self.queue_0.clear();
+        self.queue_1.clear();
+        self.depth = 0;
+
+        match index {
+            DualIndex::Graph1(i) => {
+                if i < self.vertices_graph_1.len()
+                {
+                    self.not_handled_1[i] = false;
+                    self.queue_0.push_back(index);
+                }
+            },
+            DualIndex::Graph2(i) => {
+                if i < self.vertices_graph_2.len() {
+                    self.not_handled_2[i] = false;
+                    self.queue_0.push_back(index);
+                }
+            }
+        }
+    }
+}
+
+impl <'a, T1, T2, A1, A2> Iterator for BfsDualIndex<'a, T1, T2, A1, A2> 
+where A1: AdjContainer<T1>,
+    A2: AdjContainer<T2>
+{
+    type Item = (DualIndex, usize);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(index) = self.queue_0.pop_front() {
+            match index {
+                DualIndex::Graph1(i) => {
+                    let container = &self.vertices_graph_1[i];
+                    for &j in container.neighbors() {
+                        if self.not_handled_1[j] {
+                            self.not_handled_1[j] = false;
+                            self.queue_1.push_back(DualIndex::Graph1(j));
+                        }
+                    }
+                    for &j in self.adj_1[i].iter(){
+                        if self.not_handled_2[j] {
+                            self.not_handled_2[j] = false;
+                            self.queue_1.push_back(DualIndex::Graph2(j));
+                        }
+                    }
+                    Some((index, self.depth))
+                },
+                DualIndex::Graph2(i) => {
+                    let container = &self.vertices_graph_2[i];
+                    for &j in container.neighbors() {
+                        if self.not_handled_2[j] {
+                            self.not_handled_2[j] = false;
+                            self.queue_1.push_back(DualIndex::Graph2(j));
+                        }
+                    }
+                    for &j in self.adj_2[i].iter(){
+                        if self.not_handled_1[j] {
+                            self.not_handled_1[j] = false;
+                            self.queue_1.push_back(DualIndex::Graph1(j));
+                        }
+                    }
+                    Some((index, self.depth))
+                }
+            }
+        } else if self.queue_1.is_empty(){
+            None
+        } else {
+            std::mem::swap(&mut self.queue_1, &mut self.queue_0);
+            self.depth += 1;
+            self.next()
+        }
     }
 }
