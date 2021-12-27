@@ -5,6 +5,7 @@
 mod iterators;
 pub use iterators::*;
 
+#[allow(clippy::module_inception)]
 mod generic_graph;
 pub use generic_graph::*;
 

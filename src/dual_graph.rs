@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 mod dual_graph;
 mod dual_graph_iterators;
 
