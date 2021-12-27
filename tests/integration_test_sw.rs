@@ -64,7 +64,7 @@ fn step_test() {
         //println!("undo: {:?}", _undo_step);
 
         e.sort_adj();
-        equal_graphs(&e_0.graph(), &e.graph());
+        equal_graphs(e_0.graph(), e.graph());
     }
 }
 
@@ -84,7 +84,7 @@ fn step_quiet_test() {
         //println!("undo: {:?}", _undo_step);
 
         e.sort_adj();
-        equal_graphs(&e_0.graph(), &e.graph());
+        equal_graphs(e_0.graph(), e.graph());
     }
 }
 

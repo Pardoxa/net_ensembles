@@ -25,7 +25,7 @@ fn step_test() {
         }
 
         config_change.sort_adj();
-        equal_graphs(&config.graph(), &config_change.graph());
+        equal_graphs(config.graph(), config_change.graph());
     }
 
 }

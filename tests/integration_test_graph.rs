@@ -50,8 +50,8 @@ fn multiple_connected_components() {
     assert_eq!(components[0], 6);
     assert_eq!(components[1], 4);
     assert_eq!(components[2], 3);
-    for i in 3..components.len() {
-        assert_eq!(components[i], 1);
+    for &component in components.iter().skip(3) {
+        assert_eq!(component, 1);
     }
 }
 

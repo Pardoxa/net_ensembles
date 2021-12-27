@@ -54,7 +54,7 @@ fn step_test() {
         e.undo_steps_quiet(&steps);
 
         e.sort_adj();
-        equal_graphs(&e_0.graph(), &e.graph());
+        equal_graphs(e_0.graph(), e.graph());
     }
 
 }
