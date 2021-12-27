@@ -1,8 +1,9 @@
 //! # Topology for SwEnsemble
 
-use crate::{step_structs::*, GenericGraph, traits::*};
-use core::iter::FusedIterator;
-use std::vec;
+use{
+    crate::{step_structs::*, GenericGraph, traits::*},
+    core::iter::FusedIterator
+};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};

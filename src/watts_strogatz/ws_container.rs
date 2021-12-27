@@ -1,9 +1,16 @@
-use std::mem::swap;
+use{
+    crate::{
+        AdjContainer,
+        GraphErrors,
+        IterWrapper
+    },
+    std::mem::swap,
+    permutation
+};
 
-use crate::{AdjContainer, GraphErrors, IterWrapper};
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
-use permutation;
+
 
 #[derive(Debug,Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]

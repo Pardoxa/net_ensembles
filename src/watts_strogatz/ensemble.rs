@@ -1,21 +1,36 @@
-use std::mem::swap;
-use std::num::*;
-use rand::Rng;
-use rand::distributions::{Uniform, Distribution};
-use std::convert::AsRef;
-use crate::AdjContainer;
-use crate::Node;
-use crate::GenericGraph;
-use crate::watts_strogatz::WSContainer;
-use crate::WithGraph;
-use crate::{HasRng, SimpleSample};
-use crate::{GraphIteratorsMut, GraphIterators, SerdeStateConform, iter::*, generic_graph::*};
-use crate::traits::*;
+use {
+    super::OriginalEdge,
+    crate::{
+        AdjContainer,
+        Node,
+        GenericGraph,
+        watts_strogatz::WSContainer,
+        WithGraph,
+        HasRng,
+        SimpleSample,
+        GraphIteratorsMut,
+        GraphIterators,
+        SerdeStateConform,
+        iter::*,
+        generic_graph::*,
+        traits::*
+    },
+    rand::{
+        Rng,
+        distributions::{
+            Uniform,
+            Distribution
+        }
+    },
+    std::{
+        mem::swap,
+        num::*,
+        convert::AsRef
+    }
+};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
-
-use super::OriginalEdge;
 
 /// # Specific [GenericGraph] used for watts-strogatz small World graph
 pub type WSGraph<T> = GenericGraph<T,WSContainer<T>>;

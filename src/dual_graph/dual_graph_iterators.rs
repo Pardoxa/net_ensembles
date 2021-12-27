@@ -1,6 +1,11 @@
-use std::{marker::PhantomData, collections::VecDeque};
-use super::*;
-use crate::AdjContainer;
+use{
+    super::*,
+    crate::AdjContainer,
+    std::{
+        marker::PhantomData,
+        collections::VecDeque
+    }
+};
 
 pub struct DfsDualIndex<'a, T1, T2, A1, A2>
 {

@@ -1,17 +1,23 @@
 //! Implementation of a Barabási-Albert Model
 
-
-use crate::graph::Graph;
-use crate::GenericGraph;
-use crate::Node;
-use crate::traits::*;
-use crate::iter::{INContainedIterMut, NContainedIterMut, ContainedIterMut};
-use crate::graph::NodeContainer;
-use std::borrow::Borrow;
-use std::convert::AsRef;
-use rand::seq::SliceRandom;
-use rand::distributions::WeightedIndex;
-use rand::prelude::*;
+use{
+    crate::{
+        graph::{Graph,NodeContainer},
+        GenericGraph,
+        Node,
+        traits::*,
+        iter::{INContainedIterMut, NContainedIterMut,ContainedIterMut}
+    },
+    std::{
+        borrow::Borrow,
+        convert::AsRef
+    },
+    rand::{
+        seq::SliceRandom,
+        distributions::WeightedIndex,
+        prelude::*
+    }
+};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};

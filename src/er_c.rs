@@ -7,10 +7,18 @@
 //! > P. Erdős and A. Rényi, "On the evolution of random graphs,"
 //!   Publ. Math. Inst. Hungar. Acad. Sci. **5**, 17-61 (1960)
 
-use crate::{traits::*, iter::*, graph::*};
-use std::borrow::Borrow;
-use std::convert::AsRef;
-use std::io::Write;
+use{
+    crate::{
+        traits::*,
+        iter::*,
+        graph::*
+    },
+    std::{
+        borrow::Borrow,
+        convert::AsRef,
+        io::Write
+    }
+};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};

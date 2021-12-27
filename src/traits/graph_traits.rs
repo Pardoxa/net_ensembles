@@ -1,8 +1,12 @@
-use std::fmt;
-use crate::IterWrapper;
-use crate::sw::SwChangeState;
-use crate::traits::SerdeStateConform;
-use crate::GenericGraph;
+use{
+    std::fmt,
+    crate::{
+        IterWrapper,
+        sw::SwChangeState,
+        traits::SerdeStateConform,
+        GenericGraph
+    }
+};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};

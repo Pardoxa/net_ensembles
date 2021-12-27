@@ -1,7 +1,12 @@
-use crate::{AdjContainer, traits::*, iter::*, GenericGraph};
-use crate::generic_graph::{Dfs, DfsWithIndex, Bfs};
-use crate::{sw_graph::SwContainer, graph::NodeContainer};
-
+use crate::{
+    AdjContainer,
+    traits::*, 
+    iter::*, 
+    GenericGraph,
+    sw_graph::SwContainer,
+    graph::NodeContainer,
+    generic_graph::{Dfs, DfsWithIndex, Bfs}
+};
 
 /// unify graph ensembles in a trait
 pub trait WithGraph<T, G> {

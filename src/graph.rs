@@ -5,10 +5,19 @@
 //! since it contains the topology information.
 //!
 //! For Erdős-Rényi Graphs, see struct `ER`
-use crate::{traits::*, GraphErrors, GenericGraph};
-use std::marker::PhantomData;
-use std::convert::From;
-use core::iter::FromIterator;
+
+use {
+    crate::{
+        traits::*,
+        GraphErrors, 
+        GenericGraph
+    },
+    std::{
+        marker::PhantomData,
+        convert::From
+    },
+    core::iter::FromIterator
+};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};

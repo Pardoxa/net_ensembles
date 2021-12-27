@@ -1,5 +1,14 @@
-use crate::{AdjContainer, GenericGraph};
-use std::{marker::PhantomData, collections::VecDeque};
+use {
+    crate::{
+        AdjContainer,
+        GenericGraph
+    },
+    std::{
+        marker::PhantomData,
+        collections::VecDeque
+    }
+};
+
 
 /// Depth first search Iterator
 pub struct Dfs<'a, T, A>

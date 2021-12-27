@@ -3,10 +3,23 @@
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
-use crate::{traits::*, graph::*, iter::*, GenericGraph};
-use std::{borrow::*, convert::*, iter, iter::*};
-use rand::seq::*;
-use std::mem;
+use{
+    crate::{
+        traits::*,
+        graph::*,
+        iter::*,
+        GenericGraph
+    },
+    std::{
+        borrow::*,
+        convert::*,
+        iter,
+        iter::*,
+        mem
+    },
+    rand::seq::*
+};
+
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]

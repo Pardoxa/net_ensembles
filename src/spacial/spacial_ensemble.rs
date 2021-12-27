@@ -1,8 +1,15 @@
-use crate::*;
-use er_c::draw_two_from_range;
-use crate::spacial::*;
-use rand::Rng;
-use std::{io::Write,f64::consts::PI};
+use {
+    crate::{
+        *, 
+        spacial::*, 
+        er_c::draw_two_from_range
+    },
+    rand::Rng,
+    std::{
+        io::Write,
+        f64::consts::PI
+    }
+};
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};

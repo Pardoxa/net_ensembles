@@ -1,9 +1,26 @@
-use crate::{traits::*, iter::*, GraphErrors};
-use sampling::histogram::{HistUsizeFast, HistogramVal};
+use{
+    super::iterators::*,
+    crate::{
+        traits::*, 
+        iter::*, 
+        GraphErrors,
+        graph::{
+            NodeContainer,
+            Graph
+        }
+    },
+    sampling::histogram::{
+        HistUsizeFast,
+        HistogramVal
+    },
+    std::{
+        convert::*,
+        collections::*,
+        marker::*,
+        io::Write
+    }
+};
 
-use std::{convert::*, collections::*, marker::*, io::Write};
-use crate::graph::{NodeContainer, Graph};
-use super::iterators::*;
 
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
