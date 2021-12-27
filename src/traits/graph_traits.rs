@@ -32,8 +32,8 @@ impl GraphErrors {
     /// get error message as `&str`, for printing etc.
    pub fn to_str(&self) -> &'static str {
        match self {
-           GraphErrors::EdgeExists          => &"EdgeExists",
-           GraphErrors::EdgeDoesNotExist    => &"EdgeDoesNotExist",
+           GraphErrors::EdgeExists          => "EdgeExists",
+           GraphErrors::EdgeDoesNotExist    => "EdgeDoesNotExist",
        }
    }
 

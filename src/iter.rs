@@ -2,9 +2,11 @@
 //!
 //! They are returned by a few of the methods, you do not need to build them yourself.
 
-use crate::{sw_graph::SwEdgeIterNeighbors, traits::*};
-use std::marker::PhantomData;
-use core::iter::FusedIterator;
+use {
+    crate::{sw_graph::SwEdgeIterNeighbors, traits::*},
+    std::marker::PhantomData,
+    core::iter::FusedIterator
+};
 
 /// # Wrapper for iterators
 /// * intended to use for iterating over neighbors of `AdjContainer`
@@ -302,13 +304,13 @@ where T: 'a,
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next()?;
-        Some(&self.vertex_slice[*index].contained())
+        Some(self.vertex_slice[*index].contained())
     }
 
     #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         let index = self.index_iter.nth(n)?;
-        Some(&self.vertex_slice[*index].contained())
+        Some(self.vertex_slice[*index].contained())
     }
 
     #[inline]
@@ -324,7 +326,7 @@ where T: 'a,
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         let index = self.index_iter.next_back()?;
-        Some(&self.vertex_slice[*index].contained())
+        Some(self.vertex_slice[*index].contained())
     }
 }
 
@@ -381,13 +383,13 @@ where T: 'a + Node,
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let index = *self.index_iter.next()?;
-        Some((index, &self.vertex_slice[index].contained()))
+        Some((index, self.vertex_slice[index].contained()))
     }
 
     #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         let index = *self.index_iter.nth(n)?;
-        Some((index, &self.vertex_slice[index].contained()))
+        Some((index, self.vertex_slice[index].contained()))
     }
 
     #[inline]
@@ -403,7 +405,7 @@ where T: 'a + Node,
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         let index = *self.index_iter.next_back()?;
-        Some((index, &self.vertex_slice[index].contained()))
+        Some((index, self.vertex_slice[index].contained()))
     }
 }
 

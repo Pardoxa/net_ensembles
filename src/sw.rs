@@ -43,29 +43,18 @@ pub enum SwChangeState {
 impl SwChangeState {
     /// checks if self is `Nothing` variant
     pub fn is_nothing(&self) -> bool {
-        if let SwChangeState::Nothing = self {
-            true
-        }else{
-            false
-        }
+        matches!(self, SwChangeState::Nothing)
     }
 
     /// checks if self is `Nothing` or `BlockedByExistingEdge`
     pub fn is_nothing_or_blocked(&self) -> bool {
-        match self {
-            SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge => true,
-            _                                    => false
-        }
+        matches!(self, SwChangeState::Nothing | SwChangeState::BlockedByExistingEdge)
     }
 
     /// result is equal to `!self.is_nothing_or_blocked()`
     pub fn not_nothing_or_blocked(&self) -> bool {
-        match self {
-            SwChangeState::Nothing |
-            SwChangeState::BlockedByExistingEdge => false,
-            _                                    => true
-        }
+
+        !self.is_nothing_or_blocked()
     }
 
     /// # valid states:

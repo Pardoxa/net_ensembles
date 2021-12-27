@@ -32,10 +32,7 @@ pub enum ErStepC {
 impl ErStepC {
     /// `true` if `self` is not `GError` variant
     pub fn is_valid(&self) -> bool {
-        match self {
-            Self::GError(_)     => false,
-            _                   => true,
-        }
+        !matches!(self, Self::GError(..))
     }
 
     /// `panic!` if `self` is `GError` variant

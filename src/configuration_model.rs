@@ -124,11 +124,11 @@ where T: Node,
         res
     }
 
-    /// # check if a vector is a vaild degree distribution
+    /// # check if a vector (slice) is a vaild degree distribution
     /// * sum of `degree_vec` needs to be even
     /// * `degree_vec.len()` has to be greater than `1`
     /// * no entry can request a degree larger than `degree_vec.len()-2`
-    pub fn degree_vec_is_valid(degree_vec: &Vec<usize>) -> bool
+    pub fn degree_vec_is_valid(degree_vec: &[usize]) -> bool
     {
         if degree_vec.len() <= 1 {
             return false;
@@ -149,7 +149,7 @@ where T: Node,
     /// # asserts, that a vector is a vaild degree distribution
     /// * similar to [`degree_vec_is_valid`](#method.degree_vec_is_valid), but asserts instead
     /// * intended for debugging: see why the `degree_vec` is invalid
-    pub fn assert_degree_vec_valid(degree_vec: &Vec<usize>){
+    pub fn assert_degree_vec_valid(degree_vec: &[usize]){
         assert!(
             degree_vec.len() > 1,
             "degree vec has to have lenght grater than 1"
@@ -324,7 +324,7 @@ where   T: Node,
         self.random_edge_halfs.clear();
         self.random_edge_halfs.extend_from_slice(&self.random_edge_halfs_backup);
 
-        while self.random_edge_halfs.len() > 0 {
+        while !self.random_edge_halfs.is_empty() {
             let added = self.add_multiple_random_edges();
             // if adding did not work, we have to try again!
             if !added {
@@ -431,25 +431,22 @@ impl<T, R> MarkovChain<ConfigurationModelStep, Result<(), UndoStepErrorCM>> for 
         }
 
         // try to add new edges, return on error
-        match self.graph.add_edge(edge_1.0, edge_2.0)
+        if let Err(..) = self.graph.add_edge(edge_1.0, edge_2.0){
+            return ConfigurationModelStep::Error
+        }
+
+        if let Err(..) = self.graph.add_edge(edge_1.1, edge_2.1)
         {
-            Err(..) => return ConfigurationModelStep::Error,
-            _ => ()
-        };
-        match self.graph.add_edge(edge_1.1, edge_2.1){
-            Err(..) => {
-                self.graph.remove_edge(edge_1.0, edge_2.0).unwrap();
-                return ConfigurationModelStep::Error
-            },
-            _ => ()
-        };
+            self.graph.remove_edge(edge_1.0, edge_2.0).unwrap();
+            return ConfigurationModelStep::Error
+        }
 
         // remove old edges, panic on error
         self.graph.remove_edge(edge_1.0, edge_1.1).expect("Fatal error in removing edges");
         self.graph.remove_edge(edge_2.0, edge_2.1).expect("Fatal error in removing edges");
         
 
-        return ConfigurationModelStep::Added(edge_1, edge_2)
+        ConfigurationModelStep::Added(edge_1, edge_2)
         
     }
 
@@ -468,19 +465,19 @@ impl<T, R> MarkovChain<ConfigurationModelStep, Result<(), UndoStepErrorCM>> for 
         };
         
         match self.graph.add_edge(edge2.0, edge2.1) {
-            Err(error) => return Err(UndoStepErrorCM::UnableToAddEdge(*edge2, error)),
+            Err(error) => Err(UndoStepErrorCM::UnableToAddEdge(*edge2, error)),
             Ok(..) => {
                 match self.graph.add_edge(edge1.0, edge1.1) {
                     Err(error) => {
                         self.graph.remove_edge(edge2.0, edge2.1).unwrap();
-                        return Err(UndoStepErrorCM::UnableToAddEdge(*edge1, error))
+                        Err(UndoStepErrorCM::UnableToAddEdge(*edge1, error))
                     },
                     Ok(..) => {
                         match self.graph.remove_edge(edge1.1, edge2.1){
                             Err(error) => {
                                 self.graph.remove_edge(edge2.0, edge2.1).unwrap();
                                 self.graph.remove_edge(edge1.0, edge1.1).unwrap();
-                                return Err(UndoStepErrorCM::UnableToRemoveEdge((edge1.1, edge2.1), error))
+                                Err(UndoStepErrorCM::UnableToRemoveEdge((edge1.1, edge2.1), error))
                             },
                             Ok(..) =>{
                                 match self.graph.remove_edge(edge1.0, edge2.0)
@@ -489,7 +486,7 @@ impl<T, R> MarkovChain<ConfigurationModelStep, Result<(), UndoStepErrorCM>> for 
                                         self.graph.remove_edge(edge2.0, edge2.1).unwrap();
                                         self.graph.remove_edge(edge1.0, edge1.1).unwrap();
                                         self.graph.add_edge(edge1.1, edge2.1).unwrap();
-                                        return Err(UndoStepErrorCM::UnableToRemoveEdge((edge1.0, edge2.0), error))
+                                        Err(UndoStepErrorCM::UnableToRemoveEdge((edge1.0, edge2.0), error))
                                     },
                                     Ok(..) => Ok(())
                                 }
@@ -582,6 +579,7 @@ mod testing {
     }
 
     #[test]
+    #[allow(clippy::needless_range_loop)]
     fn degree_distribution_is_valids()
     {
         let mut rng = Pcg64::seed_from_u64(12322);

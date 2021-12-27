@@ -1,5 +1,7 @@
-use crate::{GenericGraph, AdjContainer};
-use super::dual_graph_iterators::*;
+use {
+    crate::{GenericGraph, AdjContainer},
+    super::dual_graph_iterators::*
+};
 
 pub struct DualGraph<'a, T1, A1, T2, A2>
 {
@@ -138,7 +140,7 @@ where A1: AdjContainer<T1>,
 
     pub fn bfs_index(&'a self, index: DualIndex) -> impl 'a + Iterator<Item=(DualIndex, usize)>
     {
-        BfsDualIndex::new(&self, index)
+        BfsDualIndex::new(self, index)
     }
 
     pub fn is_connected(&self) -> bool
@@ -168,9 +170,7 @@ where A1: AdjContainer<T1>,
     /// * uses repeated breadth first search
     pub fn diameter(&self) -> Option<usize>
     {
-        if self.total_vertices() == 0 {
-            None
-        } else if !self.is_connected() {
+        if self.total_vertices() == 0 || !self.is_connected(){
             // This could be further optimized by using the first consumtion of the 
             // bfs Iterator to also check if the network is connected,
             // however I did not bother to
@@ -180,7 +180,7 @@ where A1: AdjContainer<T1>,
             // only one of the vertex counts can be 0, otherwise the total vertex count would be zero
             // also, we have a connected graph
             // Though, which one i choose here does not matter, as I reuse the Iterator before its first use anyway 
-            let mut bfs = BfsDualIndex::new(&self, DualIndex::Graph1(0));
+            let mut bfs = BfsDualIndex::new(self, DualIndex::Graph1(0));
 
 
             for i in 0..self.graph_1.vertex_count() {

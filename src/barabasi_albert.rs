@@ -148,7 +148,7 @@ where T: Node + SerdeStateConform,
             m,
             rng,
             ba_graph,
-            source_graph: source_graph.clone(),
+            source_graph,
             weights: vec![0; n],
         };
         e.randomize();

@@ -316,8 +316,8 @@ where A: AdjContainer<T>
         let ptr = self.vertices.as_mut_ptr();
 
         unsafe {
-            r1 = &mut *ptr.offset(index0 as isize);
-            r2 = &mut *ptr.offset(index1 as isize);
+            r1 = &mut *ptr.add(index0);
+            r2 = &mut *ptr.add(index1);
         }
 
         (r1, r2)
@@ -349,9 +349,9 @@ where A: AdjContainer<T>
         let ptr = self.vertices.as_mut_ptr();
 
         unsafe {
-            r1 = &mut *ptr.offset(index0 as isize);
-            r2 = &mut *ptr.offset(index1 as isize);
-            r3 = &mut *ptr.offset(index2 as isize);
+            r1 = &mut *ptr.add(index0);
+            r2 = &mut *ptr.add(index1);
+            r3 = &mut *ptr.add(index2);
         }
 
         (r1, r2, r3)
@@ -362,7 +362,7 @@ where A: AdjContainer<T>
     {
         self.vertices
             .get(index)
-            .and_then(|v| Some(v.contained()))
+            .map(|v| v.contained())
     }
 
     /// Returns a mutable reference to the element stored in the specified node or `None` if out of Bounds
@@ -370,7 +370,7 @@ where A: AdjContainer<T>
     {
         self.vertices
             .get_mut(index)
-            .and_then(|v| Some(v.contained_mut()))
+            .map(|v| v.contained_mut())
     }
 
     /// Returns a reference to the element stored in the specified node
@@ -447,7 +447,7 @@ where A: AdjContainer<T>
 
     /// # Iterator
     /// Iterate over the degrees of each node (in the order of the indices)
-    pub fn degree_iter<'a>(&'a self) -> impl Iterator<Item=usize> + 'a
+    pub fn degree_iter(&'_ self) -> impl Iterator<Item=usize> + '_
     {
         self.vertices
             .iter()
@@ -566,7 +566,7 @@ where A: AdjContainer<T>
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
     pub fn dfs_with_index(&self, index: usize) -> DfsWithIndex<T, A> {
-        DfsWithIndex::new(&self, index)
+        DfsWithIndex::new(self, index)
     }
 
     /// # returns `Iterator`
@@ -591,7 +591,7 @@ where A: AdjContainer<T>
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
     pub fn bfs_index_depth(&self, index: usize) -> Bfs<T, A> {
-        Bfs::new(&self, index)
+        Bfs::new(self, index)
     }
 
     /// # returns `Iterator`

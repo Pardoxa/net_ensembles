@@ -99,10 +99,9 @@ impl<T, R> SpacialEnsemble<T, R>
                 .get_unchecked(i)
                 .distance(self.graph.vertices.get_unchecked(j))
         };
-        let prob = self.f * 
+        self.f * 
             (1.0 + self.sqrt_n_pi * distance / self.alpha)
-            .powf(-self.alpha);
-        prob
+            .powf(-self.alpha)
     }
 }
 
