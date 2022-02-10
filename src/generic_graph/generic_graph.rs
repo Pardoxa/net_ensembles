@@ -660,8 +660,8 @@ where A: AdjContainer<T>
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn bfs_filtered<'a, 'b, F>(&'a self, index: usize, filter: &'b mut F) -> Option<BfsFiltered<'a, 'b, T, A, F>>
-    where F: 'b + FnMut(&T, usize) -> bool,
+    pub fn bfs_filtered<'a, F>(&'a self, index: usize, filter: F) -> Option<BfsFiltered<'a, T, A>>
+    where F: FnMut(&T, usize) -> bool,
     {
         BfsFiltered::new(self, index, filter)
     }

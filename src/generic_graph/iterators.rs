@@ -366,31 +366,37 @@ where   T: 'a,
 // # Breadth first search Iterator with **index** and **depth** of corresponding nodes
 /// * iterator returns tuple: `(index, node, depth)`
 /// * iterator uses filter to decide, if a vertex should be considered
-pub struct BfsFiltered<'a, 'b, T, A, F>
+pub struct BfsFiltered<'a, T, A>
 where   T: 'a,
         A: AdjContainer<T>,
-        F: FnMut(&T, usize) -> bool,
 {
         vertices: &'a [A],
         handled: Vec<bool>,
         queue0: VecDeque<usize>,
         queue1: VecDeque<usize>,
         depth: usize,
-        filter_fn: &'b mut  F,
         marker: PhantomData<T>
 }
 
-impl<'a, 'b, T, A, F>  BfsFiltered<'a, 'b, T, A, F>
+impl<'a, T, A>  BfsFiltered<'a, T, A>
 where   T: 'a,
         A: AdjContainer<T>,
-        F: 'b + FnMut(&T, usize) -> bool,
+        
 {
-    pub(crate) fn new(graph: &'a GenericGraph<T, A>, index: usize, filter: &'b mut F) -> Option<Self>
+    pub(crate) fn new<F>(graph: &'a GenericGraph<T, A>, index: usize, mut filter: F) -> Option<Self>
+    where F: FnMut(&T, usize) -> bool,
     {
         if index >= graph.vertex_count() || !filter(graph.at(index), index) {
             return None;
         }
-        let mut handled= vec![false; graph.vertex_count()];
+        let mut handled: Vec<_> =  graph.container_iter()
+            .enumerate()
+            .map(
+                |(index, state)|
+                {
+                    !filter(state.contained(), index)
+                }
+            ).collect();
         let mut queue0 = VecDeque::with_capacity(graph.vertex_count() / 2);
         let queue1 = VecDeque::with_capacity(graph.vertex_count() / 2);
         
@@ -401,7 +407,6 @@ where   T: 'a,
             Self{
                 handled,
                 vertices: graph.vertices.as_slice(),
-                filter_fn: filter,
                 queue0,
                 queue1,
                 depth: 0,
@@ -422,11 +427,25 @@ where   T: 'a,
     /// * returns Err(self) without changing self, if index out of Bounds 
     /// or filter (filter_fn) of (vertex_at_index, index) is false
     /// * otherwise: prepares iterator to be used again and returns Ok(self)
-    pub fn reuse(mut self, index: usize) -> Result<Self, Self>
+    pub fn reuse<F>(mut self, index: usize, mut filter: F) -> Result<Self, Self>
+    where F: FnMut(&T, usize) -> bool,
     {
-        if index > self.vertices.len() || !(self.filter_fn)(self.vertices[index].contained(), index) {
+        if index > self.vertices.len() || !filter(self.vertices[index].contained(), index) {
             return Err(self);
         }
+
+        self.handled
+            .iter_mut()
+            .zip(
+                self.vertices.iter()
+            ).enumerate()
+            .for_each(
+                |(index, (handled_entry, container))|
+                {
+                    *handled_entry = !filter(container.contained(), index);
+                }
+            );
+
         for i in 0..self.handled.len() {
             self.handled[i] = false;
         }
@@ -441,10 +460,9 @@ where   T: 'a,
     }
 }
 
-impl<'a, 'b, T, A, F> Iterator for BfsFiltered<'a, 'b, T, A, F>
+impl<'a, T, A> Iterator for BfsFiltered<'a, T, A>
 where   T: 'a,
         A: AdjContainer<T>,
-        F: 'b + FnMut(&T, usize) -> bool,
 {
     type Item = (usize, &'a T, usize);
     fn next(&mut self) -> Option<Self::Item> {
@@ -452,7 +470,7 @@ where   T: 'a,
         if let Some(index) = self.queue0.pop_front() {
             let container = self.vertices.get(index)?;
             for &i in container.neighbors() {
-                if self.handled[i] || !(self.filter_fn)(self.vertices[index].contained(), i)
+                if self.handled[i]
                 {
                     continue;
                 }

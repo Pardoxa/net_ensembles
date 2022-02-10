@@ -13,6 +13,7 @@
 * adding member `cloned_subgraph`
 * adding iterator `dfs_mut`
 * adding iterator `bfs_index_depth_mut`
+* bugfix for `bfs_filtered`
 
 ## Graph
 
