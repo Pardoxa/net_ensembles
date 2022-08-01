@@ -54,6 +54,35 @@ where T: Node,
             phantom: PhantomData,
         }
     }
+
+    /// Use the topology from another graph and create a new one with 
+    /// the same topology but the function 'map' is used to 
+    /// map what is contained in the original Graph to the newly created one.
+    pub fn clone_topology<F, T2>(&self, mut map: F) -> GenericGraph<T2, NodeContainer<T2>>
+    where F: FnMut (&T) -> T2
+    {
+        let nodes: Vec<_> = self.vertices
+            .iter()
+            .enumerate()
+            .map(
+            |(index,node)|
+            {
+                let neighbors = node.neighbors().into_vec();
+                NodeContainer{
+                    id: index,
+                    adj: neighbors,
+                    node: map(node.contained())
+
+                }
+            }
+        ).collect();
+        GenericGraph{
+            next_id: nodes.len(),
+            edge_count: self.edge_count,
+            vertices: nodes,
+            phantom: PhantomData
+        }
+    }
 }
 
 impl<T, A> GenericGraph<T, A>

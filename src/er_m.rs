@@ -70,6 +70,7 @@ impl ErStepM{
 /// use rand_pcg::Pcg64;
 /// use net_ensembles::{ErEnsembleM, EmptyNode, rand::SeedableRng};
 /// use std::fs::File;
+/// use std::io::{BufWriter, BufReader};
 ///
 /// let rng = Pcg64::seed_from_u64(95);
 /// // create Erdős-Rényi ensemble with 200 vertices and 600 edges
@@ -81,16 +82,18 @@ impl ErStepM{
 ///
 ///     let er_m_file = File::create("store_ER_m.dat")
 ///           .expect("Unable to create file");
+///     let buf_writer = BufWriter::new(er_m_file);
 ///
-///     // or serde_json::to_writer(er_m_file, &er_ensemble);
-///     serde_json::to_writer_pretty(er_m_file, &er_ensemble);
+///     // or serde_json::to_writer(buf_writer, &er_ensemble);
+///     serde_json::to_writer_pretty(buf_writer, &er_ensemble);
 ///
 ///     // loading ensemble from file:
 ///
-///     let mut read = File::open("store_ER_m.dat")
+///     let read = File::open("store_ER_m.dat")
 ///         .expect("Unable to open file");
+///     let mut buf_reader = BufReader::new(read); 
 ///
-///     let er: ErEnsembleM::<EmptyNode, Pcg64> = serde_json::from_reader(read).unwrap();
+///     let er: ErEnsembleM::<EmptyNode, Pcg64> = serde_json::from_reader(buf_reader).unwrap();
 /// }
 ///
 #[derive(Debug, Clone)]

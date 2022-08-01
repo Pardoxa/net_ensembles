@@ -55,6 +55,54 @@ impl<'a> Iterator for IterWrapper<'a> {
         let size = self.len();
         (size, Some(size))
     }
+
+    #[inline]
+    fn collect<B: FromIterator<Self::Item>>(self) -> B
+    where Self: Sized
+    {
+        match self{
+            Self::GenericIter(iter) => iter.collect(),
+            Self::SwIter(iter)      => iter.collect()
+        }
+    }
+
+    #[inline]
+    fn reduce<F>(self, f: F) -> Option<Self::Item>
+    where Self: Sized,
+        F: FnMut(Self::Item, Self::Item) -> Self::Item
+    {
+        match self
+        {
+            Self::GenericIter(iter) => {
+                iter.reduce(f)
+            },
+            Self::SwIter(iter) => {
+                iter.reduce(f)
+            }
+        }
+    }
+
+    #[inline]
+    fn all<F>(&mut self, f: F) -> bool
+    where Self:Sized,
+        F: FnMut(Self::Item) -> bool,
+    {
+        match self{
+            Self::GenericIter(iter) => iter.all(f),
+            Self::SwIter(iter) => iter.all(f)
+        }
+    }
+
+    #[inline]
+    fn any<F>(&mut self, f: F) -> bool
+    where Self:Sized,
+        F: FnMut(Self::Item) -> bool,
+    {
+        match self{
+            Self::GenericIter(iter) => iter.any(f),
+            Self::SwIter(iter) => iter.any(f)
+        }
+    }
 }
 
 /// # Number of neighbors is known
@@ -91,6 +139,15 @@ impl<'a> IterWrapper<'a> {
     #[inline]
     pub fn new_sw(iter: SwEdgeIterNeighbors<'a>) -> Self {
         Self::SwIter(iter)
+    }
+
+    #[inline]
+    pub(crate) fn into_vec(self) -> Vec<usize>
+    {
+        match self{
+            Self::GenericIter(iter) => iter.as_slice().to_vec(),
+            Self::SwIter(iter) => iter.copied().collect()
+        }
     }
 }
 
