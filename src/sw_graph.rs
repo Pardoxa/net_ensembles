@@ -18,10 +18,12 @@ pub struct SwEdge {
 
 impl SwEdge {
     /// Where does the edge point to, i.e., to which node does it connect?
+    #[inline(always)]
     pub fn to(&self) -> &usize {
         &self.to
     }
 
+    #[inline(always)]
     pub(crate) fn originally_to(&self) -> &Option<usize> {
         &self.originally_to
     }
@@ -32,14 +34,17 @@ impl SwEdge {
     /// * In the original ring structure of an [`SwGraph`](`crate::sw_graph::SwGraph`)
     /// created by the [`SwEnsemble`](`crate::sw::SwEnsemble`) every edge is rooted at a node and
     /// every node has the same amount (2) of root edges
+    #[inline(always)]
     pub fn is_root(&self) -> bool {
         self.originally_to.is_some()
     }
 
+    #[inline(always)]
     fn reset(&mut self) {
         self.to = self.originally_to.unwrap();
     }
 
+    #[inline(always)]
     fn rewire(&mut self, other_id: usize) {
         self.to = other_id;
     }
@@ -78,6 +83,7 @@ pub struct SwEdgeIterNeighbors<'a> {
 }
 
 impl<'a> SwEdgeIterNeighbors<'a> {
+    #[inline(always)]
     fn new(sw_edge_slice: &'a[SwEdge]) -> Self {
         Self {
             sw_edge_slice,
