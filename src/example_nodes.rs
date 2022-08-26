@@ -25,6 +25,7 @@ pub struct CountingNode {
 }
 
 impl CountingNode {
+    /// Returns the index of the node
     pub fn number(&self) -> usize
     {
         self.index
