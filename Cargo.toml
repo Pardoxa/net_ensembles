@@ -37,7 +37,7 @@ num-traits = "^0.2"
 transpose = "^0.2"
 average = { version = "^0.13", optional = true }
 #sampling = { path = "../sampling" }
-sampling = { git = "https://github.com/Pardoxa/sampling.git", rev = "546f405ef05a170ee9d02c8a04c1e64a234bc080" }
+sampling = { git = "https://github.com/Pardoxa/sampling.git", rev = "96d52528154ed08751fe139e2bb36a30edfe905c" }
 #sampling = "^0.1.1"
 permutation = "^0.2.5"
 
