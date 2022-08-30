@@ -21,7 +21,6 @@ use{
     }
 };
 
-
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 /// # Generic graph implementation
@@ -689,7 +688,7 @@ where A: AdjContainer<T>
     /// Note:
     /// ----------------------
     /// Will only iterate over vertices within the connected component that contains vertex `index`
-    pub fn bfs_filtered<'a, F>(&'a self, index: usize, filter: F) -> Option<BfsFiltered<'a, T, A>>
+    pub fn bfs_filtered<F>(&'_ self, index: usize, filter: F) -> Option<BfsFiltered<'_, T, A>>
     where F: FnMut(&T, usize) -> bool,
     {
         BfsFiltered::new(self, index, filter)
@@ -919,14 +918,14 @@ where A: AdjContainer<T>
         let mut s = "graph{\n\t".to_string();
 
         for i in 0..self.vertex_count() {
-            s += &format!("{} ", i);
+            let _ = std::fmt::Write::write_fmt(&mut s, format_args!("{i} "));
         }
         s += "\n";
 
         for i in 0..self.vertex_count() {
             for &j in self.container(i).neighbors() {
                 if i < j {
-                    s.push_str(&format!("\t{} -- {}\n", i, j));
+                    let _ = std::fmt::Write::write_fmt(&mut s, format_args!("\t{} -- {}\n", i, j));
                 }
             }
         }
