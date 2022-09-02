@@ -1351,6 +1351,24 @@ where A: AdjContainer<T>
         b
     }
 
+    pub fn closeness_centrality(&self) -> Vec<f64>
+    {
+        let mut count = vec![0; self.vertex_count()];
+
+        let mut bfs = Bfs::new(self, 0);
+        for i in 0..self.vertex_count()
+        {
+            bfs.reuse(i);
+            for (index, _, depth) in &mut bfs{
+                count[index] += depth;
+            }
+        }
+        let val = (self.vertex_count() - 1) as f64;
+        count.into_iter()
+            .map(|count| val / count as f64)
+            .collect()
+    }
+
     /// # Calculates transitivity of graph
     /// * related to cluster coefficient (Note: transitivity and cluster coefficient are similar,
     /// but **not** necessarily equal)
