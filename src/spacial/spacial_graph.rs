@@ -5,6 +5,7 @@
 
 use crate::{traits::*, GraphErrors, GenericGraph};
 
+use rand::seq::SliceRandom;
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
@@ -76,6 +77,10 @@ impl<T: Node + SerdeStateConform> AdjContainer<T> for SpacialNodeContainer<T> {
     /// * calls `sort_unstable()` on all adjecency lists
     fn sort_adj(&mut self) {
         self.adj.sort_unstable();
+    }
+
+    fn shuffle_adj<R: rand::Rng>(&mut self, rng: &mut R) {
+        self.adj.shuffle(rng)
     }
 
     #[doc(hidden)]

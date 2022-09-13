@@ -8,6 +8,7 @@ use{
     permutation
 };
 
+use rand::seq::SliceRandom;
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
@@ -180,4 +181,14 @@ impl<T> AdjContainer<T> for WSContainer<T>
         self.to = p.apply_slice(&self.to[..]);
         self.original = p.apply_slice(&self.original[..]);
     }
+
+    fn shuffle_adj<R: rand::Rng>(&mut self, rng: &mut R) {
+        let mut list: Vec<_> = (0..self.original.len()).collect();
+        list.shuffle(rng);
+        let new_to: Vec<_> = list.iter().map(|&idx| self.to[idx]).collect();
+        let new_original: Vec<_> = list.iter().map(|&idx| self.original[idx]).collect();
+        self.to = new_to;
+        self.original = new_original;
+    }
+
 }

@@ -169,6 +169,8 @@ where A: AdjContainer<T>
         }
     }
 
+    
+
 
     /// # get `AdjContainer` of vertex `index`
     /// * **panics** if index out of bounds

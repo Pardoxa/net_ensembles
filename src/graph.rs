@@ -10,7 +10,7 @@ use {
     crate::{
         traits::*,
         GraphErrors, 
-        GenericGraph
+        GenericGraph,
     },
     std::{
         marker::PhantomData,
@@ -19,6 +19,7 @@ use {
     core::iter::FromIterator
 };
 
+use rand::{Rng, seq::SliceRandom};
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
@@ -85,6 +86,10 @@ impl<T> AdjContainer<T> for NodeContainer<T> {
     /// * calls `sort_unstable()` on all adjecency lists
     fn sort_adj(&mut self) {
         self.adj.sort_unstable();
+    }
+
+    fn shuffle_adj<R: Rng>(&mut self, rng: &mut R) {
+        self.adj.shuffle(rng)
     }
 
     #[doc(hidden)]

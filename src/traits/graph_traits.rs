@@ -5,7 +5,8 @@ use{
         sw::SwChangeState,
         traits::SerdeStateConform,
         GenericGraph
-    }
+    },
+    rand::Rng
 };
 
 #[cfg(feature = "serde_support")]
@@ -84,8 +85,11 @@ pub trait AdjContainer<T>
     /// (in `Graph<T>`: `id` equals the index corresponding to `self`)
     fn is_adjacent(&self, other_id: usize) -> bool;
 
-    /// Sorting adjecency lists
+    /// Sorting adjacency lists
     fn sort_adj(&mut self);
+
+    /// shuffle adjacency list
+    fn shuffle_adj<R: Rng>(&mut self, rng: &mut R);
 
     /// Remove all edges
     /// # Important

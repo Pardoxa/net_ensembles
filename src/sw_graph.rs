@@ -5,6 +5,7 @@ use{
     core::iter::FusedIterator
 };
 
+use rand::seq::SliceRandom;
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 
@@ -229,6 +230,11 @@ where T: Node + SerdeStateConform
         self.adj.sort_unstable_by_key(
             |k| *k.to()
         )
+    }
+
+    /// # Shuffles adjacency list
+    fn shuffle_adj<R: rand::Rng>(&mut self, rng: &mut R) {
+        self.adj.shuffle(rng)
     }
 
     /// Remove all edges

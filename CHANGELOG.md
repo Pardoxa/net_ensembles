@@ -23,6 +23,9 @@
 
 * add `AdjList` trait
 
+## AdjContainer
+* add `shuffle_adj`
+
 ## v0.4.0 &rarr; v0.5.0
 
 ### sampling
