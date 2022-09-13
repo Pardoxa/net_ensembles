@@ -18,7 +18,8 @@ use{
         collections::*,
         marker::*,
         io::Write
-    }
+    },
+    rand::Rng
 };
 
 #[cfg(feature = "serde_support")]
@@ -169,7 +170,26 @@ where A: AdjContainer<T>
         }
     }
 
-    
+    /// Shuffles all adjacency lists
+    /// * This will not change the topology. It will change the internal order and thereby 
+    /// randomize the order of the neighbors in the respective iterators
+    pub fn shuffle_adjs<R: Rng>(&mut self, rng: &mut R)
+    {
+        self.vertices.iter_mut()
+            .for_each(
+                |v|
+                v.shuffle_adj(rng)
+            );
+    }
+
+    /// # Shuffles adjacency list
+    /// * panics if index is out of bounds
+    /// * This will not change the topology. It will change the internal order and thereby 
+    /// randomize the order of the neighbors in the respective iterators
+    pub fn shuffle_adj<R: Rng>(&mut self, rng: &mut R, index: usize)
+    {
+        self.vertices[index].shuffle_adj(rng)
+    }
 
 
     /// # get `AdjContainer` of vertex `index`
