@@ -14,6 +14,8 @@
 //! > DOI: [10.1088/1367-2630/17/1/015005](https://doi.org/10.1088/1367-2630/17/1/015005)
 mod spacial_graph;
 mod spacial_ensemble;
+mod dog_networks;
 
 pub use spacial_graph::*;
 pub use spacial_ensemble::*;
+pub use dog_networks::*;

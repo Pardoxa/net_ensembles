@@ -40,11 +40,13 @@ average = { version = "^0.13", optional = true }
 sampling = { git = "https://github.com/Pardoxa/sampling.git", rev = "848ab9fe19378b4a6ce64b4e11cf32ec8fc88246" }
 #sampling = "^0.1.1"
 permutation = "^0.2.5"
+rand_distr = "0.4.3"
 
 [dev-dependencies]
 rand_pcg = { version = "0.3.1", features = ["serde1"]}
 serde_json = "1.0"
 criterion = "0.3"
+
 
 [features]
 serde_support = ["serde"]
