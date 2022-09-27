@@ -51,6 +51,7 @@ where R: Rng,
         let iter = LatinHypercubeSampling2D::new(n, &mut rng);
 
         let scaling_factor = 1.0/ n as f64;
+        let uni = Uniform::new(0.0, scaling_factor);
 
         graph.vertices
             .iter_mut()
@@ -59,6 +60,16 @@ where R: Rng,
                 {
                     v.x = val.0 as f64 * scaling_factor;
                     v.y = val.1 as f64 * scaling_factor;
+                }
+            );
+
+        graph.vertices
+            .iter_mut()
+            .for_each(
+                |v|
+                {
+                    v.x += uni.sample(&mut rng);
+                    v.y += uni.sample(&mut rng);
                 }
             );
 

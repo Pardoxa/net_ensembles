@@ -354,9 +354,9 @@ where A: AdjContainer<T>
     }
 
     /// Returns two mutable references in a tuple
-    /// ## panics if:
+    /// ## panics in debug if:
     /// * index out of bounds
-    /// * in debug: if indices are not unique
+    /// * if indices are not unique
     pub(crate) fn get_2_mut(&mut self, index0: usize, index1: usize) -> (&mut A, &mut A)
     {
         debug_assert!(
