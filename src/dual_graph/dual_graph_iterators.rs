@@ -22,7 +22,7 @@ pub struct DfsDualIndex<'a, T1, T2, A1, A2>
 
 impl<'a, T1, T2, A1, A2> DfsDualIndex<'a, T1, T2, A1, A2> {
     pub(crate) fn new(
-        dual_graph: &'a DualGraph<'a, T1, A1, T2, A2>,
+        dual_graph: &'a DualGraph<T1, A1, T2, A2>,
         index: DualIndex
     ) -> Self
     {
@@ -121,7 +121,7 @@ pub struct DfsDualContained<'a, T, A1, A2>
 
 impl<'a, T, A1, A2> DfsDualContained<'a, T, A1, A2> {
     pub(crate) fn new(
-        dual_graph: &'a DualGraph<'a, T, A1, T, A2>,
+        dual_graph: &'a DualGraph<T, A1, T, A2>,
         index: DualIndex
     ) -> Self
     {
@@ -278,7 +278,7 @@ pub struct BfsDualIndex<'a, T1, T2, A1, A2>
 
 impl<'a, T1, T2, A1, A2> BfsDualIndex<'a, T1, T2, A1, A2>
 {
-    pub(crate) fn new(dual_graph: &'a DualGraph<'a, T1, A1, T2, A2>, index: DualIndex) -> Self
+    pub(crate) fn new(dual_graph: &'a DualGraph<T1, A1, T2, A2>, index: DualIndex) -> Self
     {
         let vertices_graph_1 = &dual_graph.graph_1.vertices;
         let vertices_graph_2 = &dual_graph.graph_2.vertices;

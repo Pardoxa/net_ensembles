@@ -3,18 +3,18 @@ use {
     super::dual_graph_iterators::*
 };
 
-pub struct DualGraph<'a, T1, A1, T2, A2>
+pub struct DualGraph<T1, A1, T2, A2>
 {
-    pub(crate) graph_1: &'a GenericGraph<T1, A1>,
-    pub(crate) graph_2: &'a GenericGraph<T2, A2>,
+    pub(crate) graph_1: GenericGraph<T1, A1>,
+    pub(crate) graph_2: GenericGraph<T2, A2>,
     pub(crate) adj_1: Vec<Adj>,
     pub(crate) adj_2: Vec<Adj>
 }
 
-impl<'a, T1, A1, T2, A2> DualGraph<'a, T1, A1, T2, A2>{
+impl<T1, A1, T2, A2> DualGraph<T1, A1, T2, A2>{
     pub fn new(
-        graph_1: &'a GenericGraph<T1, A1>, 
-        graph_2: &'a GenericGraph<T2, A2>
+        graph_1: GenericGraph<T1, A1>, 
+        graph_2: GenericGraph<T2, A2>
     ) -> Self
     {
         let adj_1 = (0..graph_1.vertices.len())
@@ -33,14 +33,14 @@ impl<'a, T1, A1, T2, A2> DualGraph<'a, T1, A1, T2, A2>{
         }
     }
 
-    pub fn graph_1(&self) -> &'a GenericGraph<T1, A1>
+    pub fn graph_1(&self) -> &GenericGraph<T1, A1>
     {
-        self.graph_1
+        &self.graph_1
     }
 
-    pub fn graph_2(&self) -> &'a GenericGraph<T2, A2>
+    pub fn graph_2(&self) -> &GenericGraph<T2, A2>
     {
-        self.graph_2
+        &self.graph_2
     }
 
     pub fn size(&self) -> (usize, usize)
@@ -87,7 +87,7 @@ impl<'a, T1, A1, T2, A2> DualGraph<'a, T1, A1, T2, A2>{
 
 }
 
-impl<'a, T1, A1, T2, A2> DualGraph<'a, T1, A1, T2, A2>
+impl<T1, A1, T2, A2> DualGraph<T1, A1, T2, A2>
 where A1: AdjContainer<T1>
 {
     pub fn degree_1(&self, index: usize) -> Option<usize>
@@ -97,7 +97,7 @@ where A1: AdjContainer<T1>
     }
 }
 
-impl<'a, T1, A1, T2, A2> DualGraph<'a, T1, A1, T2, A2>
+impl<T1, A1, T2, A2> DualGraph<T1, A1, T2, A2>
 where A2: AdjContainer<T2>
 {
     pub fn degree_2(&self, index: usize) -> Option<usize>
@@ -107,7 +107,7 @@ where A2: AdjContainer<T2>
     }
 }
 
-impl<'a, T1, T2, A1, A2> DualGraph<'a, T1, A1, T2, A2>
+impl<T1, T2, A1, A2> DualGraph<T1, A1, T2, A2>
 where A1: AdjContainer<T1>,
     A2: AdjContainer<T2>
 {
@@ -115,7 +115,7 @@ where A1: AdjContainer<T1>,
     /// 
     /// Note that, this iterator will return indices from both graphs, the corresponding
     /// graph is given by the variant of DualIndex
-    pub fn dfs_index(&'a self, index: DualIndex) -> impl 'a + Iterator<Item=DualIndex>
+    pub fn dfs_index(&self, index: DualIndex) -> impl '_ + Iterator<Item=DualIndex>
     {
         DfsDualIndex::new(self, index)
     }
@@ -124,7 +124,7 @@ where A1: AdjContainer<T1>,
     /// 
     /// Note that, this iterator will return indices from both graphs, the corresponding
     /// graph is given by the variant of DualIndex
-    pub fn dfs_1_index(&'a self, index: usize) -> impl 'a + Iterator<Item=DualIndex>
+    pub fn dfs_1_index(&self, index: usize) -> impl '_ + Iterator<Item=DualIndex>
     {
         self.dfs_index(DualIndex::Graph1(index))
     }
@@ -133,12 +133,12 @@ where A1: AdjContainer<T1>,
     /// 
     /// Note that, this iterator will return indices from both graphs, the corresponding
     /// graph is given by the variant of DualIndex
-    pub fn dfs_2_index(&'a self, index: usize) -> impl 'a + Iterator<Item=DualIndex>
+    pub fn dfs_2_index(&self, index: usize) -> impl '_ + Iterator<Item=DualIndex>
     {
         self.dfs_index(DualIndex::Graph2(index))
     }
 
-    pub fn bfs_index(&'a self, index: DualIndex) -> impl 'a + Iterator<Item=(DualIndex, usize)>
+    pub fn bfs_index(&self, index: DualIndex) -> impl '_ + Iterator<Item=(DualIndex, usize)>
     {
         BfsDualIndex::new(self, index)
     }
@@ -229,7 +229,7 @@ where A1: AdjContainer<T1>,
     }
 }
 
-impl<'a, T, A1, A2> DualGraph<'a, T, A1, T, A2>
+impl<T, A1, A2> DualGraph<T, A1, T, A2>
 where A1: AdjContainer<T>,
     A2: AdjContainer<T>
 {
@@ -237,7 +237,7 @@ where A1: AdjContainer<T>,
     /// index from graph_1. 
     /// Note, that this also includes possible neighbors in the second 
     /// graph
-    pub fn contained_iter_neighbors_1(&'a self, index: usize) -> impl Iterator<Item=&'a T>
+    pub fn contained_iter_neighbors_1(&self, index: usize) -> impl Iterator<Item=&T>
     {
         self.graph_1
             .contained_iter_neighbors(index)
@@ -253,7 +253,7 @@ where A1: AdjContainer<T>,
     /// index from graph_1. 
     /// Note, that this also includes possible neighbors in the second 
     /// graph
-    pub fn contained_iter_neighbors_2(&'a self, index: usize) -> impl Iterator<Item=&'a T>
+    pub fn contained_iter_neighbors_2(&self, index: usize) -> impl Iterator<Item=&T>
     {
         self.graph_2
             .contained_iter_neighbors(index)
@@ -350,7 +350,7 @@ mod testing {
         graph_2.init_ring_2();
         assert_eq!(graph_2.is_connected(), Some(true));
 
-        let mut dual = DualGraph::new(&graph_1, &graph_2);
+        let mut dual = DualGraph::new(graph_1, graph_2);
 
         assert!(!dual.is_connected());
 
@@ -376,8 +376,8 @@ mod testing {
         assert_eq!(sum_2, 55);
 
         let mut dual = DualGraph::new(
-            &graph_1,
-            &graph_2
+            graph_1,
+            graph_2
         );
 
         let sum_dual_1: usize = dual.dfs_1_contained(0).map(CountingNode::number).sum();
@@ -416,7 +416,7 @@ mod testing {
         graph_2.init_ring_2();
         assert_eq!(graph_2.is_connected(), Some(true));
 
-        let mut dual = DualGraph::new(&graph_1, &graph_2);
+        let mut dual = DualGraph::new(graph_1, graph_2);
         
         assert!(!is_connected(&dual));
         is_connected(&dual);
@@ -437,7 +437,7 @@ mod testing {
         graph_1.init_ring(1).unwrap();
         let graph_2 = graph_1.clone();
 
-        let mut dual = DualGraph::new(&graph_1, &graph_2);
+        let mut dual = DualGraph::new(graph_1, graph_2);
 
         // connect them
         dual.add_edge(0, 0).unwrap();
