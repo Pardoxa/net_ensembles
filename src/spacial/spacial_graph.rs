@@ -140,6 +140,18 @@ impl<T> SpacialNodeContainer<T> {
         let y = self.y - other.y;
         y.hypot(x)
     }
+
+    /// Get x coordinate
+    pub fn get_x(&self) -> f64
+    {
+        self.x
+    }
+
+    /// Get y coordinate
+    pub fn get_y(&self) -> f64
+    {
+        self.y
+    }
 }
 
 /// Type definiton for convinience. This is used to implement 
