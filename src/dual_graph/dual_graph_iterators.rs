@@ -7,12 +7,12 @@ use{
     }
 };
 
-pub struct DfsDualIndex<'a, T1, T2, A1, A2>
+pub struct DfsDualIndex<'a, T1, T2, A1, A2, ADJ>
 {
     vertices_graph_1: &'a [A1],
     vertices_graph_2: &'a [A2],
-    adj_1: &'a [Adj],
-    adj_2: &'a [Adj],
+    adj_1: &'a [ADJ],
+    adj_2: &'a [ADJ],
     handled_1: Vec<bool>,
     handled_2: Vec<bool>,
     stack: Vec<DualIndex>,
@@ -20,9 +20,9 @@ pub struct DfsDualIndex<'a, T1, T2, A1, A2>
     marker_t2: PhantomData::<T2>
 }
 
-impl<'a, T1, T2, A1, A2> DfsDualIndex<'a, T1, T2, A1, A2> {
+impl<'a, T1, T2, A1, A2, ADJ> DfsDualIndex<'a, T1, T2, A1, A2, ADJ> {
     pub(crate) fn new(
-        dual_graph: &'a DualGraph<T1, A1, T2, A2>,
+        dual_graph: &'a DualGraph<ADJ, T1, A1, T2, A2>,
         index: DualIndex
     ) -> Self
     {
@@ -58,9 +58,10 @@ impl<'a, T1, T2, A1, A2> DfsDualIndex<'a, T1, T2, A1, A2> {
     }
 }
 
-impl<'a, T1, T2, A1, A2> Iterator for DfsDualIndex<'a, T1, T2, A1, A2>
+impl<'a, T1, T2, A1, A2, ADJ> Iterator for DfsDualIndex<'a, T1, T2, A1, A2, ADJ>
 where A1: AdjContainer<T1>,
-    A2: AdjContainer<T2>
+    A2: AdjContainer<T2>,
+    ADJ: AdjTrait
 {
     type Item = DualIndex;
 
@@ -78,7 +79,7 @@ where A1: AdjContainer<T1>,
                         self.stack.push(DualIndex::Graph1(i));
                     }
                 }
-                for &i in self.adj_1[idx].iter() {
+                for &i in self.adj_1[idx].slice() {
                     if !self.handled_2[i] {
                         self.handled_2[i] = true;
                         self.stack.push(DualIndex::Graph2(i));
@@ -94,7 +95,7 @@ where A1: AdjContainer<T1>,
                         self.stack.push(DualIndex::Graph2(i));
                     }
                 }
-                for &i in self.adj_2[idx].iter() {
+                for &i in self.adj_2[idx].slice() {
                     if !self.handled_1[i] {
                         self.handled_1[i] = true;
                         self.stack.push(DualIndex::Graph1(i));
@@ -107,21 +108,21 @@ where A1: AdjContainer<T1>,
 }
 
 
-pub struct DfsDualContained<'a, T, A1, A2>
+pub struct DfsDualContained<'a, T, A1, A2, ADJ>
 {
     vertices_graph_1: &'a [A1],
     vertices_graph_2: &'a [A2],
-    adj_1: &'a [Adj],
-    adj_2: &'a [Adj],
+    adj_1: &'a [ADJ],
+    adj_2: &'a [ADJ],
     handled_1: Vec<bool>,
     handled_2: Vec<bool>,
     stack: Vec<DualIndex>,
     marker: PhantomData::<T>
 }
 
-impl<'a, T, A1, A2> DfsDualContained<'a, T, A1, A2> {
+impl<'a, T, A1, A2, ADJ> DfsDualContained<'a, T, A1, A2, ADJ> {
     pub(crate) fn new(
-        dual_graph: &'a DualGraph<T, A1, T, A2>,
+        dual_graph: &'a DualGraph<ADJ, T, A1, T, A2>,
         index: DualIndex
     ) -> Self
     {
@@ -156,10 +157,11 @@ impl<'a, T, A1, A2> DfsDualContained<'a, T, A1, A2> {
     }
 }
 
-impl<'a, T, A1, A2> Iterator for DfsDualContained<'a, T, A1, A2>
+impl<'a, T, A1, A2, ADJ> Iterator for DfsDualContained<'a, T, A1, A2, ADJ>
 where T: 'a,
     A1: AdjContainer<T>,
-    A2: AdjContainer<T>
+    A2: AdjContainer<T>,
+    ADJ: AdjTrait
 {
     type Item = &'a T;
 
@@ -176,7 +178,7 @@ where T: 'a,
                         self.stack.push(DualIndex::Graph1(i));
                     }
                 }
-                for &i in self.adj_1[idx].iter() {
+                for &i in self.adj_1[idx].slice() {
                     if !self.handled_2[i] {
                         self.handled_2[i] = true;
                         self.stack.push(DualIndex::Graph2(i));
@@ -194,7 +196,7 @@ where T: 'a,
                         self.stack.push(DualIndex::Graph2(i));
                     }
                 }
-                for &i in self.adj_2[idx].iter() {
+                for &i in self.adj_2[idx].slice() {
                     if !self.handled_1[i] {
                         self.handled_1[i] = true;
                         self.stack.push(DualIndex::Graph1(i));
@@ -261,12 +263,12 @@ where A: AdjContainer<T>,
     }
 }
 
-pub struct BfsDualIndex<'a, T1, T2, A1, A2>
+pub struct BfsDualIndex<'a, T1, T2, A1, A2, ADJ>
 {
     vertices_graph_1: &'a [A1],
     vertices_graph_2: &'a [A2],
-    adj_1: &'a [Adj],
-    adj_2: &'a [Adj],
+    adj_1: &'a [ADJ],
+    adj_2: &'a [ADJ],
     not_handled_1: Vec<bool>,
     not_handled_2: Vec<bool>,
     depth: usize,
@@ -276,9 +278,9 @@ pub struct BfsDualIndex<'a, T1, T2, A1, A2>
     marker_t2: PhantomData::<T2>
 }
 
-impl<'a, T1, T2, A1, A2> BfsDualIndex<'a, T1, T2, A1, A2>
+impl<'a, T1, T2, A1, A2, ADJ> BfsDualIndex<'a, T1, T2, A1, A2, ADJ>
 {
-    pub(crate) fn new(dual_graph: &'a DualGraph<T1, A1, T2, A2>, index: DualIndex) -> Self
+    pub(crate) fn new(dual_graph: &'a DualGraph<ADJ, T1, A1, T2, A2>, index: DualIndex) -> Self
     {
         let vertices_graph_1 = &dual_graph.graph_1.vertices;
         let vertices_graph_2 = &dual_graph.graph_2.vertices;
@@ -343,9 +345,10 @@ impl<'a, T1, T2, A1, A2> BfsDualIndex<'a, T1, T2, A1, A2>
     }
 }
 
-impl <'a, T1, T2, A1, A2> Iterator for BfsDualIndex<'a, T1, T2, A1, A2> 
+impl <'a, T1, T2, A1, A2, ADJ> Iterator for BfsDualIndex<'a, T1, T2, A1, A2, ADJ> 
 where A1: AdjContainer<T1>,
-    A2: AdjContainer<T2>
+    A2: AdjContainer<T2>,
+    ADJ: AdjTrait
 {
     type Item = (DualIndex, usize);
 
@@ -361,7 +364,7 @@ where A1: AdjContainer<T1>,
                             self.queue_1.push_back(DualIndex::Graph1(j));
                         }
                     }
-                    for &j in self.adj_1[i].iter(){
+                    for &j in self.adj_1[i].slice(){
                         if self.not_handled_2[j] {
                             self.not_handled_2[j] = false;
                             self.queue_1.push_back(DualIndex::Graph2(j));
@@ -377,7 +380,7 @@ where A1: AdjContainer<T1>,
                             self.queue_1.push_back(DualIndex::Graph2(j));
                         }
                     }
-                    for &j in self.adj_2[i].iter(){
+                    for &j in self.adj_2[i].slice(){
                         if self.not_handled_1[j] {
                             self.not_handled_1[j] = false;
                             self.queue_1.push_back(DualIndex::Graph1(j));

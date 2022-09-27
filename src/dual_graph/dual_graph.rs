@@ -3,26 +3,31 @@ use {
     super::dual_graph_iterators::*
 };
 
-pub struct DualGraph<T1, A1, T2, A2>
+pub type MultiDualGraph<T1, A1, T2, A2> = DualGraph<Adj, T1, A1, T2, A2>;
+pub type SingleDualGraph<T1, A1, T2, A2> = DualGraph<AdjSingle, T1, A1, T2, A2>;
+
+
+pub struct DualGraph<ADJ, T1, A1, T2, A2>
 {
     pub(crate) graph_1: GenericGraph<T1, A1>,
     pub(crate) graph_2: GenericGraph<T2, A2>,
-    pub(crate) adj_1: Vec<Adj>,
-    pub(crate) adj_2: Vec<Adj>
+    pub(crate) adj_1: Vec<ADJ>,
+    pub(crate) adj_2: Vec<ADJ>
 }
 
-impl<T1, A1, T2, A2> DualGraph<T1, A1, T2, A2>{
+impl<ADJ, T1, A1, T2, A2> DualGraph<ADJ, T1, A1, T2, A2>
+where ADJ: AdjTrait{
     pub fn new(
         graph_1: GenericGraph<T1, A1>, 
         graph_2: GenericGraph<T2, A2>
     ) -> Self
     {
         let adj_1 = (0..graph_1.vertices.len())
-            .map(|_| Adj::new())
+            .map(|_| ADJ::new())
             .collect();
 
         let adj_2 = (0..graph_2.vertices.len())
-            .map(|_| Adj::new())
+            .map(|_| ADJ::new())
             .collect();
 
         Self{
@@ -87,29 +92,32 @@ impl<T1, A1, T2, A2> DualGraph<T1, A1, T2, A2>{
 
 }
 
-impl<T1, A1, T2, A2> DualGraph<T1, A1, T2, A2>
-where A1: AdjContainer<T1>
-{
-    pub fn degree_1(&self, index: usize) -> Option<usize>
-    {
-        self.graph_1.degree(index)
-            .map(|d| d + self.adj_1[index].adj.len())
-    }
-}
-
-impl<T1, A1, T2, A2> DualGraph<T1, A1, T2, A2>
-where A2: AdjContainer<T2>
-{
-    pub fn degree_2(&self, index: usize) -> Option<usize>
-    {
-        self.graph_2.degree(index)
-            .map(|d| d + self.adj_2[index].adj.len())
-    }
-}
-
-impl<T1, T2, A1, A2> DualGraph<T1, A1, T2, A2>
+impl<ADJ, T1, A1, T2, A2> DualGraph<ADJ, T1, A1, T2, A2>
 where A1: AdjContainer<T1>,
-    A2: AdjContainer<T2>
+    ADJ: AdjTrait
+{
+    pub fn degree_1(&self, index: usize) -> usize
+    {
+        self.graph_1.container(index)
+            .degree() + self.adj_1[index].slice().len()
+    }
+}
+
+impl<ADJ, T1, A1, T2, A2> DualGraph<ADJ, T1, A1, T2, A2>
+where A2: AdjContainer<T2>,
+    ADJ: AdjTrait
+{
+    pub fn degree_2(&self, index: usize) -> usize
+    {
+        self.graph_2.container(index)
+            .degree() + self.adj_2[index].slice().len()
+    }
+}
+
+impl<T1, T2, A1, A2, ADJ> DualGraph<ADJ, T1, A1, T2, A2>
+where A1: AdjContainer<T1>,
+    A2: AdjContainer<T2>,
+    ADJ: AdjTrait
 {
     /// Depth first search iterator starting at the node corresponding to `index`
     /// 
@@ -229,9 +237,10 @@ where A1: AdjContainer<T1>,
     }
 }
 
-impl<T, A1, A2> DualGraph<T, A1, T, A2>
+impl<T, A1, A2, ADJ> DualGraph<ADJ, T, A1, T, A2>
 where A1: AdjContainer<T>,
-    A2: AdjContainer<T>
+    A2: AdjContainer<T>,
+    ADJ: AdjTrait,
 {
     /// Iterate over all neighbors of the node corresponding to
     /// index from graph_1. 
@@ -244,7 +253,7 @@ where A1: AdjContainer<T>,
             .chain(
                 NContainedIter2::new(
                     self.graph_2.vertices.as_slice(), 
-                    self.adj_1[index].adj.as_slice()
+                    self.adj_1[index].slice()
                 )
             )
     }
@@ -260,45 +269,46 @@ where A1: AdjContainer<T>,
             .chain(
                 NContainedIter2::new(
                     self.graph_1.vertices.as_slice(), 
-                    self.adj_2[index].adj.as_slice()
+                    self.adj_2[index].slice()
                 )
             )
     }
 
-    pub fn dfs_contained(&self, index: DualIndex) -> DfsDualContained<T, A1, A2>
+    pub fn dfs_contained(&self, index: DualIndex) -> DfsDualContained<T, A1, A2, ADJ>
     {
         DfsDualContained::new(self, index)
     }
 
-    pub fn dfs_1_contained(&self, index_graph_1: usize) -> DfsDualContained<T, A1, A2>
+    pub fn dfs_1_contained(&self, index_graph_1: usize) -> DfsDualContained<T, A1, A2, ADJ>
     {
         DfsDualContained::new(self, DualIndex::Graph1(index_graph_1))
     }
 
-    pub fn dfs_2_contained(&self, index_graph_2: usize) -> DfsDualContained<T, A1, A2>
+    pub fn dfs_2_contained(&self, index_graph_2: usize) -> DfsDualContained<T, A1, A2, ADJ>
     {
         DfsDualContained::new(self, DualIndex::Graph2(index_graph_2))
     }
 }
 
-pub(crate) struct Adj{
+pub struct Adj{
     pub(crate) adj: Vec<usize>
 }
 
-impl Adj{
-    pub fn new() -> Self
+impl AdjTrait for Adj
+{
+    fn new() -> Self
     {
         Self{
             adj: Vec::new()
         }
     }
 
-    pub fn is_adjacent(&self, other_index: &usize) -> bool
+    fn is_adjacent(&self, other_index: &usize) -> bool
     {
         self.adj.contains(other_index)
     }
 
-    pub fn add_edge(&mut self, other_index: usize) -> bool
+    fn add_edge(&mut self, other_index: usize) -> bool
     {
         if self.is_adjacent(&other_index){
             return false;
@@ -307,9 +317,78 @@ impl Adj{
         true
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=&usize>
+    fn slice(&self) -> &[usize]
     {
-        self.adj.iter()
+        self.adj.as_slice()
+    }
+}
+
+pub trait AdjTrait{
+    fn new() -> Self;
+
+    fn is_adjacent(&self, other_index: &usize) -> bool;
+
+    fn add_edge(&mut self, other_index: usize) -> bool;
+
+    fn slice(&self) -> &[usize];
+}
+
+pub enum AdjSingle
+{
+    Nothing([usize;0]),
+    Something([usize;1])
+}
+
+impl AdjSingle
+{
+    pub fn is_nothing(&self) -> bool
+    {
+        matches!(self, Self::Nothing(..))
+    }
+
+    pub fn is_something(&self) -> bool{
+        matches!(self, Self::Something(..))
+    }
+}
+
+impl AdjTrait for AdjSingle
+{
+    #[inline(always)]
+    fn new() -> Self
+    {
+        Self::Nothing([])
+    }
+
+    #[inline(always)]
+    fn is_adjacent(&self, other_index: &usize) -> bool
+    {
+        if let Self::Something(s) = self
+        {
+            s[0] == *other_index
+        } else {
+            false
+        }
+    }
+
+    #[inline(always)]
+    fn add_edge(&mut self, other_index: usize) -> bool
+    {
+        if self.is_nothing(){
+            *self = Self::Something([other_index]);
+            true
+        } else {
+            false
+        }
+    }
+
+    #[inline(always)]
+    fn slice(&self) -> &[usize]
+    {
+        match self
+        {
+            Self::Nothing(nothing) => nothing,
+            Self::Something(something) => something
+        }
     }
 }
 
@@ -350,7 +429,7 @@ mod testing {
         graph_2.init_ring_2();
         assert_eq!(graph_2.is_connected(), Some(true));
 
-        let mut dual = DualGraph::new(graph_1, graph_2);
+        let mut dual = SingleDualGraph::new(graph_1, graph_2);
 
         assert!(!dual.is_connected());
 
@@ -375,7 +454,7 @@ mod testing {
 
         assert_eq!(sum_2, 55);
 
-        let mut dual = DualGraph::new(
+        let mut dual = MultiDualGraph::new(
             graph_1,
             graph_2
         );
@@ -399,7 +478,7 @@ mod testing {
     #[test]
     fn dual_graph_bfs_test()
     {
-        let is_connected = |dual_graph: &DualGraph<_, _, _, _>| {
+        let is_connected = |dual_graph: &MultiDualGraph<_, _, _, _>| {
             dual_graph.bfs_index(DualIndex::Graph1(0)).count() == dual_graph.total_vertices()
         };
 
@@ -437,7 +516,7 @@ mod testing {
         graph_1.init_ring(1).unwrap();
         let graph_2 = graph_1.clone();
 
-        let mut dual = DualGraph::new(graph_1, graph_2);
+        let mut dual = MultiDualGraph::new(graph_1, graph_2);
 
         // connect them
         dual.add_edge(0, 0).unwrap();
