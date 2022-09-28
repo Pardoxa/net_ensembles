@@ -483,22 +483,24 @@ where T: 'a + Node,
 /// * same as NContainedIter but mutable
 /// * Iterator over mutable additional information stored at vertices
 /// that are directly connected to specific vertex
-pub struct NContainedIterMut<'a, T, A>
+pub struct NContainedIterMut<'a, T, A, I>
 where
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a
 {
     vertex_slice:   &'a mut [A],
-    index_iter:     IterWrapper<'a>,
+    index_iter:     I,
     phantom:        PhantomData<T>
 
 }
 
-impl<'a, T, A> NContainedIterMut<'a, T, A>
+impl<'a, T, A, I> NContainedIterMut<'a, T, A, I>
 where
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a
 {
     /// Create new iterator
-    pub(crate) fn new(vertex_slice: &'a mut[A], index_iter: IterWrapper::<'a>) -> Self {
+    pub(crate) fn new(vertex_slice: &'a mut[A], index_iter: I) -> Self {
         Self {
             vertex_slice,
             index_iter,
@@ -508,9 +510,10 @@ where
 }
 
 
-impl<'a, T, A> Iterator for NContainedIterMut<'a, T, A>
-where T: 'a + Node,
-      A: AdjContainer<T>
+impl<'a, T, A, I> Iterator for NContainedIterMut<'a, T, A, I>
+where T: 'a,
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a
 {
     type Item = &'a mut T;
 
@@ -542,14 +545,15 @@ where T: 'a + Node,
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len(), Some(self.len()))
+        self.index_iter.size_hint()
     }
 
 }
 
-impl<'a, T, A> DoubleEndedIterator for NContainedIterMut<'a, T, A>
+impl<'a, T, A, I> DoubleEndedIterator for NContainedIterMut<'a, T, A, I>
 where T: 'a + Node,
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a + DoubleEndedIterator
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
@@ -566,9 +570,10 @@ where T: 'a + Node,
     }
 }
 
-impl<'a, T, A> ExactSizeIterator for NContainedIterMut<'a, T, A>
+impl<'a, T, A, I> ExactSizeIterator for NContainedIterMut<'a, T, A, I>
 where T: 'a + Node,
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a + ExactSizeIterator
 {
 
     #[inline]

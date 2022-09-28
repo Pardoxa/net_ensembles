@@ -338,7 +338,7 @@ impl <T, R> SwEnsemble<T, R>
     /// * retuns `GenericGraph::contained_iter_neighbors_mut`
     /// * otherwise you would not have access to this function, since no mut access to
     ///   the graph is allowed
-    pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, SwContainer<T>>
+    pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, SwContainer<T>, IterWrapper>
     {
             self.graph.contained_iter_neighbors_mut(index)
     }
@@ -349,7 +349,7 @@ where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
     fn contained_iter_neighbors_mut(&mut self, index: usize) ->
-        NContainedIterMut<T, SwContainer<T>>
+        NContainedIterMut<T, SwContainer<T>, IterWrapper>
     {
         self.graph.contained_iter_neighbors_mut(index)
     }

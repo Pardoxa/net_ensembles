@@ -282,7 +282,7 @@ impl<T, R> GraphIteratorsMut<T, Graph<T>, NodeContainer<T>> for ConfigurationMod
 where   T: Node
 {
     fn contained_iter_neighbors_mut(&mut self, index: usize) ->
-        NContainedIterMut<T, NodeContainer<T>>
+        NContainedIterMut<T, NodeContainer<T>, IterWrapper>
     {
         self.graph.contained_iter_neighbors_mut(index)
     }

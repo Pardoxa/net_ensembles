@@ -34,7 +34,7 @@ where
     /// * iterator returns `&mut T`
     /// * `sort_adj` will affect the order
     /// * **panics** if index out of bounds
-    fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<'_, T, A>;
+    fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<'_, T, A, IterWrapper>;
 
     /// * iterate over mutable additional information of neighbors of vertex `index`
     /// * iterator returns `(index_neighbor: usize, neighbor: &mut T)`

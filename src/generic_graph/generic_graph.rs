@@ -270,7 +270,7 @@ where A: AdjContainer<T>
     /// * `sort_adj` will affect the order
     /// * **panics** if index out of bounds
     /// * See also: [`GraphIteratorsMut`](../traits/trait.GraphIteratorsMut.html)
-    pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, A> {
+    pub fn contained_iter_neighbors_mut(&mut self, index: usize) -> NContainedIterMut<T, A, IterWrapper> {
         assert!(
             index < self.vertices.len(),
             "contained_iter_neighbors_mut - index out of bounds"

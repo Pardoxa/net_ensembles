@@ -1,12 +1,22 @@
+use crate::{graph::NodeContainer, AdjList};
+
 use {
     crate::{GenericGraph, AdjContainer},
-    super::dual_graph_iterators::*
+    super::dual_graph_iterators::*,
+    crate::iter::NContainedIterMut,
+    std::ops::{Deref, DerefMut}
 };
+
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
 
 pub type MultiDualGraph<T1, A1, T2, A2> = DualGraph<Adj, T1, A1, T2, A2>;
 pub type SingleDualGraph<T1, A1, T2, A2> = DualGraph<AdjSingle, T1, A1, T2, A2>;
+pub type DefaultSDG<T1, T2> = SingleDualGraph<T1, NodeContainer<T1>, T2, NodeContainer<T2>>;
 
 
+#[derive(Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct DualGraph<ADJ, T1, A1, T2, A2>
 {
     pub(crate) graph_1: GenericGraph<T1, A1>,
@@ -46,6 +56,26 @@ where ADJ: AdjTrait{
     pub fn graph_2(&self) -> &GenericGraph<T2, A2>
     {
         &self.graph_2
+    }
+
+    pub fn graph_1_mut(&mut self) -> &mut GenericGraph<T1, A1>
+    {
+        &mut self.graph_1
+    }
+
+    pub fn graph_2_mut(&mut self) -> &mut GenericGraph<T2, A2>
+    {
+        &mut self.graph_2
+    }
+
+    pub fn adj_1(&self) -> &[ADJ]
+    {
+        &self.adj_1
+    }
+
+    pub fn adj_2(&self) -> &[ADJ]
+    {
+        &self.adj_2
     }
 
     pub fn size(&self) -> (usize, usize)
@@ -237,6 +267,204 @@ where A1: AdjContainer<T1>,
     }
 }
 
+#[derive(Clone, Copy)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+/// Stores information T and the graph the information corresponds to
+pub enum WhichGraph<T>{
+    /// information is related to graph 1
+    Graph1(T),
+    /// information is related to graph 2
+    Graph2(T)
+}
+
+impl<T> Deref for WhichGraph<T>
+{
+    type Target = T;
+    #[inline(always)]
+    fn deref(&self) -> &Self::Target {
+        match self{
+            WhichGraph::Graph1(inner) => inner,
+            WhichGraph::Graph2(inner) => inner,
+        }
+    }
+}
+
+impl<T> DerefMut for WhichGraph<T>
+{
+    #[inline(always)]
+    fn deref_mut(&mut self) -> &mut Self::Target
+    {
+        match self{
+            WhichGraph::Graph1(inner) => inner,
+            WhichGraph::Graph2(inner) => inner
+        }
+    }
+}
+
+impl<T> WhichGraph<T>
+{
+    #[inline(always)]
+    pub fn into_inner(self) -> T
+    {
+        match self{
+            WhichGraph::Graph1(inner) => inner,
+            WhichGraph::Graph2(inner) => inner
+        }
+    }
+}
+
+impl<T, ADJ, A1, A2> DualGraph<ADJ, T, A1, T, A2>
+where A1: AdjContainer<T> + AdjList<usize>,
+    A2: AdjContainer<T> + AdjList<usize>,
+    ADJ: AdjTrait,
+{
+    #[inline]
+    pub fn graph_1_contained_iter_mut_which_graph_with_index(&mut self, index: usize) -> impl Iterator<Item=WhichGraph<(usize, &mut T)>>
+    {
+        assert!(
+            index < self.graph_1().vertices.len(),
+            "graph_1_contained_iter_mut_which_graph - index out of bounds"
+        );
+
+        let ptr = self.graph_1.vertices.as_mut_ptr();
+        let iter_helper: &mut A1 = unsafe { &mut *ptr.add(index) };
+        let iter = iter_helper.edges();
+
+        let iter = NContainedIterMut::new(
+            &mut self.graph_1.vertices,
+            iter.iter()
+        );
+
+        let o = {
+            let slice = self.adj_1[index].slice();
+            if slice.is_empty(){
+                None
+            } else {
+                let index = slice[0];
+                Some(WhichGraph::Graph2((index, self.graph_2.at_mut(index))))
+            }
+        };
+
+        iter
+            .enumerate()
+            .map(WhichGraph::Graph1)
+            .chain(o.into_iter())
+    }
+
+    #[inline]
+    pub fn graph_1_contained_iter_mut_which_graph(&mut self, index: usize) -> impl Iterator<Item=WhichGraph<&mut T>>
+    {
+        assert!(
+            index < self.graph_1().vertices.len(),
+            "graph_1_contained_iter_mut_which_graph - index out of bounds"
+        );
+
+        let ptr = self.graph_1.vertices.as_mut_ptr();
+        let iter_helper: &mut A1 = unsafe { &mut *ptr.add(index) };
+        let iter = iter_helper.edges();
+
+        let iter = NContainedIterMut::new(
+            &mut self.graph_1.vertices,
+            iter.iter()
+        );
+
+        let o = {
+            let slice = self.adj_1[index].slice();
+            if slice.is_empty(){
+                None
+            } else {
+                Some(WhichGraph::Graph2(self.graph_2.at_mut(slice[0])))
+            }
+        };
+
+        iter
+            .map(WhichGraph::Graph1)
+            .chain(o.into_iter())
+    }
+
+
+    #[inline]
+    pub fn graph_2_contained_iter_mut_which_graph(&mut self, index: usize) -> impl Iterator<Item=WhichGraph<&mut T>>
+    {
+        assert!(
+            index < self.graph_2().vertices.len(),
+            "graph_2_contained_iter_mut_which_graph - index out of bounds"
+        );
+
+        let ptr = self.graph_2.vertices.as_mut_ptr();
+        let iter_helper: &mut A2 = unsafe { &mut *ptr.add(index) };
+        let iter = iter_helper.edges();
+
+        let iter = NContainedIterMut::new(
+            &mut self.graph_2.vertices,
+            iter.iter()
+        );
+
+        let o = {
+            let slice = self.adj_2[index].slice();
+            if slice.is_empty(){
+                None
+            } else {
+                Some(WhichGraph::Graph1(self.graph_1.at_mut(slice[0])))
+            }
+        };
+
+        iter
+            .map(WhichGraph::Graph2)
+            .chain(o.into_iter())
+    }
+
+    #[inline]
+    pub fn graph_2_contained_iter_mut_which_graph_with_index(&mut self, index: usize)-> impl Iterator<Item=WhichGraph<(usize, &mut T)>>
+    {
+        assert!(
+            index < self.graph_2().vertices.len(),
+            "graph_2_contained_iter_mut_which_graph - index out of bounds"
+        );
+
+        let ptr = self.graph_2.vertices.as_mut_ptr();
+        let iter_helper: &mut A2 = unsafe { &mut *ptr.add(index) };
+        let iter = iter_helper.edges();
+
+        let iter = NContainedIterMut::new(
+            &mut self.graph_2.vertices,
+            iter.iter()
+        );
+
+        let o = {
+            let slice = self.adj_2[index].slice();
+            if slice.is_empty(){
+                None
+            } else {
+                let index = slice[0];
+                Some(WhichGraph::Graph1((index, self.graph_1.at_mut(index))))
+            }
+        };
+
+
+        iter
+            .enumerate()
+            .map(WhichGraph::Graph2)
+            .chain(o.into_iter())
+    }
+
+}
+
+//#[inline(always)]
+//fn map_chain<'a, T, A, I, F>(
+//    ncontained: NContainedIterMut<'a, T, A, I>, 
+//    option: Option<WhichGraph<&'a mut T>>,
+//    graph_fun: F
+//) -> impl Iterator<Item=WhichGraph<&mut T>>
+//where I: Iterator<Item=&'a usize>,
+//    A: AdjContainer<T>,
+//    F: Fn(&'a mut T) -> WhichGraph<&'a mut T>
+//{
+//    ncontained
+//            .map(graph_fun)
+//            .chain(option.into_iter())
+//}
+
 impl<T, A1, A2, ADJ> DualGraph<ADJ, T, A1, T, A2>
 where A1: AdjContainer<T>,
     A2: AdjContainer<T>,
@@ -333,6 +561,7 @@ pub trait AdjTrait{
     fn slice(&self) -> &[usize];
 }
 
+#[derive(Clone, Copy)]
 pub enum AdjSingle
 {
     Nothing([usize;0]),
@@ -392,15 +621,9 @@ impl AdjTrait for AdjSingle
     }
 }
 
+
 /// Index which also stores for which graph the index is
-#[derive(Debug, Clone)]
-pub enum DualIndex
-{
-    /// Index for graph_1
-    Graph1(usize),
-    /// Index for graph_2
-    Graph2(usize)
-}
+pub type DualIndex = WhichGraph<usize>;
 
 #[derive(Debug, Copy, Clone)]
 pub enum AddEdgeError{

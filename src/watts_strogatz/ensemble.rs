@@ -281,7 +281,7 @@ where   T: Node + SerdeStateConform,
         R: rand::Rng
 {
     fn contained_iter_neighbors_mut(&mut self, index: usize) ->
-        NContainedIterMut<T, WSContainer<T>>
+        NContainedIterMut<T, WSContainer<T>, IterWrapper>
     {
         self.graph.contained_iter_neighbors_mut(index)
     }
