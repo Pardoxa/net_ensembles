@@ -15,13 +15,14 @@ mod tests{
     use crate::{EmptyNode, graph::NodeContainer, CountingNode};
     use sampling::histogram::{Histogram, HistogramVal};
     use crate::{Graph, AdjContainer};
+    use std::num::*;
 
     #[test]
     fn degree_dist()
     {
         let mut network = GenericGraph::<EmptyNode, NodeContainer<EmptyNode>>::new(10);
 
-        network.init_ring(1).unwrap();
+        network.init_ring(NonZeroUsize::new(1).unwrap()).unwrap();
 
         let hist = network.degree_histogram();
 

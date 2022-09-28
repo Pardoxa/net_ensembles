@@ -22,6 +22,8 @@ use{
     rand::Rng
 };
 
+use std::num::NonZeroUsize;
+
 #[cfg(feature = "serde_support")]
 use serde::{Serialize, Deserialize};
 /// # Generic graph implementation
@@ -137,14 +139,14 @@ where A: AdjContainer<T>
     /// # initialize Ring
     /// * every node is connected with its neighbors, which are
     /// not more than distance away
-    pub(crate) fn init_ring(&mut self, distance: usize) -> Result<(), GraphErrors>
+    pub(crate) fn init_ring(&mut self, distance: NonZeroUsize) -> Result<(), GraphErrors>
     {
         self.clear_edges();
         let n = self.vertex_count();
 
         for i in 0..n
         {
-            for add in 1..=distance{
+            for add in 1..=distance.get(){
                 let sum = i + add;
                 let index2 = if sum >= n {
                     sum - n

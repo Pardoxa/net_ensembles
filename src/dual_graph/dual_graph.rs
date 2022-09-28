@@ -636,6 +636,7 @@ pub enum AddEdgeError{
 mod testing {
     use super::*;
     use crate::{Graph, EmptyNode, SwGraph, CountingNode};
+    use std::num::*;
 
     #[test]
     fn dual_graph_basic_test()
@@ -666,12 +667,12 @@ mod testing {
     fn dual_graph_dfs_test()
     {
         let mut graph_1 = Graph::<CountingNode>::new(5);
-        graph_1.init_ring(2).unwrap();
+        graph_1.init_ring(NonZeroUsize::new(2).unwrap()).unwrap();
         let sum_1: usize = graph_1.dfs(0).map(CountingNode::number).sum();
         assert_eq!(sum_1, 10);
         
         let mut graph_2 = Graph::<CountingNode>::new(11);
-        graph_2.init_ring(1).unwrap();
+        graph_2.init_ring(NonZeroUsize::new(1).unwrap()).unwrap();
 
         let sum_2: usize = graph_2.dfs(0).map(CountingNode::number).sum();
 
@@ -736,7 +737,7 @@ mod testing {
     fn dual_graph_bfs_depth_test()
     {
         let mut graph_1 = Graph::<EmptyNode>::new(6);
-        graph_1.init_ring(1).unwrap();
+        graph_1.init_ring(NonZeroUsize::new(1).unwrap()).unwrap();
         let graph_2 = graph_1.clone();
 
         let mut dual = MultiDualGraph::new(graph_1, graph_2);

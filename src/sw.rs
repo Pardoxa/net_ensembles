@@ -15,7 +15,7 @@
 //!   Nature **393**, 440-442 (1998), DOI:&nbsp;[10.1038/30918](https://doi.org/10.1038/30918)
 use {
     crate::{traits::*, sw_graph::*, iter::*},
-    std::{borrow::Borrow, io::Write}
+    std::{borrow::Borrow, io::Write, num::*}
 };
 
 #[cfg(feature = "serde_support")]
@@ -222,6 +222,26 @@ impl <T, R> SwEnsemble<T, R>
             };
         result.randomize();
         result
+    }
+
+    /// # Initialize
+    /// * create new SwEnsemble graph with `n` vertices
+    /// * `r_prob` is probability of rewiring for each edge
+    /// * `rng` is consumed and used as random number generator in the following
+    /// * internally uses `SwGraph<T>::new(n)`
+    /// * `distance`: Initial ring will be created by connecting every node to the neighbors which are not more than distance away 
+    /// in the ring
+    pub fn new_with_distance(n: usize, distance: NonZeroUsize, r_prob: f64, rng: R) -> Result<Self, GraphErrors>  {
+        let mut graph = SwGraph::new(n);
+        graph.init_ring(distance)?;
+        let mut result =
+            SwEnsemble {
+                graph,
+                r_prob,
+                rng,
+            };
+        result.randomize();
+        Ok(result)
     }
 
     /// # **Experimental!** Connect the connected components
@@ -452,8 +472,6 @@ where   T: Node + SerdeStateConform,
                 .iter_raw_edges()
                 .filter(|edge| edge.is_root())
                 .map(|edge| edge.to());
-
-            debug_assert_eq!(ROOT_EDGES_PER_VERTEX, 2);
 
             let first   = *root_iter.next().unwrap();
             let second  = *root_iter.next().unwrap();

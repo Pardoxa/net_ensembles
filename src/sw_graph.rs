@@ -2,7 +2,8 @@
 
 use{
     crate::{step_structs::*, GenericGraph, traits::*},
-    core::iter::FusedIterator
+    core::iter::FusedIterator,
+    std::num::*
 };
 
 use rand::seq::SliceRandom;
@@ -485,7 +486,8 @@ where T: Node + SerdeStateConform {
     /// * every node is connected with its
     /// next and second next neighbors
     pub(crate) fn init_ring_2(&mut self) {
-        self.init_ring(2)
+        let two = NonZeroUsize::new(2).unwrap();
+        self.init_ring(two)
             .expect("unable to init Ring");
     }
 
