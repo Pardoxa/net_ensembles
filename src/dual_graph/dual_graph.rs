@@ -319,6 +319,15 @@ where A1: AdjContainer<T> + AdjList<usize>,
     ADJ: AdjTrait,
 {
     #[inline]
+    pub fn graph_1_contained_iter_neighbors_in_other_graph_mut(&mut self, index: usize) -> impl Iterator<Item=&mut T>
+    {
+        NContainedIterMut::new(
+            &mut self.graph_2.vertices,
+            self.adj_1[index].slice().iter()
+        )
+    }
+
+    #[inline]
     pub fn graph_1_contained_iter_mut_which_graph_with_index(&mut self, index: usize) -> impl Iterator<Item=WhichGraph<(usize, &mut T)>>
     {
         assert!(
