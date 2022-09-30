@@ -518,6 +518,8 @@ where A1: AdjContainer<T>,
     }
 }
 
+#[derive(Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Adj{
     pub(crate) adj: Vec<usize>
 }
@@ -562,6 +564,7 @@ pub trait AdjTrait{
 }
 
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum AdjSingle
 {
     Nothing([usize;0]),
