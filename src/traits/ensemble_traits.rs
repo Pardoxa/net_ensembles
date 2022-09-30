@@ -62,7 +62,7 @@ pub trait GraphIterators<T, G, A>
     /// * iterator returns `&T`
     /// * `sort_adj` will affect the order
     /// * **panics** if index out of bounds
-    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, A>;
+    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, A, IterWrapper>;
 
     /// * iterate over additional information of neighbors of vertex `index`
     /// * iterator returns (`index_neighbor`,`&T`)
@@ -78,7 +78,7 @@ pub trait GraphIterators<T, G, A>
     /// * iterator returns `&T`
     /// * `sort_adj` will affect the order
     /// * **panics** if index out of bounds
-    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, A>;
+    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, A, IterWrapper>;
 
     /// # returns `Iterator`
     ///
@@ -148,7 +148,7 @@ where
         self.graph().contained_iter()
     }
 
-    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, NodeContainer<T>>
+    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, NodeContainer<T>, IterWrapper>
     {
         self.graph().contained_iter_neighbors(index)
     }
@@ -158,7 +158,7 @@ where
         self.graph().container_iter()
     }
 
-    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, NodeContainer<T>>
+    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, NodeContainer<T>, IterWrapper>
     {
         self.graph().container_iter_neighbors(index)
     }
@@ -193,7 +193,7 @@ where
         self.graph().contained_iter()
     }
 
-    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, SwContainer<T>>
+    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, SwContainer<T>, IterWrapper>
     {
         self.graph().contained_iter_neighbors(index)
     }
@@ -203,7 +203,7 @@ where
         self.graph().container_iter()
     }
 
-    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, SwContainer<T>>
+    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, SwContainer<T>, IterWrapper>
     {
         self.graph().container_iter_neighbors(index)
     }

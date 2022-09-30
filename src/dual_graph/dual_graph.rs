@@ -3,7 +3,7 @@ use crate::{graph::NodeContainer, AdjList};
 use {
     crate::{GenericGraph, AdjContainer},
     super::dual_graph_iterators::*,
-    crate::iter::NContainedIterMut,
+    crate::iter::{NContainedIterMut, NContainedIter},
     std::ops::{Deref, DerefMut}
 };
 
@@ -328,6 +328,105 @@ where A1: AdjContainer<T> + AdjList<usize>,
     }
 
     #[inline]
+    /// Note: This will first iterate over all neighbors from this graph and then over 
+    /// all neighbors from the other graph
+    pub fn graph_1_contained_iter_mut(&mut self, index: usize) -> impl Iterator<Item=&mut T>
+    {
+        debug_assert!(
+            index < self.graph_1().vertices.len(),
+            "graph_1_contained_iter_mut_which_graph - index out of bounds"
+        );
+
+        let ptr = self.graph_1.vertices.as_mut_ptr();
+        let iter_helper: &mut A1 = unsafe { &mut *ptr.add(index) };
+        let iter = iter_helper.edges();
+
+        let iter = NContainedIterMut::new(
+            &mut self.graph_1.vertices,
+            iter.iter()
+        );
+
+        let o = {
+            let slice = self.adj_1[index].slice();
+            if slice.is_empty(){
+                None
+            } else {
+                let index = slice[0];
+                Some(self.graph_2.at_mut(index))
+            }
+        };
+
+        iter
+            .chain(o.into_iter())
+    }
+
+    #[inline]
+    /// Note: This will first iterate over all neighbors from this graph and then over 
+    /// all neighbors from the other graph
+    pub fn graph_1_contained_iter(&self, index: usize) -> impl Iterator<Item=&T>
+    {
+        debug_assert!(
+            index < self.graph_1().vertices.len(),
+            "graph_1_contained_iter_mut_which_graph - index out of bounds"
+        );
+
+        let ptr = self.graph_1.vertices.as_ptr();
+        let iter_helper: &A1 = unsafe { & *ptr.add(index) };
+        let iter = iter_helper.edges();
+
+        let iter = NContainedIter::new(
+            &self.graph_1.vertices,
+            iter.iter()
+        );
+
+        let o = {
+            let slice = self.adj_1[index].slice();
+            if slice.is_empty(){
+                None
+            } else {
+                let index = slice[0];
+                Some(self.graph_2.at(index))
+            }
+        };
+
+        iter
+            .chain(o.into_iter())
+    }
+
+    #[inline]
+    /// Note: This will first iterate over all neighbors from this graph and then over 
+    /// all neighbors from the other graph
+    pub fn graph_2_contained_iter(&self, index: usize) -> impl Iterator<Item=&T>
+    {
+        debug_assert!(
+            index < self.graph_2().vertices.len(),
+            "graph_1_contained_iter_mut_which_graph - index out of bounds"
+        );
+
+        let ptr = self.graph_2.vertices.as_ptr();
+        let iter_helper: &A2 = unsafe { & *ptr.add(index) };
+        let iter = iter_helper.edges();
+
+        let iter = NContainedIter::new(
+            &self.graph_2.vertices,
+            iter.iter()
+        );
+
+        let o = {
+            let slice = self.adj_2[index].slice();
+            if slice.is_empty(){
+                None
+            } else {
+                let index = slice[0];
+                Some(self.graph_1.at(index))
+            }
+        };
+
+        iter
+            .chain(o.into_iter())
+    }
+
+    #[inline]
     pub fn graph_1_contained_iter_mut_which_graph_with_index(&mut self, index: usize) -> impl Iterator<Item=WhichGraph<(usize, &mut T)>>
     {
         assert!(
@@ -582,11 +681,13 @@ pub enum AdjSingle
 
 impl AdjSingle
 {
+    #[inline]
     pub fn is_nothing(&self) -> bool
     {
         matches!(self, Self::Nothing(..))
     }
 
+    #[inline]
     pub fn is_something(&self) -> bool{
         matches!(self, Self::Something(..))
     }

@@ -244,22 +244,23 @@ where T: 'a + Node,
 
 ///////////////////////////
 /// Iterator over each vertex directly connected with start vertex in adjecency list of vertex index
-pub struct NContainerIter<'a, T, A>
+pub struct NContainerIter<'a, T, A, I>
 where
       A: AdjContainer<T>
 {
     vertex_slice:   &'a[A],
-    index_iter:     IterWrapper<'a>,
+    index_iter:     I,
     phantom:        PhantomData<T>
 
 }
 
-impl<'a, T, A> NContainerIter<'a, T, A>
+impl<'a, T, A, I> NContainerIter<'a, T, A, I>
 where
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a
 {
     /// Create new iterator
-    pub(crate) fn new(vertex_slice: &'a[A], index_iter: IterWrapper::<'a>) -> Self {
+    pub(crate) fn new(vertex_slice: &'a[A], index_iter: I) -> Self {
         Self {
             vertex_slice,
             index_iter,
@@ -268,14 +269,16 @@ where
     }
 }
 
-impl<'a, T, A> FusedIterator for NContainerIter<'a, T, A>
+impl<'a, T, A, I> FusedIterator for NContainerIter<'a, T, A, I>
 where T: 'a,
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a
 {     }
 
-impl<'a, T, A> Iterator for NContainerIter<'a, T, A>
+impl<'a, T, A, I> Iterator for NContainerIter<'a, T, A, I>
 where T: 'a,
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a
 {
     type Item = &'a A;
 
@@ -293,13 +296,14 @@ where T: 'a,
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len(), Some(self.len()))
+        self.index_iter.size_hint()
     }
 }
 
-impl<'a, T, A> DoubleEndedIterator for NContainerIter<'a, T, A>
+impl<'a, T, A, I> DoubleEndedIterator for NContainerIter<'a, T, A, I>
 where T: 'a,
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a + DoubleEndedIterator
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
@@ -308,9 +312,10 @@ where T: 'a,
     }
 }
 
-impl<'a, T, A> ExactSizeIterator for NContainerIter<'a, T, A>
+impl<'a, T, A, I> ExactSizeIterator for NContainerIter<'a, T, A, I>
 where T: 'a,
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a + ExactSizeIterator
 {
     #[inline]
     fn len(&self) -> usize {
@@ -323,27 +328,29 @@ where T: 'a,
 ///////////////////////////
 /// Iterator over additional information stored at vertices
 /// that are directly connected to specific vertex
-pub struct NContainedIter<'a, T, A>
+pub struct NContainedIter<'a, T, A, I>
 where
       A: AdjContainer<T>
 {
     vertex_slice:   &'a[A],
-    index_iter:     IterWrapper<'a>,
+    index_iter:     I,
     phantom:        PhantomData<T>
 
 }
 
-impl<'a, T, A> FusedIterator for NContainedIter<'a, T, A>
+impl<'a, T, A, I> FusedIterator for NContainedIter<'a, T, A, I>
 where T: 'a,
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a
 {     }
 
-impl<'a, T, A> NContainedIter<'a, T, A>
+impl<'a, T, A, I> NContainedIter<'a, T, A, I>
 where
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a
 {
     /// Create new iterator
-    pub(crate) fn new(vertex_slice: &'a[A], index_iter: IterWrapper::<'a>) -> Self {
+    pub(crate) fn new(vertex_slice: &'a[A], index_iter: I) -> Self {
         Self {
             vertex_slice,
             index_iter,
@@ -352,9 +359,10 @@ where
     }
 }
 
-impl<'a, T, A> Iterator for NContainedIter<'a, T, A>
+impl<'a, T, A, I> Iterator for NContainedIter<'a, T, A, I>
 where T: 'a,
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a
 {
     type Item = &'a T;
 
@@ -372,13 +380,14 @@ where T: 'a,
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len(), Some(self.len()))
+        self.index_iter.size_hint()
     }
 }
 
-impl<'a, T, A> DoubleEndedIterator for NContainedIter<'a, T, A>
+impl<'a, T, A, I> DoubleEndedIterator for NContainedIter<'a, T, A, I>
 where T: 'a,
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a + DoubleEndedIterator
 {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
@@ -387,9 +396,10 @@ where T: 'a,
     }
 }
 
-impl<'a, T, A> ExactSizeIterator for NContainedIter<'a, T, A>
+impl<'a, T, A, I> ExactSizeIterator for NContainedIter<'a, T, A, I>
 where T: 'a,
-      A: AdjContainer<T>
+      A: AdjContainer<T>,
+      I: Iterator<Item=&'a usize> + 'a + ExactSizeIterator
 {
 
     #[inline]

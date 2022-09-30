@@ -304,7 +304,7 @@ where   T: Node + SerdeStateConform,
         self.graph().contained_iter()
     }
 
-    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, WSContainer<T>> {
+    fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<'_, T, WSContainer<T>, IterWrapper> {
         self.graph.contained_iter_neighbors(index)   
     }
 
@@ -316,7 +316,7 @@ where   T: Node + SerdeStateConform,
         self.graph.container_iter()
     }
 
-    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, WSContainer<T>> {
+    fn container_iter_neighbors(&self, index: usize) -> NContainerIter<'_, T, WSContainer<T>, IterWrapper> {
         self.graph.container_iter_neighbors(index)
     }
 

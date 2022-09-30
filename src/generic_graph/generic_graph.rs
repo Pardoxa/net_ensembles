@@ -223,7 +223,7 @@ where A: AdjContainer<T>
     ///   `iter.next().unwrap().id() < iter.next().unwrap.id() < ...` Note, that `...id()` returns the
     ///   index of the corresponding vertex
     /// * **panics** if index out of bounds
-    pub fn container_iter_neighbors(&self, index: usize) -> NContainerIter<T, A> {
+    pub fn container_iter_neighbors(&self, index: usize) -> NContainerIter<T, A, IterWrapper> {
         NContainerIter::new(
             self.vertices.as_slice(),
             self.vertices[index].neighbors()
@@ -249,7 +249,7 @@ where A: AdjContainer<T>
     /// * iterator returns `&T`
     /// * `sort_adj` will affect the order
     /// * **panics** if index out of bounds
-    pub fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<T, A> {
+    pub fn contained_iter_neighbors(&self, index: usize) -> NContainedIter<T, A, IterWrapper> {
         NContainedIter::new(
             self.vertices.as_slice(),
             self.vertices[index].neighbors()
