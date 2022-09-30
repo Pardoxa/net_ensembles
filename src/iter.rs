@@ -522,7 +522,7 @@ where T: 'a,
         let index = self.index_iter.next()?;
         let index = *index as isize;
 
-        assert!(index < self.vertex_slice.len() as isize);
+        debug_assert!(index < self.vertex_slice.len() as isize);
 
         let ptr = self.vertex_slice.as_mut_ptr();
         let r1: &mut A = unsafe { &mut *ptr.offset(index) };
@@ -535,7 +535,7 @@ where T: 'a,
         let index = self.index_iter.nth(n)?;
         let index = *index as isize;
 
-        assert!(index < self.vertex_slice.len() as isize);
+        debug_assert!(index < self.vertex_slice.len() as isize);
 
         let ptr = self.vertex_slice.as_mut_ptr();
         let r1: &mut A = unsafe { &mut *ptr.offset(index) };
