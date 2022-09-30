@@ -313,10 +313,9 @@ impl<T> WhichGraph<T>
     }
 }
 
-impl<T, ADJ, A1, A2> DualGraph<ADJ, T, A1, T, A2>
+impl<T, A1, A2> SingleDualGraph<T, A1, T, A2>
 where A1: AdjContainer<T> + AdjList<usize>,
     A2: AdjContainer<T> + AdjList<usize>,
-    ADJ: AdjTrait,
 {
     #[inline]
     pub fn graph_1_contained_iter_neighbors_in_other_graph_mut(&mut self, index: usize) -> impl Iterator<Item=&mut T>
