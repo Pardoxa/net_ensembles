@@ -267,7 +267,7 @@ where A1: AdjContainer<T1>,
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 /// Stores information T and the graph the information corresponds to
 pub enum WhichGraph<T>{
@@ -461,8 +461,8 @@ where A1: AdjContainer<T> + AdjList<usize>,
             }
         };
 
-        iter
-            .enumerate()
+        iter_helper.edges().iter().copied()
+            .zip(iter)
             .map(WhichGraph::Graph1)
             .chain(o.into_iter())
     }
@@ -558,10 +558,13 @@ where A1: AdjContainer<T> + AdjList<usize>,
         };
 
 
-        iter
-            .enumerate()
+        iter_helper.edges()
+            .iter()
+            .copied()
+            .zip(iter)
             .map(WhichGraph::Graph2)
             .chain(o.into_iter())
+
     }
 
 }
