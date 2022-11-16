@@ -96,7 +96,8 @@ where R: Rng,
             for j in 0..i{
                 let (node_i, node_j) = self.graph.get_2_mut(i, j);
                 let dist = node_i.distance(node_j);
-                let prob = (-dist*self.kappa).exp();
+                let prob_m1 = -(-dist*self.kappa).exp_m1();
+                let prob = 1.0-prob_m1*prob_m1;
                 let num = uniform.sample(&mut self.rng);
                 if num < prob {
                     unsafe{
