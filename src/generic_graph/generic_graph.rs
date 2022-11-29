@@ -88,6 +88,15 @@ where T: Node,
 }
 
 impl<T, A> GenericGraph<T, A>
+{
+    /// Get internal vertice slice
+    pub fn get_vertices(&self) -> &[A]
+    {
+        &self.vertices
+    }
+}
+
+impl<T, A> GenericGraph<T, A>
 where A: AdjContainer<T>
 {
     /// # create a new graph
