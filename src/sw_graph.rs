@@ -327,9 +327,9 @@ impl<T: Node + SerdeStateConform> SwContainer<T> {
         .count()
     }
 
-    /// Iterate over the concrete edge impl
-    #[allow(dead_code)]
-    pub(crate) fn iter_raw_edges(&self) -> std::slice::Iter::<SwEdge> {
+    /// Iterate over the actual edges used underneath.
+    /// You will probably need `neighbors_sw` more often 
+    pub fn iter_raw_edges(&self) -> std::slice::Iter::<SwEdge> {
         self.adj.iter()
     }
 
