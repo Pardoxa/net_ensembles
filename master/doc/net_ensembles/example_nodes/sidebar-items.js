@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CountingNode","Example node that contains a `usize` which will, if not changed,  correspond to the index of the Vertex"],["EmptyNode","Use this, if you do not need to store extra information"]]};

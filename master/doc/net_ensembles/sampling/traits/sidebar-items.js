@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["HasRng","Access internal random number generator"],["MarkovChain","Create a markov chain by doing markov steps"],["SimpleSample","For easy sampling of your ensemble"]]};

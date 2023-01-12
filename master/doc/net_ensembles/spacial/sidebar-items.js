@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["SpacialStep","Returned by markov steps"]],"struct":[["DogEnsemble",""],["LatinHypercubeSampling2D",""],["SpacialEnsemble","Implements a special Ensemble"],["SpacialNodeContainer","Used for accessing neighbor information from graph"]],"type":[["SpacialGraph","Type definiton for convinience. This is used to implement  the spacial ensemble"]]};

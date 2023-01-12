@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["SwChangeState","Returned by markov steps"]],"struct":[["SwEnsemble","Implements small-world graph ensemble"]]};

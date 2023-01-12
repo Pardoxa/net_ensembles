@@ -1,0 +1,1227 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/git/checkouts/sampling-63114c03a787f82e/c5dc731/src/examples.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>examples.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><div class="width-limiter"><nav class="sub"><a class="sub-logo-container" href="../../sampling/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
+<span id="2">2</span>
+<span id="3">3</span>
+<span id="4">4</span>
+<span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Contains examples
+
+/// # Example Coin flips
+/// 
+/// Lets assume we do n Coinflips and want to measure the probability for the number of times,
+/// this results in Head. This means, the number of times the coin flip returned head is the `energy`
+///
+/// Of cause, for this example there is a analytic solution.
+/// 
+/// For the implementation of the coin flip sequence and Markov chain of it, please look in the [source code](../../../src/sampling/examples/coin_flips.rs.html)
+/// 
+/// Now A detailed example for large deviation simulations with **comparison to analytical results**
+///
+/// The files created in this example can be found below
+/// ```
+///
+/// use rand::SeedableRng;
+/// use rand_pcg::Pcg64;
+/// use sampling::{*, examples::coin_flips::*};
+/// use std::fs::File;
+/// use std::io::{BufWriter, Write};
+/// use statrs::distribution::{Binomial, Discrete};
+///
+/// // length of coin flip sequence
+/// let n = 20;
+/// let interval_count = 3;
+/// 
+/// // create histogram. The result of our `energy` (number of heads) can be anything between 0 and n
+/// let hist = HistUsizeFast::new_inclusive(0, n).unwrap();
+/// 
+/// // now the overlapping histograms for sampling
+/// // lets create 3 histograms. The parameter Overlap should be larger than 0. Normally, 1 is sufficient
+/// let hist_list = hist.overlapping_partition(interval_count, 1).unwrap();
+/// // alternativly you could also create the histograms in the desired interval. 
+/// // Just make sure, that they overlap
+/// 
+/// // create rng to seed all other rngs
+/// let mut rng = Pcg64::seed_from_u64(834628956578);
+/// 
+/// // now create ensembles (could be combined with wl creation)
+/// // note: You could also create one ensemble and clone it instead of creating different ones
+/// let ensembles: Vec&lt;_&gt; = (0..interval_count).map(|_| {
+///     CoinFlipSequence::new(
+///         n,
+///         Pcg64::from_rng(&amp;mut rng).unwrap()
+///     )
+/// }).collect();
+/// 
+/// // Now the Wang Landau simulation. First create the struct 
+/// // (here as Vector, since we want to use 3 overlapping intervals)
+/// let mut wl_list: Vec&lt;_&gt; = ensembles.into_iter()
+///     .zip(hist_list.into_iter())
+///     .map(|(ensemble, histogram)| {
+///         WangLandau1T::new(
+///             0.00001, // arbitrary threshold for `log_f`(see paper), 
+///                      // you have to try what is good for your model
+///             ensemble,
+///             Pcg64::from_rng(&amp;mut rng).unwrap(),
+///             1,  // stepsize 1 is sufficient for this problem
+///             histogram,
+///             100 // every 100 steps: check if WL can refine factor f
+///         ).unwrap()
+///     }).collect();
+/// 
+/// // Now we have to initialize the wl with a valid state
+/// // as the simulation has to start in the interval one wants to measure.
+/// // Since the energy landscape is quite simple, here a greedy approach is good enough.
+/// 
+/// wl_list.iter_mut()
+///     .for_each(|wl|{
+///         wl.init_greedy_heuristic(
+///             |coin_seq| Some(coin_seq.head_count()),
+///             Some(10_000) // if no valid state is found after 10_000 
+///                          // this returns an Err. If you do not want a step limit,
+///                          // you can use None here
+///         ).expect(&quot;Unable to find valid state within 10_000 steps!&quot;);
+///     });
+/// 
+/// // Now our ensemble is initialized. Time for the Wang Landau Simulation. 
+/// // You can do that in different ways.
+/// // I will show this by doing it differently for our three intervals
+/// 
+/// // First, the simplest one. Just simulate until the threshold for `log_f` is reached
+/// wl_list[0].wang_landau_convergence(
+///     |coin_seq| Some(coin_seq.head_count())
+/// );
+/// 
+/// // Secondly, I only have a limited amount of time.
+/// // Lets say, I have 1 minute at most.
+/// let start_time = std::time::Instant::now();
+/// wl_list[1].wang_landau_while(
+///     |coin_seq| Some(coin_seq.head_count()),
+///     |_| start_time.elapsed().as_secs() &lt;= 60
+/// );
+/// 
+/// // Or lets say, I want to limit the number of steps to 100_000
+/// wl_list[2].wang_landau_while(
+///     |coin_seq| Some(coin_seq.head_count()),
+///     |state| state.step_counter() &lt;= 100_000 
+/// );
+/// 
+/// // Now, lets see if our last two simulations did indeed finish:
+/// // This one did
+/// assert!(wl_list[1].is_finished());
+/// // This simulation did not finish
+/// assert!(!wl_list[2].is_finished());
+/// 
+/// // If a simulation did not finish, you could, e.g., store the state (`wl_list[2]`) using serde.
+/// // Then you could continue the simulation later on.
+/// // I recommend the crate `bincode` for storing
+/// 
+/// // lets resume the simulation for now
+/// wl_list[2].wang_landau_convergence(
+///     |coin_seq| Some(coin_seq.head_count())
+/// );
+/// // it finished
+/// assert!(wl_list[2].is_finished());
+/// 
+/// // Since our simulations did all finish, lets see what our distribution looks like
+/// // Lets glue them together. We use our original histogram for that.
+/// let glued = glue_wl(
+///     &amp;wl_list,
+///     &amp;hist
+/// ).expect(&quot;Unable to glue results. Look at error message&quot;);
+/// 
+/// // now, lets print our result
+/// glued.write(std::io::stdout()).unwrap();
+/// 
+/// // or store it into a file
+/// let file = File::create(&quot;coin_flip_log_density.dat&quot;).unwrap();
+/// let buf = BufWriter::new(file);
+/// glued.write(buf).unwrap();
+/// 
+/// // now, lets check if our results are actually any good.
+/// // lets compare that to the analytical result
+/// 
+/// // Since the library I am going to use lets me directly calculate the natural
+/// // logaritm of the probability, I first convert the base of our own results:
+/// let log10_prob = glued.glued_log10_probability;
+/// let ln_prob: Vec&lt;_&gt; = log10_prob.iter()
+///                         .map(|&amp;val| val / std::f64::consts::LOG10_E)
+///                         .collect();
+/// 
+/// // Then create the `true` results:
+/// let binomial = Binomial::new(0.5, n as u64).unwrap();
+/// 
+/// let ln_prob_true: Vec&lt;_&gt; = (0..=n)
+///     .map(|k| binomial.ln_pmf(k as u64))
+///     .collect();
+/// 
+/// // lets write that in a file, so we can use gnuplot to plot the result
+/// let comp_file = File::create(&quot;coin_flip_compare.dat&quot;).unwrap();
+/// let mut buf = BufWriter::new(comp_file);
+/// 
+/// // lets also calculate the maximum difference between the two solutions
+/// let mut max_ln_dif = std::f64::NEG_INFINITY;
+/// let mut max_dif = std::f64::NEG_INFINITY;
+/// 
+/// writeln!(buf, &quot;#head_count Numeric_ln_prob Analytic_ln_prob ln_dif dif&quot;).unwrap();
+/// for (index, (numeric, analytic)) in ln_prob.iter().zip(ln_prob_true.iter()).enumerate()
+/// {
+///     let ln_dif = numeric - analytic;
+///     max_ln_dif = ln_dif.abs().max(max_ln_dif);
+///     let dif = numeric.exp() - analytic.exp();
+///     max_dif = dif.abs().max(max_dif);
+///     writeln!(buf, &quot;{} {:e} {:e} {:e} {:e}&quot;, index, numeric, analytic, ln_dif, dif).unwrap();
+/// }
+/// 
+/// println!(&quot;Max_ln_dif = {}&quot;, max_ln_dif);
+/// println!(&quot;Max_dif = {}&quot;, max_dif);
+/// 
+/// // in this case, the max difference of the natural logarithms 
+/// // of the probabilities is smaller than 0.03
+/// assert!(max_ln_dif &lt; 0.03);
+/// // and the max absolut difference is smaller than 0.0009
+/// assert!(max_dif &lt; 0.0009);
+/// 
+/// // But we can do better. Lets refine the results with entropic sampling
+/// // first, convert the wl simulations in entropic sampling simulations
+/// let mut entropic_list: Vec&lt;_&gt; = wl_list
+///     .into_iter()
+///     .map(|wl| EntropicSampling::from_wl(wl).unwrap())
+///     .collect();
+/// 
+/// 
+/// // Now, while doing that, lets also create a heatmap.
+/// // Lets say, we want to see, how the number of times `Head` occured in the sequence 
+/// // correlates to the maximum number of `Heads` in a row in that sequence.
+/// 
+/// // In this case, the heatmap is symetric and we already have a histogram of correct sice
+/// let mut heatmap = HeatmapU::new(
+///     hist.clone(),
+///     hist.clone()
+/// );
+/// 
+/// entropic_list.iter_mut()
+///     .for_each(|entr|{
+///         entr.entropic_sampling(
+///             |coin_seq| Some(coin_seq.head_count()),
+///             |state| {
+///                 let head_count = *state.energy();
+///                 let heads_in_row = state.ensemble().max_heads_in_a_row();
+///                 heatmap.count(head_count, heads_in_row)
+///                     .expect(&quot;Value outside heatmap?&quot;);
+///             }
+///         )
+///     });
+/// 
+/// // Now, lets see our refined results:
+/// let glued = glue_entropic(
+///     &amp;entropic_list,
+///     &amp;hist
+/// ).expect(&quot;Unable to glue results. Look at error message&quot;);
+/// 
+/// // lets store our result
+/// let file = File::create(&quot;coin_flip_log_density_entropic.dat&quot;).unwrap();
+/// let buf = BufWriter::new(file);
+/// glued.write(buf).unwrap();
+/// 
+/// // now, lets compare with the analytical results again
+/// // Again, calculate to base e
+/// let ln_prob: Vec&lt;_&gt; = glued.glued_log10_probability
+///     .iter()
+///     .map(|&amp;val| val / std::f64::consts::LOG10_E)
+///     .collect();
+/// 
+/// 
+/// // lets write that in a file, so we can use gnuplot to plot the result
+/// let comp_file = File::create(&quot;coin_flip_compare_entr.dat&quot;).unwrap();
+/// let mut buf = BufWriter::new(comp_file);
+/// 
+/// // lets also calculate the maximum difference between the two solutions
+/// let mut max_ln_dif = std::f64::NEG_INFINITY;
+/// let mut max_dif = std::f64::NEG_INFINITY;
+/// 
+/// writeln!(buf, &quot;#head_count Numeric_ln_prob Analytic_ln_prob ln_dif dif&quot;).unwrap();
+/// for (index, (numeric, analytic)) in ln_prob.iter().zip(ln_prob_true.iter()).enumerate()
+/// {
+///     let ln_dif = numeric - analytic;
+///     max_ln_dif = ln_dif.abs().max(max_ln_dif);
+///     let dif = numeric.exp() - analytic.exp();
+///     max_dif = dif.abs().max(max_dif);
+///     writeln!(buf, &quot;{} {:e} {:e} {:e} {:e}&quot;, index, numeric, analytic, ln_dif, dif).unwrap();
+/// }
+/// 
+/// println!(&quot;Max_ln_dif = {}&quot;, max_ln_dif);
+/// println!(&quot;Max_dif = {}&quot;, max_dif);
+/// 
+/// // in this case, the max difference of the natural logarithms 
+/// //of the probabilities is smaller than 0.026
+/// assert!(max_ln_dif &lt; 0.026);
+/// // and the max absolut difference is smaller than 0.0007
+/// assert!(max_dif &lt; 0.0007);
+/// 
+/// // That would be the final result for our probability 
+/// // density than. As you can see, it is very very 
+/// // close to the analytical result.
+/// 
+/// // Now, lets see, how our heatmap looks:
+/// let mut settings = GnuplotSettings::new();
+/// settings.x_label(&quot;#Heads&quot;)
+///     .y_label(&quot;Max heads in row&quot;)
+///     .terminal(GnuplotTerminal::PDF(&quot;heatmap_coin_flips&quot;.to_owned()));
+/// 
+/// // lets normalize coloumwise
+/// // This way, the scale of our heatmap tells us the conditional probability
+/// // P(Number of heads in a rom | number of heads) of how many heads in a row were
+/// // part of that sequence given the total number of heads that occured in the sequence
+/// let heatmap = heatmap.heatmap_normalized_columns();
+/// 
+/// // now create gnuplot file
+/// let file = File::create(&quot;coin_heatmap.gp&quot;).unwrap();
+/// let buf = BufWriter::new(file);
+/// heatmap.gnuplot(
+///     buf,
+///     settings
+/// ).unwrap();
+/// 
+/// // now you can use gnuplot to plot the heatmap
+/// ```
+/// # Created files:
+/// * `coin_flip_log_density.dat`
+/// ```txt 
+/// #bin_left bin_right glued_log_density curve_0 curve_1 curve_2
+/// #total_steps 3300000
+/// #total_steps_accepted 1892678
+/// #total_steps_rejected 1407322
+/// #total_acception_fraction 5.735387878787879e-1
+/// #total_rejection_fraction 4.2646121212121213e-1
+/// 0 1 -6.031606841072606e0 -5.2779314834625595e0 NONE NONE
+/// 1 2 -4.728485280490379e0 -3.9748099228803326e0 NONE NONE
+/// 2 3 -3.7500990622715635e0 -2.9964237046615168e0 NONE NONE
+/// 3 4 -2.9668930048460895e0 -2.2132176472360428e0 NONE NONE
+/// 4 5 -2.339721588163688e0 -1.5860462305536416e0 NONE NONE
+/// 5 6 -1.8365244111917054e0 -1.0820006622583023e0 -1.083697444905016e0 NONE
+/// 6 7 -1.4371802248730712e0 -6.836525846019086e-1 -6.83357149924141e-1 NONE
+/// 7 8 -1.1351008012679982e0 -3.8187173971763855e-1 -3.809791475982654e-1 NONE
+/// 8 9 -9.233969878866752e-1 -1.7037710459167243e-1 -1.6906615596158522e-1 NONE
+/// 9 10 -7.962413727681732e-1 -4.269821376793459e-2 -4.243381654831898e-2 NONE
+/// 10 11 -7.528173091050847e-1 0e0 -1.0665900001297264e-3 3.6407355150146854e-3
+/// 11 12 -7.942713970200067e-1 NONE -4.26721996981397e-2 -3.8519879121780974e-2
+/// 12 13 -9.171173964543223e-1 NONE -1.6557876219227494e-1 -1.61305315496277e-1
+/// 13 14 -1.1271626249139948e0 NONE -3.736972983947891e-1 -3.732772362131079e-1
+/// 14 15 -1.430004495200477e0 NONE -6.750424918819155e-1 -6.776157832989455e-1
+/// 15 16 -1.8307880991746777e0 NONE -1.0716228097885552e0 -1.0826026733407075e0
+/// 16 17 -2.3447129767461368e0 NONE NONE -1.5910376191360902e0
+/// 17 18 -2.974429977113245e0 NONE NONE -2.220754619503199e0
+/// 18 19 -3.7503197785367197e0 NONE NONE -2.9966444209266734e0
+/// 19 20 -4.732341369591395e0 NONE NONE -3.9786660119813484e0
+/// 20 21 -6.014059503852461e0 NONE NONE -5.260384146242414e0
+/// ```
+/// * `coin_flip_compare.dat`
+/// ```dat
+/// #head_count Numeric_ln_prob Analytic_ln_prob ln_dif dif
+/// 0 -1.388828799905469e1 -1.3862943611198906e1 -2.5344387855783523e-2 -2.3866572408958168e-8
+/// 1 -1.0887739719298917e1 -1.0867211337644916e1 -2.0528381654001393e-2 -3.875562455014197e-7
+/// 2 -8.634922198037453e0 -8.615919539038421e0 -1.9002658999031752e-2 -3.4107369181183742e-6
+/// 3 -6.831523605466917e0 -6.824160069810366e0 -7.363535656550901e-3 -7.976150535885006e-6
+/// 4 -5.387408050662062e0 -5.377241086874042e0 -1.0166963788019956e-2 -4.673898610979728e-5
+/// 5 -4.228753732129688e0 -4.214090277068356e0 -1.4663455061331376e-2 -2.152285704062097e-4
+/// 6 -3.309229761738564e0 -3.2977995451941995e0 -1.1430216544364491e-2 -4.201057612779821e-4
+/// 7 -2.6136661840452895e0 -2.6046523646342594e0 -9.013819411030077e-3 -6.633868338237203e-4
+/// 8 -2.126200139223462e0 -2.119144548852554e0 -7.0555903709079715e-3 -8.446355834740987e-4
+/// 9 -1.8334135153611106e0 -1.8314624764007785e0 -1.9510389603321077e-3 -3.122110722084126e-4
+/// 10 -1.7334259136932588e0 -1.736152296596451e0 2.7263829031922704e-3 4.810360764700705e-4
+/// 11 -1.8288774785698227e0 -1.8314624764007768e0 2.5849978309540056e-3 4.145983618321636e-4
+/// 12 -2.1117408456012328e0 -2.1191445488525558e0 7.403703251323002e-3 8.927398170218287e-4
+/// 13 -2.5953878575070033e0 -2.6046523646342594e0 9.264507127256127e-3 6.880967171132152e-4
+/// 14 -3.2927070335630937e0 -3.2977995451942013e0 5.092511631107577e-3 1.8872184723020546e-4
+/// 15 -4.215545385590517e0 -4.214090277068356e0 -1.4551085221610194e-3 -2.1499249324725273e-5
+/// 16 -5.398901147605349e0 -5.377241086874038e0 -2.1660060731310438e-2 -9.900533675925687e-5
+/// 17 -6.848878125455579e0 -6.824160069810366e0 -2.47180556452129e-2 -2.6543784456516638e-5
+/// 18 -8.635430416019382e0 -8.61591953903842e0 -1.9510876980962877e-2 -3.5010687071566015e-6
+/// 19 -1.0896618692580171e1 -1.0867211337644916e1 -2.940735493525537e-2 -5.52733731038154e-7
+/// 20 -1.3847883761949843e1 -1.3862943611198906e1 1.5059849249063006e-2 1.4470882595462752e-8
+/// ```
+/// * `coin_flip_log_density_entropic.dat`
+/// * If you want to plot with gnuplot:
+/// ```gp
+/// set format y &quot;10^{%.0f}&quot;
+/// set ylabel &#39;P(Heads)&#39;
+/// set xlabel &#39;#Heads&#39;
+/// p &quot;coin_flip_log_density_entropic.dat&quot; u 1:3 t &#39;P(E), normalized&#39;,\
+///    for[i=4:6] &quot;&quot; u 1:i t &quot;glued not normalized overlapping interval&quot;
+/// ```
+/// ```csv
+/// #bin_left bin_right glued_log_density curve_0 curve_1 curve_2
+/// #total_steps 6600000
+/// #total_steps_accepted 3789779
+/// #total_steps_rejected 2810221
+/// #total_acception_fraction 5.742089393939394e-1
+/// #total_rejection_fraction 4.257910606060606e-1
+/// 0 1 -6.026918605089148e0 -5.27395131583382e0 NONE NONE
+/// 1 2 -4.7282564130642415e0 -3.9752891238089134e0 NONE NONE
+/// 2 3 -3.740764114870072e0 -2.987796825614744e0 NONE NONE
+/// 3 4 -2.9571447347511652e0 -2.204177445495837e0 NONE NONE
+/// 4 5 -2.3331262146639107e0 -1.5801589254085826e0 NONE NONE
+/// 5 6 -1.822752729218271e0 -1.072607725281621e0 -1.0669631546442648e0 NONE
+/// 6 7 -1.4288440916787124e0 -6.757499681532266e-1 -6.76003636693542e-1 NONE
+/// 7 8 -1.1277454047397892e0 -3.750318346032344e-1 -3.745243963656879e-1 NONE
+/// 8 9 -9.191559949607412e-1 -1.6656676951174632e-1 -1.6581064189908012e-1 NONE
+/// 9 10 -7.959284032103325e-1 -4.211860403626844e-2 -4.3803623873740705e-2 NONE
+/// 10 11 -7.547205033527027e-1 0e0 -4.969448109781283e-3 -2.901941823427734e-4
+/// 11 12 -7.971134272615988e-1 NONE -4.4924054052993156e-2 -4.336822195954859e-2
+/// 12 13 -9.198413168594478e-1 NONE -1.6588986141874607e-1 -1.6785819378949363e-1
+/// 13 14 -1.1307079438518484e0 NONE -3.7892725389989756e-1 -3.76554055293143e-1
+/// 14 15 -1.4352206678153943e0 NONE -6.801668342346883e-1 -6.843399228854441e-1
+/// 15 16 -1.836086569993232e0 NONE -1.0818858489348369e0 -1.084352712540971e0
+/// 16 17 -2.3462415423683174e0 NONE NONE -1.5932742531129893e0
+/// 17 18 -2.971577175460559e0 NONE NONE -2.218609886205231e0
+/// 18 19 -3.7473120822317787e0 NONE NONE -2.9943447929764506e0
+/// 19 20 -4.723849161266183e0 NONE NONE -3.970881872010855e0
+/// 20 21 -6.016589039252039e0 NONE NONE -5.263621749996711e0
+/// ```
+/// * `coin_flip_compare_entr.dat`
+/// * gnuplot for comparing:
+/// ```gp
+/// set format y &quot;e^{%.0f}&quot;
+/// set ylabel &#39;P(Heads)&#39;
+/// set xlabel &#39;#Heads&#39;
+/// p &quot;coin_flip_compare_entr.dat&quot; u 1:2 t &quot;numeric results&quot;, &quot;&quot; u 1:3 t &quot;analytic results&quot;
+/// ```
+/// ```txt
+/// #head_count Numeric_ln_prob Analytic_ln_prob ln_dif dif
+/// 0 -1.387749293676674e1 -1.3862943611198906e1 -1.4549325567834615e-2 -1.3774867607233972e-8
+/// 1 -1.088721273257522e1 -1.0867211337644916e1 -2.0001394930304173e-2 -3.777064132904934e-7
+/// 2 -8.613427687306894e0 -8.615919539038421e0 2.491851731527106e-3 4.5208187593923066e-7
+/// 3 -6.8090773840638645e0 -6.824160069810366e0 1.5082685746501845e-2 1.652201075832624e-5
+/// 4 -5.372221641958746e0 -5.377241086874042e0 5.019444915295601e-3 2.3250911075241125e-5
+/// 5 -4.197043262512203e0 -4.214090277068356e0 1.7047014556153428e-2 2.542138155917483e-4
+/// 6 -3.290035105712021e0 -3.2977995451941995e0 7.764439482178531e-3 2.8812509235658784e-4
+/// 7 -2.5967297576463753e0 -2.6046523646342594e0 7.922606987884162e-3 5.880353998786031e-4
+/// 8 -2.116434892132713e0 -2.119144548852554e0 2.709656719841025e-3 3.2596428483325224e-4
+/// 9 -1.832692876322666e0 -1.8314624764007785e0 -1.2303999218874484e-3 -1.9696320250631172e-4
+/// 10 -1.7378081803968959e0 -1.736152296596451e0 -1.6558838004447907e-3 -2.91520415518165e-4
+/// 11 -1.835421495037951e0 -1.8314624764007768e0 -3.959018637174294e-3 -6.328985381396646e-4
+/// 12 -2.1180129041205773e0 -2.1191445488525558e0 1.131644731978465e-3 1.3602636066446794e-4
+/// 13 -2.6035512560432146e0 -2.6046523646342594e0 1.1011085910448415e-3 8.144850674679516e-5
+/// 14 -3.304717714868686e0 -3.2977995451942013e0 -6.918169674484886e-3 -2.5484356336342995e-4
+/// 15 -4.2277455655129845e0 -4.214090277068356e0 -1.3655288444628155e-2 -2.0053163313986377e-4
+/// 16 -5.4024208000206455e0 -5.377241086874038e0 -2.5179713146607163e-2 -1.1489163608931121e-4
+/// 17 -6.842309306896834e0 -6.824160069810366e0 -1.8149237086467984e-2 -1.9553667043482144e-5
+/// 18 -8.62850493934337e0 -8.61591953903842e0 -1.2585400304951477e-2 -2.266160694642524e-6
+/// 19 -1.0877064660283938e1 -1.0867211337644916e1 -9.853322639022721e-3 -1.8701434523338205e-7
+/// 20 -1.3853708232453112e1 -1.3862943611198906e1 9.235378745794165e-3 8.848339504323986e-9
+/// ```
+/// * `coin_heatmap.gp`
+/// If you want to see how it looks like, you can copy the file and use `gnuplot coin_heatmap.gp`
+/// ```gp
+/// set t pdf
+/// set output &quot;heatmap_coin_flips.pdf&quot;
+/// set xlabel &quot;#Heads&quot;
+/// set ylabel &quot;Max heads in row&quot;
+/// set xrange[-0.5:20.5]
+/// set yrange[-0.5:20.5]
+/// set palette model HSV
+/// set palette negative defined  ( 0 0 1 0, 2.8 0.4 0.6 0.8, 5.5 0.83 0 1 )
+/// set view map
+/// set rmargin screen 0.8125
+/// set lmargin screen 0.175
+/// $data &lt;&lt; EOD
+/// 1e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0
+/// 0e0 1e0 8.942007280084902e-1 7.126507397021373e-1 4.9517412091147733e-1 2.7688123477165416e-1 1.2722327984770193e-1 4.4177045183096356e-2 1.0028102647039738e-2 1.153466443696734e-3 6.05371664570287e-5 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0
+/// 0e0 0e0 1.0579927199150987e-1 2.713958719368999e-1 4.4540817854255454e-1 5.843583220621195e-1 6.111009469181893e-1 5.423656574767444e-1 4.069492904455992e-1 2.552988938810872e-1 1.2900470171992817e-1 5.0431631137845115e-2 1.265593470242199e-2 1.4620914966775231e-3 2.0244759137978155e-5 0e0 0e0 0e0 0e0 0e0 0e0
+/// 0e0 0e0 0e0 1.595338836096275e-2 5.5904340795895756e-2 1.2220762796693344e-1 2.1528419907533317e-1 3.115537295754266e-1 3.9456016612008765e-1 4.327513952410694e-1 4.1325696681890645e-1 3.289708806281932e-1 2.0963058760775158e-1 9.928609601403608e-2 3.0731544371450842e-2 4.150637780927313e-3 0e0 0e0 0e0 0e0 0e0
+/// 0e0 0e0 0e0 0e0 3.5133597500723633e-3 1.5532302403820331e-2 4.0749622963384184e-2 8.303143538227467e-2 1.426646101319277e-1 2.137791388793746e-1 2.7967161950372976e-1 3.250799083884932e-1 3.3032744400440817e-1 2.790729331572101e-1 1.8010749967102266e-1 7.551123709252885e-2 1.5334414349488519e-2 0e0 0e0 0e0 0e0
+/// 0e0 0e0 0e0 0e0 0e0 1.020512795472634e-3 5.360100872747051e-3 1.6354526486899033e-2 3.6483525259937005e-2 7.120262728426652e-2 1.1868647801491905e-1 1.764729569878942e-1 2.335334463896619e-1 2.6976596452663526e-1 2.620835906104807e-1 1.994381453735574e-1 9.346785978820091e-2 1.7855904240034085e-2 0e0 0e0 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 2.818503226444483e-4 2.354060630690012e-3 7.886710892146733e-3 2.0223440049966755e-2 4.2399558751320045e-2 7.696876651649762e-2 1.2222160717790269e-1 1.7494681011968982e-1 2.2017693919486592e-1 2.2753593844907877e-1 1.7919844653974737e-1 8.109473934541563e-2 5.9234312317369125e-3 0e0 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 1.6354526486899034e-4 1.3627038440228215e-3 4.780085829992143e-3 1.296504314954698e-2 2.89431958321798e-2 5.689886826253893e-2 9.565103405160678e-2 1.4196131226528733e-1 1.8725450496051832e-1 2.0002802634476408e-1 1.470981678375727e-1 4.815016591550691e-2 0e0 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 6.489065923918197e-5 7.555457054782101e-4 3.2690069886795498e-3 9.845720182216293e-3 2.3223514374424443e-2 4.6333175360229094e-2 8.246196515876952e-2 1.280471755416076e-1 1.6467479430664825e-1 1.6756012247445973e-1 9.21400624040414e-2 0e0 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 5.540668506840207e-5 6.59182479198757e-4 2.6980092114866736e-3 8.459095918398156e-3 2.1109576195133758e-2 4.497879361480297e-2 8.13778092731322e-2 1.2503753528316616e-1 1.6224893231205223e-1 1.4450993016690605e-1 0e0 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 2.6905407314234977e-5 5.184607253416555e-4 2.4255111437643732e-3 8.742298811168362e-3 2.2820904738285876e-2 4.859789431058919e-2 8.993453846615819e-2 1.289251776176934e-1 1.473428755386063e-1 9.912165730941529e-2 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 7.047038985226386e-5 5.334111643963144e-4 2.8233490970324586e-3 1.0051522912006155e-2 2.7029763109941284e-2 5.953596380597762e-2 9.816783757270682e-2 1.2446139369025803e-1 1.0074531974412645e-1 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 9.057925433144962e-5 7.007955794419852e-4 3.5731999878531443e-3 1.3302287912532901e-2 3.629411646948131e-2 7.41287567256909e-2 1.094943291565549e-1 1.0805180070032669e-1 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 1.0587559113871718e-4 9.211365407780061e-4 5.724843085644867e-3 2.0589353992753186e-2 5.197237388400598e-2 9.335842702194047e-2 1.0236898217883761e-1 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 1.1134617525887985e-4 1.685563879327799e-3 1.0890236822613256e-2 3.593971402808193e-2 7.825268684067159e-2 9.70187210234942e-2 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 3.4419923061348453e-4 4.05381058194703e-3 2.10564908490968e-2 6.218612252984003e-2 9.445607308437176e-2 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 9.609032490541108e-4 1.0295385408099565e-2 4.56242880491308e-2 9.8251139498034e-2 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 3.656397705090221e-3 3.337130404635729e-2 9.823157730002544e-2 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 1.518498340844931e-2 1.0283847493104326e-1 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 9.891625423032532e-2 0e0
+/// 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 0e0 1e0
+/// EOD
+/// splot $data matrix with image t &quot;&quot; 
+/// set output
+/// ```
+/// 
+/// # Example: Replica exchange wang landau
+/// * The same example as above, but with replica exchange wang landau
+/// * [see explanaition of the model](#example-coin-flips)
+/// ```
+/// // feature is activated by default
+/// #[cfg(feature=&quot;replica_exchange&quot;)]
+/// {
+/// use rand::SeedableRng;
+/// use rand_pcg::Pcg64;
+/// use sampling::{*, examples::coin_flips::*};
+/// use std::{num::*, time::*};
+/// use statrs::distribution::{Binomial, Discrete};
+/// use std::fs::File;
+/// use std::io::{BufWriter, Write};
+///
+/// let begin = Instant::now();
+/// // length of coin flip sequence
+/// let n = 20;
+/// // how many intervals do we want?
+/// let interval_count = 3;
+///
+/// // create histogram. The result of our `energy` (number of heads) can be anything between 0 and n
+/// let hist = HistUsizeFast::new_inclusive(0, n).unwrap();
+///
+/// // now the overlapping histograms for sampling
+/// // lets create 3 histograms. The parameter overlap here must be larger than 0. Normally, 2 should be good
+/// let hist_list = hist.overlapping_partition(interval_count, 2).unwrap();
+/// let rng = Pcg64::seed_from_u64(19756556678);
+/// 
+/// // create an ensemble
+/// let ensemble = CoinFlipSequence::new(n, rng);
+/// 
+/// // create the replica exchange simulation builder. Note: There are different methods for this
+/// let rewl_builder = RewlBuilder::from_ensemble(
+///     ensemble,                           // the ensemble
+///     hist_list,                          // the histograms, used as intervals for the Rewl
+///     1,                                  // step size for the markov steps
+///     NonZeroUsize::new(3000).unwrap(),   // sweep size, i.e., how many steps will be performed before a replica exchange will be tried
+///     NonZeroUsize::new(4).unwrap(),      // How many random walkers should sample each interval (independently)?
+///     0.0000025                           // Threshold for the simulation
+/// ).unwrap();
+///
+/// // Note: You can now change the sweep size and the step sizes for the different 
+/// // intervals independently.
+/// // Use the `rewl_builder.step_sizes_mut()` and `rewl_builder.sweep_sizes.mut()` respecively
+/// // The indice in the slices corresponds to the interval(index)
+/// 
+/// // uses greedy heuristik to find valid starting point.
+/// // (fastest, if the ensembles are already at their respective vaild starting points)
+/// // Note: there are different heuristiks. You have to try them out to see, which works best for your problem
+/// let mut rewl = rewl_builder
+///     .greedy_build(
+///         |e| Some(e.head_count()) // energy function. It is a logical error to use a different energy function later on
+///     );
+/// 
+/// // lets say, we want to limit our simulation to roughly 40 minutes at most
+/// let start = Instant::now();
+/// let seconds = 40 * 60; // seconds in 40 minutes
+///         
+/// // This is the heart pice - it performs the actual simulation
+/// rewl.simulate_while(
+///     |e| Some(e.head_count()), // energy function. has to be the same as used above
+///     |_| start.elapsed().as_secs() &lt; seconds // condition for continuation of simulation
+/// );
+/// // note, the above simulation might take slightly longer than 40 seconds, 
+/// // because the condition is only checked after each sweep
+///
+/// // now lets get the result of the simulation:
+/// // The logarithm (here base e, there is also a function for base 10) of the probability density (or density of states)
+/// let glued = rewl.derivative_merged_log_prob_and_aligned()
+///     .unwrap();
+/// 
+/// let ln_prob = glued.glued();
+/// 
+///
+/// // For this example, we know the exact result. Lets calculate it to compare
+/// let binomial = Binomial::new(0.5, n as u64).unwrap();
+/// let ln_prob_true: Vec&lt;_&gt; = (0..=n)
+///     .map(|k| binomial.ln_pmf(k as u64))
+///     .collect();
+///
+/// let mut max_ln_difference = f64::NEG_INFINITY;
+/// let mut max_difference = f64::NEG_INFINITY;
+/// let mut frac_difference_max = f64::NEG_INFINITY;
+/// let mut frac_difference_min = f64::INFINITY;
+/// for (index, val) in ln_prob.into_iter().zip(ln_prob_true.into_iter()).enumerate()
+/// {
+///     println!(&quot;{} {} {}&quot;, index, val.0, val.1);
+///     let val_simulation = val.0.exp();
+///     let val_real = val.1.exp();
+///     max_difference = f64::max((val_simulation - val_real).abs(), max_difference);
+///     max_ln_difference = f64::max(max_ln_difference, (val.0-val.1).abs());
+/// 
+///     let frac = val_simulation / val_real;
+///     frac_difference_max = frac_difference_max.max(frac);
+///     frac_difference_min = frac_difference_min.min(frac);
+///     
+/// }
+///
+/// println!(&quot;max_ln_difference: {}&quot;, max_ln_difference);
+/// println!(&quot;max absolute difference: {}&quot;, max_difference);
+/// println!(&quot;max frac: {}&quot;, frac_difference_max);
+/// println!(&quot;min frac: {}&quot;, frac_difference_min);
+///
+/// // at worst the simulated density overetimated the real result by under 1 %
+/// assert!((frac_difference_max - 1.0).abs() &lt; 0.01);
+/// // and underestimated the result by under 1 %
+/// assert!((frac_difference_min - 1.0).abs() &lt; 0.01);
+/// 
+/// 
+/// // Note: to get even better results, you can decrease the threshold 
+/// // I used 2.5E-6. Often it is good to use between 1E-6 and 1E-8
+/// // I used a larger threshold, since this is also a doc test and 
+/// // should run under 5 minutes in Debug mode
+/// // (on my machine it takes about 30 seconds in debug mode and under 2 seconds in release mode)
+/// 
+/// // if you want to see, how good the intervals align, you can do the following
+/// 
+/// let file = File::create(&quot;coin_flip_rewl.dat&quot;).unwrap();
+/// let buf = BufWriter::new(file);
+/// 
+/// let glued = rewl.derivative_merged_log_prob_and_aligned().unwrap();
+/// 
+/// glued.write(buf).unwrap();
+/// 
+/// 
+/// println!(&quot;Total time: {}&quot;, begin.elapsed().as_secs());
+/// }
+/// ```
+/// 
+/// To plot it, use gnuplot with
+/// ```gp
+/// set format y &quot;e^{%.0f}&quot;
+/// set ylabel &quot;probability&quot;
+/// set xlabel &quot;Number of heads&quot;
+/// p &quot;coin_flip_rewl.dat&quot; u 1:2 t &quot;merged&quot;, for[i=3:5] &quot;&quot; u 1:i t &quot;interval &quot;.(i-3)
+/// ```
+/// 
+/// The resulting file is &quot;coin_flip_rewl.dat&quot;
+/// ```dat
+///#left_border right_border merged_ln interval0_ln interval1_ln …
+///#bin log_merged log_interval0 …
+///#log: BaseE
+///0 -1.3871903700121702e1 -1.3875739115786455e1 NaN NaN
+///1 -1.0870146579412317e1 -1.087398199507707e1 NaN NaN
+///2 -8.618332301859919e0 -8.622167717524672e0 NaN NaN
+///3 -6.82920349878786e0 -6.8330389144526125e0 NaN NaN
+///4 -5.377758170163912e0 -5.381593585828665e0 -5.388874667753538e0 NaN
+///5 -4.216803437381242e0 -4.220638853045995e0 -4.226280476088033e0 NaN
+///6 -3.29812994129598e0 -3.301965356960733e0 -3.305497156868495e0 NaN
+///7 -2.605482088178616e0 -2.6093175038433687e0 -2.6108809938156528e0 NaN
+///8 -2.1197452928056864e0 -2.1235807084704392e0 -2.1240478848774105e0 -2.122542340935621e0
+///9 -1.8310804880851892e0 -1.834915903749942e0 -1.834915903749942e0 -1.8347018659540995e0
+///10 -1.735772920315168e0 -1.7376906281475444e0 -1.7396083359799208e0 -1.7396083359799208e0
+///11 -1.831533663302804e0 -1.8331206687810608e0 -1.8363372589726454e0 -1.835369078967557e0
+///12 -2.1181512793901733e0 -2.1199758856386497e0 -2.1267731198929996e0 -2.121986695054926e0
+///13 -2.60403923032207e0 NaN -2.613084660078397e0 -2.607874645986823e0
+///14 -3.2983258973492697e0 NaN -3.3051691503818974e0 -3.3021613130140226e0
+///15 -4.216952145493605e0 NaN -4.21975952523182e0 -4.220787561158358e0
+///16 -5.381221237813844e0 NaN -5.381876163859073e0 -5.385056653478597e0
+///17 -6.829471030462838e0 NaN NaN -6.833306446127591e0
+///18 -8.62372738543517e0 NaN NaN -8.627562801099923e0
+///19 -1.0870037296186052e1 NaN NaN -1.0873872711850805e1
+///20 -1.3867708133842694e1 NaN NaN -1.3871543549507447e1
+/// ```
+</span><span class="kw">pub mod </span>coin_flips;</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sampling" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.1 (90743e729 2023-01-10)" ></div></body></html>

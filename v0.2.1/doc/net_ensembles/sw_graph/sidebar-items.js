@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["SwContainer","Used for accessing neighbor information from graph"],["SwEdgeIterNeighbors","Iterator over indices stored in adjecency list"]],"type":[["SwGraph","specific `GenericGraph` used for small-world ensemble"]]};

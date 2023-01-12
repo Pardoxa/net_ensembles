@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["bootstrap","returns reduced value + estimated error (as sqrt of variance). Note, that you can use bootstrap_copyable  if your `N1` implements Copy"],["bootstrap_copyable","Similar to bootstrap but for stuff that implements `Copy`. Likely more effient in these cases returns reduced value + estimated error (as sqrt of variance)"]]};

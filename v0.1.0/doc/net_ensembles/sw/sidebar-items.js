@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["SwEnsemble","Implements small-world graph ensemble"]]};

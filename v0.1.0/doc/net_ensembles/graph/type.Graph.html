@@ -1,0 +1,252 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Contains the topology and implements functions for analyzing topology"><meta name="keywords" content="rust, rustlang, rust-lang, Graph"><title>Graph in net_ensembles::graph - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc type"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../net_ensembles/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../net_ensembles/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"><a href="#">Graph</a></h2><div class="sidebar-elems"><h2><a href="index.html">In net_ensembles::graph</a></h2></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1 class="fqn">Type Definition <a href="../index.html">net_ensembles</a>::<wbr><a href="index.html">graph</a>::<wbr><a class="type" href="#">Graph</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../../src/net_ensembles/graph.rs.html#457">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><div class="item-decl"><pre class="rust typedef"><code>pub type Graph&lt;T&gt; = <a class="struct" href="../generic_graph/struct.GenericGraph.html" title="struct net_ensembles::generic_graph::GenericGraph">GenericGraph</a>&lt;T, <a class="struct" href="struct.NodeContainer.html" title="struct net_ensembles::graph::NodeContainer">NodeContainer</a>&lt;T&gt;&gt;;</code></pre></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="contains-the-topology-and-implements-functions-for-analyzing-topology"><a href="#contains-the-topology-and-implements-functions-for-analyzing-topology">Contains the topology and <strong>implements functions</strong> for analyzing topology</a></h2>
+<p>used for graph ensembles</p>
+<h2 id="example"><a href="#example">Example:</a></h2>
+<p>A graph, where each node stores a phase</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>net_ensembles::{traits::<span class="kw-2">*</span>,Graph};
+<span class="kw">use </span>std::fs::File;
+<span class="kw">use </span>std::io::prelude::<span class="kw-2">*</span>;
+<span class="comment">// define your own vertices, if you need to store extra information at each vertex
+</span><span class="attribute">#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>PhaseNode {phase: f64,}
+
+<span class="comment">// implement whatever you need
+</span><span class="kw">impl </span>PhaseNode {
+    <span class="kw">pub fn </span>set_phase(<span class="kw-2">&amp;mut </span><span class="self">self</span>, phase: f64) {
+        <span class="self">self</span>.phase = phase;
+    }
+
+    <span class="kw">pub fn </span>get_phase(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; f64 {
+        <span class="self">self</span>.phase
+    }
+}
+
+<span class="comment">// implement the trait `Node`
+</span><span class="kw">impl </span>Node <span class="kw">for </span>PhaseNode {
+    <span class="kw">fn </span>new_from_index(index: u32) -&gt; <span class="self">Self </span>{
+        PhaseNode { phase: index <span class="kw">as </span>f64 * <span class="number">10.0</span>}
+    }
+
+    <span class="comment">// if you do not wish to print/load etc. you can do the following.
+    // I do not recommend this though
+    </span><span class="kw">fn </span>make_string(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; { <span class="macro">unimplemented!</span>() }
+
+    <span class="kw">fn </span>parse_str(<span class="kw">_</span>: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;(<span class="kw-2">&amp;</span>str, <span class="self">Self</span>)&gt; { <span class="macro">unimplemented!</span>() }
+}
+
+<span class="comment">// now you can create an empty graph
+</span><span class="kw">let </span><span class="kw-2">mut </span>graph: Graph&lt;PhaseNode&gt; = Graph::new(<span class="number">4</span>);
+<span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">4 </span>{
+    <span class="macro">assert_eq!</span>(
+      graph.at(i).get_phase(),
+      i <span class="kw">as </span>f64 * <span class="number">10.0
+    </span>);
+}
+
+<span class="comment">// and fill it with edges
+</span><span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">4 </span>{
+    graph.add_edge(i, (i + <span class="number">1</span>) % <span class="number">4</span>).unwrap();
+}
+
+
+<span class="comment">// you can manipulate the extra information stored at each Vertex
+</span><span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">4 </span>{
+    graph.at_mut(i).set_phase(i <span class="kw">as </span>f64 * <span class="number">0.5</span>);
+}
+
+<span class="comment">// you can, of course, also access the information
+</span><span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">4 </span>{
+    <span class="macro">assert_eq!</span>(
+        graph.at(i).get_phase(),
+        i <span class="kw">as </span>f64 * <span class="number">0.5
+    </span>);
+}
+
+<span class="comment">// if you want to visualize your graph, you can generate a string with graphviz representation
+</span><span class="kw">let </span>dot = graph.to_dot_with_labels_from_contained(
+    <span class="string">&quot;&quot;</span>,
+    |contained, index|
+           <span class="macro">format!</span>(
+                <span class="string">&quot;Phase: {} at index {}&quot;</span>,
+                contained.get_phase(),
+                index
+            )
+);
+<span class="comment">// which you can store in a dot file
+</span><span class="kw">let </span><span class="kw-2">mut </span>f = File::create(<span class="string">&quot;phase_example.dot&quot;</span>).expect(<span class="string">&quot;Unable to create file&quot;</span>);
+f.write_all(dot.as_bytes()).expect(<span class="string">&quot;Unable to write data&quot;</span>);
+
+<span class="comment">// or just print it out
+</span><span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, dot);</code></pre></div>
+<p><code>phase_example.dot</code> will then contain</p>
+<div class="example-wrap"><pre class="language-dot"><code>graph G{
+
+	0 1 2 3 ;
+	&quot;0&quot; [label=&quot;Phase: 0 at index 0&quot;];
+	&quot;1&quot; [label=&quot;Phase: 0.5 at index 1&quot;];
+	&quot;2&quot; [label=&quot;Phase: 1 at index 2&quot;];
+	&quot;3&quot; [label=&quot;Phase: 1.5 at index 3&quot;];
+	0 -- 1
+	0 -- 3
+	1 -- 2
+	2 -- 3
+}
+</code></pre></div>
+<p>Now you can use <code>circo</code> or similar programs to create a pdf from that.
+Search for <strong>graphviz</strong> for more info.</p>
+<h2 id="example-2"><a href="#example-2">Example 2</a></h2>
+<ul>
+<li>if you also want to be able to store your graph, you have to override two functions of the Node trait, as shown below</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>net_ensembles::{Node,Graph,traits::<span class="kw-2">*</span>};
+<span class="kw">use </span>std::fs::File;
+<span class="kw">use </span>std::io::prelude::<span class="kw-2">*</span>;
+<span class="comment">// define your own vertices, if you need to store extra information at each vertex
+</span><span class="attribute">#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>PhaseNode {phase: f64,}
+
+<span class="kw">impl </span>PhaseNode {
+    <span class="kw">pub fn </span>set_phase(<span class="kw-2">&amp;mut </span><span class="self">self</span>, phase: f64) {
+        <span class="self">self</span>.phase = phase;
+    }
+
+    <span class="kw">pub fn </span>get_phase(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; f64 {
+        <span class="self">self</span>.phase
+    }
+}
+
+<span class="kw">impl </span>Node <span class="kw">for </span>PhaseNode {
+    <span class="kw">fn </span>new_from_index(index: u32) -&gt; <span class="self">Self </span>{
+        PhaseNode { phase: <span class="number">10.0 </span>* index <span class="kw">as </span>f64 }
+    }
+
+    <span class="comment">// Override this, to save the graph
+    </span><span class="kw">fn </span>make_string(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+        <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;phase: {},&quot;</span>, <span class="self">self</span>.phase))
+    }
+
+    <span class="comment">// Override this, since you want to load the stored graph
+    </span><span class="kw">fn </span>parse_str(to_parse: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;(<span class="kw-2">&amp;</span>str, <span class="self">Self</span>)&gt;
+        <span class="kw">where </span><span class="self">Self</span>: Sized
+    {
+        <span class="kw">let </span>identifier = <span class="string">&quot;phase: &quot;</span>;
+        <span class="comment">// searching for identifier
+        </span><span class="kw">let </span><span class="kw-2">mut </span>split_index = to_parse.find(identifier)<span class="question-mark">?</span>;
+
+        <span class="comment">// add length of identifier to index
+        </span>split_index += identifier.len();
+
+        <span class="comment">// new string slice to skip to our identifier
+        </span><span class="kw">let </span>remaining_to_parse = <span class="kw-2">&amp;</span>to_parse[split_index..];
+
+        <span class="comment">// find out, where our data ends
+        </span>split_index = remaining_to_parse.find(<span class="string">&quot;,&quot;</span>)<span class="question-mark">?</span>;
+
+        <span class="comment">// create new string slice, beginning after what Node::make_string() created
+        </span><span class="kw">let </span>(phase_str, <span class="kw-2">mut </span>remaining_to_parse) = remaining_to_parse.split_at(split_index);
+        remaining_to_parse = <span class="kw-2">&amp;</span>remaining_to_parse[<span class="number">1</span>..];
+
+        <span class="comment">// parse our data
+        </span><span class="kw">let </span>phase = phase_str.parse::&lt;f64&gt;().ok()<span class="question-mark">?</span>;
+        <span class="kw">let </span>node = PhaseNode{ phase };
+
+        <span class="comment">// return our struct as option
+        </span><span class="prelude-val">Some</span>((remaining_to_parse, node))
+    }
+}
+
+<span class="comment">// now you can create an empty graph
+</span><span class="kw">let </span><span class="kw-2">mut </span>graph: Graph&lt;PhaseNode&gt; = Graph::new(<span class="number">4</span>);
+<span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">4 </span>{
+    <span class="macro">assert_eq!</span>(
+      graph.at(i).get_phase(),
+      i <span class="kw">as </span>f64 * <span class="number">10.0
+    </span>);
+}
+
+<span class="comment">// and fill it with edges
+</span><span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">4 </span>{
+    graph.add_edge(i, (i + <span class="number">1</span>) % <span class="number">4</span>).unwrap();
+}
+
+
+<span class="comment">// you can manipulate the extra information stored at each Vertex
+</span><span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">4 </span>{
+    graph.at_mut(i).set_phase(i <span class="kw">as </span>f64 * <span class="number">0.5</span>);
+}
+
+<span class="comment">// you can, of course, also access the information
+</span><span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">4 </span>{
+    <span class="macro">assert_eq!</span>(
+        graph.at(i).get_phase(),
+        i <span class="kw">as </span>f64 * <span class="number">0.5
+    </span>);
+}
+
+<span class="comment">// if you want to visualize your graph, you can generate a string with graphviz representation
+</span><span class="kw">let </span>dot = graph.to_dot_with_labels_from_contained(
+    <span class="string">&quot;&quot;</span>,
+    |contained, index|
+           <span class="macro">format!</span>(
+                <span class="string">&quot;Phase: {} at index {}&quot;</span>,
+                contained.get_phase(),
+                index
+            )
+);
+<span class="comment">// which you can store in a dot file
+</span><span class="kw">let </span><span class="kw-2">mut </span>f = File::create(<span class="string">&quot;phase_example_still_works.dot&quot;</span>).expect(<span class="string">&quot;Unable to create file&quot;</span>);
+f.write_all(dot.as_bytes()).expect(<span class="string">&quot;Unable to write data&quot;</span>);
+
+<span class="comment">// or just print it out
+</span><span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, dot);
+
+<span class="comment">// if you want to store your graph, you can do the following:
+// first get string representation
+</span><span class="kw">let </span>s = graph.to_string();
+<span class="comment">// open file
+</span><span class="kw">let </span><span class="kw-2">mut </span>graph_file = File::create(<span class="string">&quot;store_graph_example.dat&quot;</span>).expect(<span class="string">&quot;Unable to create file&quot;</span>);
+<span class="comment">// write to file
+</span>graph_file.write_all(s.as_bytes()).expect(<span class="string">&quot;Unable to write data&quot;</span>);
+<span class="comment">// close file
+</span>drop(graph_file);
+
+<span class="comment">// now, if you want to load your network:
+</span><span class="kw">let </span><span class="kw-2">mut </span>read_in = File::open(<span class="string">&quot;store_graph_example.dat&quot;</span>).expect(<span class="string">&quot;unable to open file&quot;</span>);
+<span class="kw">let </span><span class="kw-2">mut </span>test_data = String::new();
+read_in.read_to_string(<span class="kw-2">&amp;mut </span>test_data).expect(<span class="string">&quot;unable to read file&quot;</span>);
+
+<span class="comment">// now we read the string. We still have to parse it:
+</span><span class="kw">let </span>(<span class="kw">_</span>, graph2) = Graph::&lt;PhaseNode&gt;::parse_str(<span class="kw-2">&amp;</span>test_data).unwrap();
+
+<span class="comment">// now, to show, that the graphs are equal, here is one of my test functions:
+// modified for this example, which is a doc-test, so this example also serves as unit test
+
+</span><span class="kw">fn </span>assert_equal_graphs(g1: <span class="kw-2">&amp;</span>Graph&lt;PhaseNode&gt;, g2: <span class="kw-2">&amp;</span>Graph&lt;PhaseNode&gt;) {
+    <span class="macro">assert_eq!</span>(g1.edge_count(), g2.edge_count());
+    <span class="macro">assert_eq!</span>(g1.vertex_count(), g2.vertex_count());
+    <span class="kw">for </span>(n0, n1) <span class="kw">in </span>g2.container_iter().zip(g1.container_iter()) {
+        <span class="macro">assert_eq!</span>(n1.id(), n0.id());
+        <span class="macro">assert_eq!</span>(n0.degree(), n1.degree());
+
+        <span class="kw">for </span>(i, j) <span class="kw">in </span>n1.neighbors().zip(n0.neighbors()) {
+            <span class="macro">assert_eq!</span>(i, j);
+        }
+    }
+
+    <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..g2.vertex_count() <span class="kw">as </span>usize {
+        <span class="macro">assert_eq!</span>(
+            g1.at(i).get_phase(),
+            g2.at(i).get_phase()
+        );
+    }
+}
+<span class="comment">// lets use it
+</span>assert_equal_graphs(<span class="kw-2">&amp;</span>graph, <span class="kw-2">&amp;</span>graph2);
+
+<span class="comment">// you can also clone the graph, if you need:
+</span><span class="kw">let </span>clone = graph.clone();
+assert_equal_graphs(<span class="kw-2">&amp;</span>graph, <span class="kw-2">&amp;</span>clone);
+<span class="kw">let </span>clone2 = graph2.clone();
+assert_equal_graphs(<span class="kw-2">&amp;</span>clone, <span class="kw-2">&amp;</span>clone2);</code></pre></div>
+</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="net_ensembles" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.1 (90743e729 2023-01-10)" ></div></body></html>

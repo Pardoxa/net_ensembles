@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"net_ensembles":[["impl&lt;T&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.66.1/core/ops/deref/trait.Deref.html\" title=\"trait core::ops::deref::Deref\">Deref</a> for <a class=\"enum\" href=\"net_ensembles/dual_graph/enum.WhichGraph.html\" title=\"enum net_ensembles::dual_graph::WhichGraph\">WhichGraph</a>&lt;T&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["CoinFlip","Result of flipping a coin"]],"struct":[["CoinFlipMove","Result of markov Step"],["CoinFlipSequence","A sequence of Coin flips. Contains random Number generator"]]};

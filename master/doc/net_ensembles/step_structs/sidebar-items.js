@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["SpacialStep","Returned by markov steps"]],"type":[["SwStep","returned by mc step of small world ensemble"]]};

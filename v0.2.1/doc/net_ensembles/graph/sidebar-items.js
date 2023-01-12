@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["NodeContainer","Used for accessing neighbor information from graph"]],"type":[["Graph","Contains the topology and implements functions for analyzing topology"]]};

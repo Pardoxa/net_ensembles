@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["derivative_merged","Calculates the derivative of a Vector"],["five_point_derivitive","five-point stencil derivative method "]]};

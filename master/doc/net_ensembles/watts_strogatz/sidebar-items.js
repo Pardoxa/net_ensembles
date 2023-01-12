@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["WSCreationError","Error variants"]],"struct":[["SmallWorldWS","Implements small-world graph ensemble"],["WSContainer","Used for accessing neighbor information from a graph"]],"type":[["WS","short for [SmallWorldWS]"],["WSGraph","Specific [GenericGraph] used for watts-strogatz small World graph"]]};

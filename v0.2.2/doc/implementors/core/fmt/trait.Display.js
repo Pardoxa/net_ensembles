@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"net_ensembles":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.66.1/core/fmt/trait.Display.html\" title=\"trait core::fmt::Display\">Display</a> for <a class=\"enum\" href=\"net_ensembles/enum.GraphErrors.html\" title=\"enum net_ensembles::GraphErrors\">GraphErrors</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
